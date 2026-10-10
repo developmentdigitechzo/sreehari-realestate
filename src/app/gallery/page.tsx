@@ -13,17 +13,17 @@ export default function GalleryPage() {
 
   const categories = [
     'All',
-    'Infrastructure & Roads',
-    'Greenery & Parks',
-    'Entrance Arches',
-    'Gated Layouts',
-    'Site Ceremonies'
+    'Park Avenue',
+    'Sri Amman Nagar',
+    'Aishwarya Nagar'
   ];
 
   const filteredItems =
     selectedCategory === 'All'
       ? galleryItems
-      : galleryItems.filter((item) => item.category === selectedCategory);
+      : galleryItems.filter(
+          (item) => item.project === selectedCategory || item.category === selectedCategory
+        );
 
   return (
     <div className="space-y-12 pb-16">
@@ -55,7 +55,7 @@ export default function GalleryPage() {
             </h1>
 
             <p className="text-white/90 text-xs sm:text-[15px] font-medium leading-relaxed max-w-xl drop-shadow-sm">
-              Witness the real civil infrastructure, 40-foot asphalt roads, avenue plantations, grand gatehouses, and vibrant ground-breaking ceremonies across our active plotted developments.
+              Explore the real on-ground infrastructure, grand entrance arch, wide tar roads, and secured layout developments across our landmark projects: Park Avenue, Sri Amman Nagar, and Aishwarya Nagar.
             </p>
           </div>
         </div>

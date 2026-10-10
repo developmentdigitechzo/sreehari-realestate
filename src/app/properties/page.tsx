@@ -118,7 +118,7 @@ function PropertiesContent() {
       <section className="relative min-h-[340px] sm:min-h-[380px] lg:min-h-[420px] flex items-center overflow-hidden bg-gray-950 border-b border-amber-900/30">
         {/* Exact HD Panoramic Background Image */}
         <Image
-          src="/hero_properties.jpg"
+          src="/hero_properties_plotted_new.jpg"
           alt="Sree Hari Realty Promoters Gated Communities Portfolio"
           fill
           priority

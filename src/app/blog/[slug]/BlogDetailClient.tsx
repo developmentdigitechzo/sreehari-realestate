@@ -5,11 +5,46 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BlogPost } from '@/data/blogs';
 import { properties } from '@/data/properties';
-import { Calendar, Clock, User, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, User, ArrowLeft, Send, CheckCircle } from 'lucide-react';
 import EnquiryModal from '@/components/EnquiryModal';
 
 export default function BlogDetailClient({ post }: { post: BlogPost }) {
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
+  const [inlineForm, setInlineForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    preferredProject: properties[0]?.title || 'Park Avenue',
+    visitDate: '',
+    message: '',
+  });
+  const [inlineLoading, setInlineLoading] = useState(false);
+  const [inlineSubmitted, setInlineSubmitted] = useState(false);
+
+  const handleInlineSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setInlineLoading(true);
+
+    const newLead = {
+      ...inlineForm,
+      source: `Blog: ${post.title}`,
+      timestamp: new Date().toISOString(),
+      id: 'LEAD-' + Date.now(),
+    };
+
+    try {
+      const existingLeads = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
+      existingLeads.unshift(newLead);
+      localStorage.setItem('sree_hari_leads', JSON.stringify(existingLeads));
+    } catch {
+      // ignore storage error
+    }
+
+    setTimeout(() => {
+      setInlineLoading(false);
+      setInlineSubmitted(true);
+    }, 600);
+  };
 
   return (
     <div className="space-y-12 pb-16">
@@ -84,21 +119,139 @@ export default function BlogDetailClient({ post }: { post: BlogPost }) {
 
           {/* Right Sidebar */}
           <div className="lg:col-span-4 space-y-6">
-            {/* CTA Box */}
-            <div className="bg-[#075E43] text-white p-6 rounded-2xl shadow-lg space-y-4 text-center">
-              <span className="accent-text text-xl text-[#C5A869]">Looking for Land?</span>
-              <h3 className="font-heading-sc text-lg font-bold text-white">
-                Explore DTCP Approved Villa Plots
-              </h3>
-              <p className="text-xs text-emerald-100 leading-relaxed">
-                Ready to register gated community plots starting from just ₹9.2 Lakhs with spot registration support.
-              </p>
-              <button
-                onClick={() => setIsEnquiryOpen(true)}
-                className="w-full bg-white text-[#075E43] font-bold py-3 rounded-xl text-xs uppercase tracking-wider shadow hover:bg-gray-100 transition"
-              >
-                Book Free Site Visit
-              </button>
+            {/* Direct Property Enquiry Form Card (Matching Projects Detail Form) */}
+            <div className="bg-white p-6 rounded-2xl shadow-xl border border-pink-100 space-y-5">
+              <div className="space-y-1 pb-3 border-b border-gray-100 text-center">
+                <span className="accent-text text-lg text-[#D61F69]">Quick Property Enquiry</span>
+                <h3 className="font-heading-sc text-xl font-bold text-gray-900">
+                  Enquire for Plots
+                </h3>
+                <p className="text-[11px] text-gray-500">
+                  Fill in your details below to receive layout map, price break-up & direct assistance.
+                </p>
+              </div>
+
+              {inlineSubmitted ? (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center space-y-2.5">
+                  <div className="w-10 h-10 mx-auto rounded-full bg-emerald-100 text-[#075E43] flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-[#075E43]" />
+                  </div>
+                  <h4 className="font-bold text-[#075E43] text-sm">Enquiry Received!</h4>
+                  <p className="text-xs text-gray-700 leading-relaxed">
+                    Thank you, <span className="font-bold text-gray-900">{inlineForm.name}</span>. Your enquiry for <span className="font-bold text-gray-900">{inlineForm.preferredProject}</span> has been stored. Our property advisor will call you at <span className="font-bold text-gray-900">{inlineForm.phone}</span> shortly.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInlineSubmitted(false);
+                      setInlineForm({
+                        name: '',
+                        phone: '',
+                        email: '',
+                        preferredProject: properties[0]?.title || 'Park Avenue',
+                        visitDate: '',
+                        message: '',
+                      });
+                    }}
+                    className="mt-2 text-xs font-bold text-[#075E43] hover:underline block mx-auto cursor-pointer"
+                  >
+                    Submit another enquiry
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleInlineSubmit} className="space-y-3.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                      Full Name <span className="text-[#D61F69]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Anand Kumar"
+                      value={inlineForm.name}
+                      onChange={(e) => setInlineForm({ ...inlineForm, name: e.target.value })}
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                      Phone / WhatsApp Number <span className="text-[#D61F69]">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="e.g. +91 98765 43210"
+                      value={inlineForm.phone}
+                      onChange={(e) => setInlineForm({ ...inlineForm, phone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Preferred Project
+                      </label>
+                      <select
+                        value={inlineForm.preferredProject}
+                        onChange={(e) => setInlineForm({ ...inlineForm, preferredProject: e.target.value })}
+                        className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
+                      >
+                        {properties.map((p) => (
+                          <option key={p.id} value={p.title}>
+                            {p.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Preferred Visit Date
+                      </label>
+                      <input
+                        type="date"
+                        value={inlineForm.visitDate}
+                        onChange={(e) => setInlineForm({ ...inlineForm, visitDate: e.target.value })}
+                        className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                      Message / Requirement (Optional)
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="e.g. Corner plot preference or loan assistance inquiry"
+                      value={inlineForm.message}
+                      onChange={(e) => setInlineForm({ ...inlineForm, message: e.target.value })}
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={inlineLoading}
+                    className="w-full bg-[#D61F69] hover:bg-[#b81857] text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
+                  >
+                    {inlineLoading ? (
+                      <span>Submitting Enquiry...</span>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Send Property Enquiry
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-[10px] text-center text-gray-400">
+                    🔒 Stored securely • Direct callback from Sree Hari Realty team
+                  </p>
+                </form>
+              )}
             </div>
 
             {/* Top Projects List */}
@@ -107,7 +260,7 @@ export default function BlogDetailClient({ post }: { post: BlogPost }) {
                 Featured Plotted Projects
               </h4>
               <div className="space-y-3">
-                {properties.slice(0, 3).map((p) => (
+                {properties.map((p) => (
                   <Link
                     key={p.id}
                     href={`/properties/${p.slug}`}

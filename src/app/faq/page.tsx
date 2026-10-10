@@ -35,7 +35,7 @@ export default function FAQPage() {
       <section className="relative min-h-[340px] sm:min-h-[380px] lg:min-h-[420px] flex items-center overflow-hidden bg-gray-950 border-b border-amber-900/30">
         {/* Exact HD Panoramic Background Image */}
         <Image
-          src="/hero_faq.jpg"
+          src="/hero_faq_new.jpg"
           alt="Sree Hari Realty Promoters Legal Clarity & Guidance"
           fill
           priority

@@ -12,6 +12,17 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
+  // Extract clean price without parentheses
+  const rawPrice = property.totalPriceRange.replace('Plots from ', '');
+  const statusMatch = rawPrice.match(/\(([^)]+)\)/);
+  const cleanPrice = rawPrice.replace(/\s*\([^)]+\)/g, '').trim();
+
+  // Determine status badge label
+  let statusLabel = statusMatch ? statusMatch[1] : '';
+  if (!statusLabel) {
+    statusLabel = property.availableUnits > 0 ? 'Plots Available' : 'Sold Out';
+  }
+
   return (
     <Link
       href={`/properties/${property.slug}`}
@@ -33,33 +44,47 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       {/* 2. Content Panel: Title -> Location -> Amount -> Sq.Ft Units */}
       <div className="p-5 flex-1 flex flex-col justify-between space-y-4 bg-transparent group-hover:bg-[#fffdf2]/70 transition-colors duration-300">
         <div className="space-y-2.5">
-          {/* 2.1 Title FIRST */}
-          <h3 className="text-xl font-extrabold text-gray-950 group-hover:text-[#006452] transition-colors tracking-tight line-clamp-1">
+          {/* 2.1 Title FIRST - Fixed height for straight alignment */}
+          <h3 className="text-xl font-extrabold text-gray-950 group-hover:text-[#006452] transition-colors tracking-tight line-clamp-1 h-7 flex items-center">
             {property.title}
           </h3>
 
-          {/* 2.2 Location BELOW Title */}
-          <div className="flex items-center gap-1.5 text-xs text-gray-600 font-medium">
+          {/* 2.2 Location BELOW Title - Fixed height for straight alignment */}
+          <div className="flex items-center gap-1.5 text-xs text-gray-600 font-medium h-5">
             <MapPin className="w-3.5 h-3.5 text-[#006452] flex-shrink-0" />
             <span className="truncate">{property.location}</span>
           </div>
 
-          {/* 2.3 Amount / Price Line */}
-          <div className="flex items-baseline gap-1.5 pt-0.5">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+          {/* 2.3 Amount / Price Line - Fixed height with clean non-wrapping price */}
+          <div className="flex items-center gap-1.5 pt-0.5 h-7">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex-shrink-0">
               Starting:
             </span>
-            <span className="text-lg sm:text-xl font-black text-[#D61F69] tracking-tight">
-              {property.totalPriceRange.replace('Plots from ', '')}
+            <span className="text-base sm:text-[17px] font-black text-[#D61F69] tracking-tight whitespace-nowrap truncate">
+              {cleanPrice}
             </span>
           </div>
 
-          {/* 2.4 Sq.Ft Units */}
-          <div className="pt-0.5">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-800 bg-white/95 px-3 py-1.5 rounded-xl border border-amber-200/80 shadow-2xs">
+          {/* 2.4 Sq.Ft Units & Status Badge - Fixed height row for straight horizontal alignment */}
+          <div className="pt-0.5 flex items-center justify-between gap-2 h-8">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-800 bg-white/95 px-3 py-1.5 rounded-xl border border-amber-200/80 shadow-2xs flex-shrink-0">
               <Maximize2 className="w-3.5 h-3.5 text-[#006452]" />
               <span>{property.plotSizes}</span>
             </span>
+
+            {statusLabel && (
+              <span
+                className={`inline-flex items-center text-[11px] font-extrabold px-2.5 py-1 rounded-xl border shadow-2xs flex-shrink-0 ${
+                  statusLabel.toLowerCase().includes('sold')
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : statusLabel.toLowerCase().includes('complete')
+                    ? 'bg-stone-100 text-stone-700 border-stone-200'
+                    : 'bg-emerald-50 text-[#006452] border-emerald-200'
+                }`}
+              >
+                {statusLabel}
+              </span>
+            )}
           </div>
         </div>
 

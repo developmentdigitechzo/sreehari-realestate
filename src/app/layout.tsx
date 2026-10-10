@@ -4,6 +4,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import FloatingCTA from '@/components/FloatingCTA';
+import PageLoader from '@/components/PageLoader';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://sreeharirealty.com'),
@@ -51,6 +52,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon.png" />
       </head>
       <body className="min-h-screen flex flex-col bg-[#fef9e6] text-gray-900 font-sans selection:bg-[#D61F69] selection:text-white">
+        <PageLoader />
         <Suspense fallback={<div className="h-16 bg-[#fef9e6] border-b border-amber-100" />}>
           <Navbar />
         </Suspense>

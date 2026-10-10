@@ -281,88 +281,94 @@ export default function HomePage() {
 
           {/* Right Column: Seamless Masterplan with Zoomed Layout & Vertical Staggered Birds */}
           <div className="lg:col-span-7 relative">
-            {/* Animated Flying Crows / Birds (Left Airspace - Vertical Column Lineup outside layout) */}
-            <div className="absolute inset-0 z-20 pointer-events-none animate-crow-left">
-              {/* Bird 1 */}
-              <div className="absolute top-[2%] left-[-4%] sm:left-[-2%]">
-                <svg width="20" height="11" viewBox="0 0 24 14" fill="#1F2937" className="drop-shadow-2xs">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
+            {/* North Direction Compass Rose (Positioned in Open Sky Above Top-Right Tree) */}
+            <div className="absolute top-[-3%] sm:top-[-4%] right-[2%] sm:right-[3%] pointer-events-none z-10 select-none flex flex-col items-center">
+              <span className="text-[11px] font-black text-gray-800 tracking-tighter leading-none mb-0.5">N</span>
+              <svg width="22" height="32" viewBox="0 0 24 36" fill="none" className="drop-shadow-xs">
+                <circle cx="12" cy="18" r="7.5" stroke="#374151" strokeWidth="1" strokeDasharray="2 1.5" opacity="0.6" />
+                <line x1="2" y1="18" x2="22" y2="18" stroke="#374151" strokeWidth="0.8" opacity="0.5" />
+                <polygon points="12,4 9.5,18 12,16" fill="#111827" />
+                <polygon points="12,4 14.5,18 12,16" fill="#374151" />
+                <polygon points="12,32 9.5,18 12,20" fill="#9CA3AF" />
+                <polygon points="12,32 14.5,18 12,20" fill="#CBD5E1" />
+              </svg>
+            </div>
+
+            {/* Animated Flying Crows / Birds (Left Airspace - Sharp, Clearly Visible Soaring Flock in Open Sky) */}
+            <div className="absolute top-[10%] sm:top-[12%] lg:top-[13%] left-[-12%] sm:left-[-8%] lg:left-[-6%] w-36 sm:w-44 h-24 sm:h-28 z-20 pointer-events-none animate-crow-left select-none">
+              {/* Lead Bird 1 (Front Left - Largest & Deep Charcoal Black) */}
+              <div className="absolute bottom-[4%] left-[2%] rotate-[-6deg]">
+                <svg width="22" height="12" viewBox="0 0 24 13" fill="#111827" className="drop-shadow-xs">
+                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
                 </svg>
               </div>
-              {/* Bird 2 */}
-              <div className="absolute top-[10%] left-[-1%] sm:left-[1%]">
-                <svg width="17" height="9" viewBox="0 0 24 14" fill="#374151" className="opacity-90">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
+
+              {/* Companion Bird 2 */}
+              <div className="absolute bottom-[10%] left-[24%] rotate-[-4deg]">
+                <svg width="18" height="10" viewBox="0 0 24 13" fill="#111827" className="opacity-95 drop-shadow-2xs">
+                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
                 </svg>
               </div>
-              {/* Bird 3 */}
-              <div className="absolute top-[18%] left-[-5%] sm:left-[-3%]">
-                <svg width="19" height="10" viewBox="0 0 24 14" fill="#1F2937" className="opacity-95">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
+
+              {/* Ascending Bird 3 */}
+              <div className="absolute bottom-[30%] left-[28%] rotate-[-10deg]">
+                <svg width="16" height="9" viewBox="0 0 24 13" fill="#1F2937" className="opacity-95">
+                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
                 </svg>
               </div>
-              {/* Bird 4 */}
-              <div className="absolute top-[27%] left-[-2%] sm:left-[0%]">
-                <svg width="15" height="8" viewBox="0 0 24 14" fill="#4B5563" className="opacity-85">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
+
+              {/* Middle Cluster Bird 4 */}
+              <div className="absolute bottom-[50%] left-[44%] rotate-[-8deg]">
+                <svg width="17" height="9" viewBox="0 0 24 13" fill="#111827" className="opacity-95">
+                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
                 </svg>
               </div>
-              {/* Bird 5 */}
-              <div className="absolute top-[36%] left-[-4%] sm:left-[-2%]">
-                <svg width="14" height="8" viewBox="0 0 24 14" fill="#374151" className="opacity-80">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
+
+              {/* Middle Companion Bird 5 */}
+              <div className="absolute bottom-[44%] left-[60%] rotate-[-5deg]">
+                <svg width="13" height="7" viewBox="0 0 24 13" fill="#1F2937" className="opacity-90">
+                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
                 </svg>
               </div>
-              {/* Bird 6 */}
-              <div className="absolute top-[45%] left-[-1%] sm:left-[1%]">
-                <svg width="16" height="9" viewBox="0 0 24 14" fill="#374151" className="opacity-90">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
+
+              {/* Trailing Bird 6 */}
+              <div className="absolute top-[20%] left-[68%] rotate-[-12deg]">
+                <svg width="14" height="8" viewBox="0 0 24 13" fill="#111827" className="opacity-90">
+                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
                 </svg>
               </div>
-              {/* Bird 7 */}
-              <div className="absolute top-[54%] left-[-3%] sm:left-[-1%]">
-                <svg width="13" height="7" viewBox="0 0 24 14" fill="#6B7280" className="opacity-75">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
+
+              {/* Distant Climber Bird 7 */}
+              <div className="absolute top-[8%] left-[82%] rotate-[-8deg]">
+                <svg width="13" height="7" viewBox="0 0 24 13" fill="#1F2937" className="opacity-85">
+                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
+                </svg>
+              </div>
+
+              {/* Peak Bird 8 */}
+              <div className="absolute top-[0%] left-[94%] rotate-[-10deg]">
+                <svg width="10" height="5" viewBox="0 0 24 13" fill="#374151" className="opacity-85">
+                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
                 </svg>
               </div>
             </div>
 
-            {/* Animated Flying Crows / Birds (Right Airspace - 5 Birds outside layout) */}
-            <div className="absolute inset-0 z-20 pointer-events-none animate-crow-right">
-              {/* Bird 1 */}
-              <div className="absolute top-[2%] right-[1%] sm:right-[3%]">
-                <svg width="20" height="11" viewBox="0 0 24 14" fill="#1F2937" className="drop-shadow-2xs">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
+            {/* Animated Flying Crows (Right Airspace - 2 Distant Birds in Open Sky) */}
+            <div className="absolute top-[6%] sm:top-[8%] right-[1%] sm:right-[2%] w-16 h-12 pointer-events-none z-20 animate-crow-right select-none">
+              <div className="absolute top-[10%] left-[30%] rotate-[6deg]">
+                <svg width="15" height="8" viewBox="0 0 24 13" fill="#111827" className="drop-shadow-xs">
+                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
                 </svg>
               </div>
-              {/* Bird 2 */}
-              <div className="absolute top-[10%] right-[8%] sm:right-[10%]">
-                <svg width="16" height="9" viewBox="0 0 24 14" fill="#374151" className="opacity-90">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
-                </svg>
-              </div>
-              {/* Bird 3 */}
-              <div className="absolute top-[18%] right-[2%] sm:right-[4%]">
-                <svg width="18" height="10" viewBox="0 0 24 14" fill="#1F2937" className="opacity-95">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
-                </svg>
-              </div>
-              {/* Bird 4 */}
-              <div className="absolute top-[27%] right-[10%] sm:right-[12%]">
-                <svg width="14" height="8" viewBox="0 0 24 14" fill="#4B5563" className="opacity-85">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
-                </svg>
-              </div>
-              {/* Bird 5 */}
-              <div className="absolute top-[36%] right-[3%] sm:right-[5%]">
-                <svg width="13" height="7" viewBox="0 0 24 14" fill="#6B7280" className="opacity-80">
-                  <path d="M 0,8 Q 6,0 12,6 Q 18,0 24,8 Q 18,4 12,5 Q 6,4 0,8 Z" />
+              <div className="absolute top-[55%] left-[65%] rotate-[10deg]">
+                <svg width="11" height="6" viewBox="0 0 24 13" fill="#1F2937" className="opacity-95">
+                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
                 </svg>
               </div>
             </div>
 
             {/* Masterplan Image Container Zoomed & Prominent */}
-            <div className="relative w-full h-[330px] sm:h-[400px] md:h-[430px] lg:h-[450px] select-none scale-[1.03] sm:scale-[1.05] group-hover:scale-[1.07] transition-transform duration-500 ease-out">
+            <div className="relative w-full h-[280px] sm:h-[380px] md:h-[420px] lg:h-[450px] select-none scale-100 sm:scale-[1.03] lg:scale-[1.05] transition-transform duration-500 ease-out">
               <Image
                 src="/masterplan_zoomed.png"
                 alt="A Well-Planned Community Masterplan"
@@ -371,28 +377,28 @@ export default function HomePage() {
                 className="object-contain"
               />
 
-              {/* Pin Tooltips Separated with Clear Distance */}
-              {/* 1. Children's Park (over green park zone) */}
-              <div className="absolute top-[44%] left-[28%] bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1 rounded-full text-[10px] font-extrabold shadow-md flex items-center gap-1.5 border border-amber-200/80 hover:scale-105 transition-transform cursor-pointer">
-                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-                <span>Children&apos;s Park</span>
-              </div>
-
-              {/* 2. Plots Area (over top plot sector) */}
-              <div className="absolute top-[18%] left-[45%] bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1 rounded-full text-[10px] font-extrabold shadow-md flex items-center gap-1.5 border border-amber-200/80 hover:scale-105 transition-transform cursor-pointer">
-                <span className="w-2 h-2 rounded-full bg-[#D61F69]" />
+              {/* Pin Tooltips Separated with Clear Distance & Responsive Positioning */}
+              {/* 1. Plots Area (over top plot sector) */}
+              <div className="absolute top-[12%] sm:top-[16%] left-[50%] sm:left-[46%] -translate-x-1/2 bg-white/95 backdrop-blur-sm text-gray-900 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-extrabold shadow-md flex items-center gap-1 sm:gap-1.5 border border-amber-200/80 hover:scale-105 transition-transform cursor-pointer whitespace-nowrap z-10">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#D61F69] flex-shrink-0" />
                 <span>Plots Area</span>
               </div>
 
-              {/* 3. Clubhouse (over right clubhouse & pool area) */}
-              <div className="absolute top-[46%] right-[12%] bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1 rounded-full text-[10px] font-extrabold shadow-md flex items-center gap-1.5 border border-amber-200/80 hover:scale-105 transition-transform cursor-pointer">
-                <span className="w-2 h-2 rounded-full bg-[#3B82F6]" />
+              {/* 2. Children's Park (over lower-left green park zone) */}
+              <div className="absolute top-[38%] sm:top-[42%] left-[4%] sm:left-[14%] lg:left-[20%] bg-white/95 backdrop-blur-sm text-gray-900 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-extrabold shadow-md flex items-center gap-1 sm:gap-1.5 border border-amber-200/80 hover:scale-105 transition-transform cursor-pointer whitespace-nowrap z-10">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#10B981] flex-shrink-0" />
+                <span>Children&apos;s Park</span>
+              </div>
+
+              {/* 3. Clubhouse (over center-right clubhouse & pool area) */}
+              <div className="absolute top-[54%] sm:top-[48%] right-[4%] sm:right-[10%] lg:right-[14%] bg-white/95 backdrop-blur-sm text-gray-900 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-extrabold shadow-md flex items-center gap-1 sm:gap-1.5 border border-amber-200/80 hover:scale-105 transition-transform cursor-pointer whitespace-nowrap z-10">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#3B82F6] flex-shrink-0" />
                 <span>Clubhouse</span>
               </div>
 
               {/* 4. Main Entry (placed directly on main entrance arch) */}
-              <div className="absolute bottom-[20%] left-[46%] -translate-x-1/2 bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1 rounded-full text-[10px] font-extrabold shadow-md flex items-center gap-1.5 border border-amber-200/80 hover:scale-105 transition-transform cursor-pointer">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <div className="absolute bottom-[10%] sm:bottom-[16%] left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-sm text-gray-900 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-extrabold shadow-md flex items-center gap-1 sm:gap-1.5 border border-amber-200/80 hover:scale-105 transition-transform cursor-pointer whitespace-nowrap z-10">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-500 flex-shrink-0" />
                 <span>Main Entry</span>
               </div>
             </div>
