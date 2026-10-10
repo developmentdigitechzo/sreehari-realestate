@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" width="240" height="60" fill="none">
+  <defs>
+    <!-- Headlight Beam Gradient (Projecting Leftwards) -->
+    <linearGradient id="headlightBeam" x1="100%" y1="50%" x2="0%" y2="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="25%" stop-color="#fef08a" stop-opacity="0.75" />
+      <stop offset="60%" stop-color="#fde047" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#fef9c3" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Headlight Core Glow -->
+    <radialGradient id="bulbGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="40%" stop-color="#fef08a" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#fde047" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Red Car Body Gradient -->
+    <linearGradient id="carRedBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="20%" stop-color="#e11d48" />
+      <stop offset="70%" stop-color="#be123c" />
+      <stop offset="100%" stop-color="#881337" />
+    </linearGradient>
+
+    <!-- Roof & Hood Gloss Highlight -->
+    <linearGradient id="carGloss" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.2" />
+    </linearGradient>
+
+    <!-- Glass Tint -->
+    <linearGradient id="glassGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.85" />
+      <stop offset="50%" stop-color="#1e293b" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95" />
+    </linearGradient>
+
+    <!-- Wheel Rim Gradient -->
+    <radialGradient id="rimGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="60%" stop-color="#94a3b8" />
+      <stop offset="100%" stop-color="#334155" />
+    </radialGradient>
+
+    <!-- Ground Shadow -->
+    <radialGradient id="carShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- 1. HEADLIGHT CONE BEAM (Shining towards the left) -->
+  <!-- Upper & Lower Combined Beam Cones -->
+  <polygon points="102,32 0,12 0,52 102,38" fill="url(#headlightBeam)" />
+  <ellipse cx="100" cy="35" rx="8" ry="6" fill="url(#bulbGlow)" />
+  <ellipse cx="102" cy="35" rx="3" ry="2" fill="#ffffff" />
+  
+  <!-- Secondary Ground Lighting Spill -->
+  <polygon points="100,36 10,48 0,56 95,44" fill="url(#headlightBeam)" opacity="0.6" />
+
+  <!-- 2. CAR GROUND SHADOW -->
+  <ellipse cx="165" cy="51" rx="65" ry="4" fill="url(#carShadow)" />
+
+  <!-- 3. MAIN CAR GROUP (Facing Left, from x=95 to x=235) -->
+  <g id="red-suv-body">
+    <!-- Rear bumper & exhaust zone -->
+    <rect x="228" y="34" width="6" height="12" rx="2" fill="#1e293b" />
+    <circle cx="232" cy="43" r="2" fill="#cbd5e1" />
+
+    <!-- Main Chassis / Body Outline -->
+    <!-- Front nose at x=98, hood rises to x=130, windshield up to x=150 y=16, flat roof to x=205 y=16, upright rear hatch down to x=230 y=32, rear bumper to x=232 y=46 -->
+    <path d="
+      M 102,35
+      C 98,34 96,36 96,40
+      L 97,44
+      C 98,46 101,47 105,47
+      L 115,47
+      C 116,42 121,38 127,38
+      C 133,38 138,42 139,47
+      L 186,47
+      C 187,42 192,38 198,38
+      C 204,38 209,42 210,47
+      L 228,47
+      C 231,47 233,45 233,42
+      L 233,32
+      C 232,28 228,26 222,25
+      L 205,17
+      C 203,16 200,16 195,16
+      L 152,16
+      C 148,16 144,18 141,21
+      L 128,29
+      L 108,31
+      C 104,31.5 102,33 102,35
+      Z" 
+      fill="url(#carRedBody)" 
+      stroke="#9f1239" 
+      stroke-width="0.8"
+    />
+
+    <!-- Roof Rack Rails -->
+    <rect x="155" y="13.5" width="48" height="2" rx="1" fill="#0f172a" />
+    <rect x="160" y="15.5" width="3" height="1.5" fill="#334155" />
+    <rect x="195" y="15.5" width="3" height="1.5" fill="#334155" />
+
+    <!-- Hood & Roof Specular Highlight -->
+    <path d="M 110,32 L 127,30 L 140,22 L 152,17.5 L 198,17.5 C 196,18.5 154,18.5 151,20 L 138,25 L 110,33 Z" fill="url(#carGloss)" opacity="0.6" />
+
+    <!-- Cabin / Windows Frame (Black Trim) -->
+    <path d="M 141,21.5 L 152,17.5 L 174,17.5 L 174,29 L 130,29.5 Z" fill="#0f172a" />
+    <path d="M 176,17.5 L 196,17.5 L 204,24 L 204,29 L 176,29 Z" fill="#0f172a" />
+    <path d="M 206,24.5 L 218,25.5 L 218,29 L 206,29 Z" fill="#0f172a" />
+
+    <!-- Front Windshield & Side Windows (Tinted Glass) -->
+    <path d="M 142.5,22 L 151.5,18.5 L 172.5,18.5 L 172.5,28 L 133,28.5 Z" fill="url(#glassGradient)" />
+    <!-- Window Reflection Streak -->
+    <polygon points="146,26 153,19 157,19 148,27" fill="#ffffff" opacity="0.45" />
+
+    <!-- Rear Side Window -->
+    <path d="M 177.5,18.5 L 194.5,18.5 L 202.5,24 L 202.5,28 L 177.5,28 Z" fill="url(#glassGradient)" />
+    <!-- Rear Quarter Window -->
+    <path d="M 207,25 L 216,26 L 216,28 L 207,28 Z" fill="url(#glassGradient)" />
+
+    <!-- B-Pillar & C-Pillar -->
+    <rect x="173" y="17.5" width="4" height="11.5" fill="#0f172a" />
+    <rect x="203" y="18" width="3.5" height="11" fill="#0f172a" />
+
+    <!-- Door Seam & Character Lines -->
+    <line x1="174" y1="29" x2="174" y2="45" stroke="#881337" stroke-width="0.8" />
+    <line x1="139" y1="33" x2="139" y2="46" stroke="#881337" stroke-width="0.8" />
+    <line x1="108" y1="34" x2="225" y2="34" stroke="#f43f5e" stroke-width="0.7" opacity="0.6" />
+    <line x1="108" y1="41" x2="228" y2="41" stroke="#881337" stroke-width="0.6" />
+
+    <!-- Chrome Door Handles -->
+    <rect x="156" y="32" width="7" height="1.8" rx="0.9" fill="#f8fafc" stroke="#64748b" stroke-width="0.4" />
+    <rect x="187" y="32" width="7" height="1.8" rx="0.9" fill="#f8fafc" stroke="#64748b" stroke-width="0.4" />
+
+    <!-- Front Grille & Fog Light Accent -->
+    <path d="M 96,38 L 102,38 L 102,44 L 97,44 Z" fill="#1e293b" />
+    <rect x="97" y="39.5" width="4" height="1.5" rx="0.5" fill="#475569" />
+    <circle cx="100" cy="43.5" r="1.2" fill="#fef08a" />
+
+    <!-- Headlight Assembly (Glossy Left Corner) -->
+    <path d="M 99,34 C 101,32 105,32 107,32 L 106,37 L 98,37 Z" fill="#e2e8f0" stroke="#0f172a" stroke-width="0.5" />
+    <ellipse cx="102" cy="34.5" rx="2.5" ry="2" fill="#ffffff" />
+    <circle cx="102" cy="34.5" r="1.2" fill="#fef08a" />
+
+    <!-- Rear Taillight (Ruby Red LED bar on Right Side) -->
+    <path d="M 229,31 L 233,31 L 233,37 L 227,37 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="0.5" />
+    <line x1="229" y1="33" x2="233" y2="33" stroke="#fca5a5" stroke-width="0.8" />
+
+    <!-- Wheel Arches (Matte Black Tough Cladding) -->
+    <path d="M 113,47 C 114,39 120,35 127,35 C 134,35 140,39 141,47 Z" fill="#0f172a" />
+    <path d="M 184,47 C 185,39 191,35 198,35 C 205,35 211,39 212,47 Z" fill="#0f172a" />
+
+    <!-- Front Wheel (Left) -->
+    <g transform="translate(127, 47)">
+      <!-- Rubber Tire -->
+      <circle cx="0" cy="0" r="9" fill="#1e293b" stroke="#0f172a" stroke-width="1.5" />
+      <circle cx="0" cy="0" r="7.5" fill="#334155" />
+      <!-- Alloy Rim -->
+      <circle cx="0" cy="0" r="6" fill="url(#rimGrad)" />
+      <!-- Red Brake Caliper -->
+      <rect x="-3" y="-5" width="2" height="4" rx="0.5" fill="#e11d48" />
+      <!-- Rim Spokes -->
+      <circle cx="0" cy="0" r="2.5" fill="#0f172a" />
+      <line x1="-5" y1="0" x2="5" y2="0" stroke="#f8fafc" stroke-width="1" />
+      <line x1="0" y1="-5" x2="0" y2="5" stroke="#f8fafc" stroke-width="1" />
+      <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5" stroke="#cbd5e1" stroke-width="0.8" />
+      <line x1="-3.5" y1="3.5" x2="3.5" y2="-3.5" stroke="#cbd5e1" stroke-width="0.8" />
+      <circle cx="0" cy="0" r="1.2" fill="#94a3b8" />
+    </g>
+
+    <!-- Rear Wheel (Right) -->
+    <g transform="translate(198, 47)">
+      <!-- Rubber Tire -->
+      <circle cx="0" cy="0" r="9" fill="#1e293b" stroke="#0f172a" stroke-width="1.5" />
+      <circle cx="0" cy="0" r="7.5" fill="#334155" />
+      <!-- Alloy Rim -->
+      <circle cx="0" cy="0" r="6" fill="url(#rimGrad)" />
+      <!-- Red Brake Caliper -->
+      <rect x="-3" y="-5" width="2" height="4" rx="0.5" fill="#e11d48" />
+      <!-- Rim Spokes -->
+      <circle cx="0" cy="0" r="2.5" fill="#0f172a" />
+      <line x1="-5" y1="0" x2="5" y2="0" stroke="#f8fafc" stroke-width="1" />
+      <line x1="0" y1="-5" x2="0" y2="5" stroke="#f8fafc" stroke-width="1" />
+      <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5" stroke="#cbd5e1" stroke-width="0.8" />
+      <line x1="-3.5" y1="3.5" x2="3.5" y2="-3.5" stroke="#cbd5e1" stroke-width="0.8" />
+      <circle cx="0" cy="0" r="1.2" fill="#94a3b8" />
+    </g>
+
+    <!-- Lower Side Underbody Sill (Dark Grey) -->
+    <rect x="142" y="46" width="41" height="2" fill="#334155" />
+    <rect x="104" y="46" width="9" height="2" fill="#334155" />
+    <rect x="212" y="46" width="16" height="2" fill="#334155" />
+  </g>
+</svg>
