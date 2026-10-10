@@ -26,6 +26,8 @@ import {
   properties
 } from '@/data/properties';
 
+import { api } from '@/lib/api';
+
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
@@ -38,29 +40,53 @@ export default function ContactPage() {
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    const newLead = {
-      ...formData,
-      timestamp: new Date().toISOString(),
-      id: 'LEAD-CONTACT-' + Date.now(),
-    };
+    setErrorMessage('');
 
     try {
-      const existing = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
-      existing.unshift(newLead);
-      localStorage.setItem('sree_hari_leads', JSON.stringify(existing));
-    } catch {
-      // ignore
-    }
+      if (formData.visitDate) {
+        await api.submitPublicSiteVisit({
+          customer_name: formData.name,
+          customer_phone: formData.phone,
+          customer_email: formData.email,
+          project_name: formData.interestedProject,
+          visit_date: formData.visitDate,
+          notes: formData.message,
+        });
+      } else {
+        await api.submitPublicLead({
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          message: `Interested Project: ${formData.interestedProject}. ${formData.message || ''}`,
+          source: 'Website Contact Page',
+        });
+      }
 
-    setTimeout(() => {
-      setLoading(false);
+      // Also mirror locally
+      try {
+        const existing = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
+        existing.unshift({
+          ...formData,
+          timestamp: new Date().toISOString(),
+          id: 'LEAD-CONTACT-' + Date.now(),
+        });
+        localStorage.setItem('sree_hari_leads', JSON.stringify(existing));
+      } catch {
+        // ignore
+      }
+
       setSubmitted(true);
-    }, 600);
+    } catch (err: any) {
+      console.error('Submission error:', err);
+      setErrorMessage(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleWhatsAppChat = () => {

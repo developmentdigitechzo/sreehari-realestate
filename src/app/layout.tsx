@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
-import React, { Suspense } from 'react';
+import React from 'react';
 import './globals.css';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import FloatingCTA from '@/components/FloatingCTA';
-import PageLoader from '@/components/PageLoader';
+import LayoutWrapper from '@/components/LayoutWrapper';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://sreeharirealty.com'),
@@ -46,19 +43,17 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
         <link rel="icon" href="/icon.png" type="image/png" />
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/icon.png" />
       </head>
       <body className="min-h-screen flex flex-col bg-[#fef9e6] text-gray-900 font-sans selection:bg-[#D61F69] selection:text-white">
-        <PageLoader />
-        <Suspense fallback={<div className="h-16 bg-[#fef9e6] border-b border-amber-100" />}>
-          <Navbar />
-        </Suspense>
-        <main className="flex-grow">{children}</main>
-        <Footer />
-        <FloatingCTA />
+        <LayoutWrapper>{children}</LayoutWrapper>
       </body>
     </html>
   );

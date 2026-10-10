@@ -30,6 +30,8 @@ import {
 import EnquiryModal from '@/components/EnquiryModal';
 import { WhatsAppSvgIcon } from '@/components/FloatingCTA';
 
+import { api } from '@/lib/api';
+
 export default function PropertyDetailClient({ property }: { property: Property }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
@@ -45,30 +47,55 @@ export default function PropertyDetailClient({ property }: { property: Property 
   });
   const [inlineSubmitted, setInlineSubmitted] = useState(false);
   const [inlineLoading, setInlineLoading] = useState(false);
+  const [inlineError, setInlineError] = useState('');
 
-  const handleInlineSubmit = (e: React.FormEvent) => {
+  const handleInlineSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setInlineLoading(true);
-
-    const newLead = {
-      ...inlineForm,
-      propertyName: property.title,
-      timestamp: new Date().toISOString(),
-      id: 'LEAD-' + Date.now(),
-    };
+    setInlineError('');
 
     try {
-      const existingLeads = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
-      existingLeads.unshift(newLead);
-      localStorage.setItem('sree_hari_leads', JSON.stringify(existingLeads));
-    } catch {
-      // ignore storage error
-    }
+      if (inlineForm.visitDate) {
+        await api.submitPublicSiteVisit({
+          customer_name: inlineForm.name,
+          customer_phone: inlineForm.phone,
+          customer_email: inlineForm.email,
+          project_name: property.title,
+          visit_date: inlineForm.visitDate,
+          preferred_plot_size: inlineForm.preferredVariant,
+          notes: inlineForm.message || `Preferred variant: ${inlineForm.preferredVariant}`,
+        });
+      } else {
+        await api.submitPublicLead({
+          name: inlineForm.name,
+          phone: inlineForm.phone,
+          email: inlineForm.email,
+          preferred_plot_size: inlineForm.preferredVariant,
+          message: `[${property.title}] Variant: ${inlineForm.preferredVariant}. ${inlineForm.message || ''}`,
+          source: 'Website Property Detail Page',
+        });
+      }
 
-    setTimeout(() => {
-      setInlineLoading(false);
+      try {
+        const existingLeads = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
+        existingLeads.unshift({
+          ...inlineForm,
+          propertyName: property.title,
+          timestamp: new Date().toISOString(),
+          id: 'LEAD-' + Date.now(),
+        });
+        localStorage.setItem('sree_hari_leads', JSON.stringify(existingLeads));
+      } catch {
+        // ignore storage error
+      }
+
       setInlineSubmitted(true);
-    }, 600);
+    } catch (err: any) {
+      console.error('Property inline submit error:', err);
+      setInlineError(err.message || 'Submission failed. Please try again.');
+    } finally {
+      setInlineLoading(false);
+    }
   };
 
   const iconMap: Record<string, React.ReactNode> = {

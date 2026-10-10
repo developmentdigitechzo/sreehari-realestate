@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { X, CheckCircle, ShieldCheck, Send, Phone, User, Mail, Calendar, MapPin } from 'lucide-react';
 import { COMPANY_WHATSAPP } from '@/data/properties';
 
+import { api } from '@/lib/api';
+
 interface EnquiryModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -30,33 +32,58 @@ export default function EnquiryModal({
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    // Save lead to localStorage for Phase 1 CRM ready export
-    const newLead = {
-      ...formData,
-      propertyName: propertyName || 'General Enquiry',
-      timestamp: new Date().toISOString(),
-      id: 'LEAD-' + Date.now(),
-    };
+    setErrorMessage('');
 
     try {
-      const existingLeads = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
-      existingLeads.unshift(newLead);
-      localStorage.setItem('sree_hari_leads', JSON.stringify(existingLeads));
-    } catch {
-      // ignore storage error
-    }
+      if (formData.preferredDate) {
+        await api.submitPublicSiteVisit({
+          customer_name: formData.name,
+          customer_phone: formData.phone,
+          customer_email: formData.email,
+          project_name: propertyName || 'General Enquiry',
+          visit_date: formData.preferredDate,
+          preferred_plot_size: formData.budget,
+          notes: formData.message,
+        });
+      } else {
+        await api.submitPublicLead({
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          preferred_plot_size: formData.budget,
+          message: `${propertyName ? `[${propertyName}] ` : ''}${formData.message}`,
+          source: 'Website Enquiry Modal',
+        });
+      }
 
-    setTimeout(() => {
-      setLoading(false);
+      // Save lead to localStorage as well
+      try {
+        const existingLeads = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
+        existingLeads.unshift({
+          ...formData,
+          propertyName: propertyName || 'General Enquiry',
+          timestamp: new Date().toISOString(),
+          id: 'LEAD-' + Date.now(),
+        });
+        localStorage.setItem('sree_hari_leads', JSON.stringify(existingLeads));
+      } catch {
+        // ignore storage error
+      }
+
       setSubmitted(true);
-    }, 600);
+    } catch (err: any) {
+      console.error('Enquiry submission error:', err);
+      setErrorMessage(err.message || 'Submission failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleWhatsAppRedirect = () => {
