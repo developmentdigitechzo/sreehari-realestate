@@ -57,12 +57,9 @@ export const properties: Property[] = [
     status: 'Featured',
     badgeColor: 'magenta',
     isFeatured: true,
-    heroImage: '/hero_gate_entrance.png',
+    heroImage: '/project_park_avenue_new.jpg',
     images: [
-      '/hero_gate_entrance.png',
-      '/lifestyle_family.jpg',
-      '/masterplan_community_hd.png',
-      '/lifestyle_parks.jpg',
+      '/project_park_avenue_new.jpg',
     ],
     description: 'Park Avenue is Sree Hari Realty Promoters\' prestigious ongoing flagship plotted community spanning 5.37 acres with 101 DTCP & TNRERA approved residential plots. Situated directly on the booming Trichy-Pudukkottai Highway Corridor close to Trichy International Airport, major universities, and premier hospitals. Built to the highest civil infrastructure standards with a grand monumental entrance arch, wide blacktop tar avenues, 24/7 security, sweet potable groundwater, and immediate bank loan clearance with all leading banks.',
     highlights: [
@@ -148,12 +145,9 @@ export const properties: Property[] = [
     status: 'Fast Selling',
     badgeColor: 'magenta',
     isFeatured: true,
-    heroImage: '/project_sri_amman_nagar.jpg',
+    heroImage: '/project_sri_amman_nagar_new.jpg',
     images: [
-      '/project_sri_amman_nagar.jpg',
-      '/lifestyle_wellness.jpg',
-      '/masterplan_community_hd.png',
-      '/lifestyle_family.jpg',
+      '/project_sri_amman_nagar_new.jpg',
     ],
     description: 'Sri Amman Nagar is Sree Hari Realty\'s landmark township strategically positioned on the Trichy-Thanjavur National Highway in Thiruverumbur, within Trichy City Corporation limits. Endorsed with DTCP Approval No. 56/2024, TNRERA No. TN/16/Layout/0474/2025, and ISO 9001:2008 Certification, this project achieved an extraordinary record of 100% sold out within just 60 days of launch. Features 33ft and 24ft wide tar roads, Cauvery sweet drinking water line, complete EB streetlights, protective compound wall with entrance gate, and a rare 5-Year Maintenance & Security Guarantee.',
     highlights: [
@@ -243,9 +237,6 @@ export const properties: Property[] = [
     heroImage: '/project_aishwarya_nagar.jpg',
     images: [
       '/project_aishwarya_nagar.jpg',
-      '/milestone_2007_realestate.jpg',
-      '/lifestyle_parks.jpg',
-      '/lifestyle_family.jpg',
     ],
     description: 'Aishwarya Nagar is Sree Hari Realty\'s maiden milestone plotted residential development launched in 2022. Located at Kadiyapatti & Kammangudippatti, directly adjoining the BHEL Thirumayam industrial hub (just 1.5 km behind Ilanjavur) in Pudukkottai district. Carefully conceived to give middle-income families, industrial employees, and discerning investors secure, legally unassailable land with abundant sweet drinking water, complete boundary security walls, and rapid industrial belt capital appreciation. Fully completed and handed over.',
     highlights: [

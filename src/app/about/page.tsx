@@ -88,7 +88,7 @@ export default function AboutPage() {
           <div className="bg-[#fffdf5] rounded-[2.5rem] sm:rounded-[3rem] border-2 border-amber-200/90 shadow-xl overflow-visible grid grid-cols-1 lg:grid-cols-12 items-center relative">
             
             {/* Left Column: Leadership Narrative & Philosophy */}
-            <div className="lg:col-span-7 p-6 sm:p-10 md:p-14 space-y-6 z-10 relative">
+            <div className="lg:col-span-7 p-6 sm:p-10 md:p-14 space-y-6 z-10 relative order-2 lg:order-1">
               <div className="space-y-2">
                 <span className="text-xs font-black uppercase tracking-widest text-[#006452] bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 inline-block shadow-2xs">
                   ABOUT SREE HARI REALTY PROMOTERS
@@ -140,7 +140,7 @@ export default function AboutPage() {
             </div>
 
             {/* Right Column: Exact BeyondWalls Triangular Polygon in Logo Pink & Standout Cutout Person */}
-            <div className="lg:col-span-5 relative flex items-end justify-center px-4 sm:px-6 pb-0 pt-6 lg:pt-0 min-h-[400px] sm:min-h-[480px] lg:min-h-[540px]">
+            <div className="lg:col-span-5 relative flex items-end justify-center px-4 sm:px-6 pb-0 pt-8 sm:pt-10 lg:pt-0 min-h-[380px] sm:min-h-[460px] lg:min-h-[540px] order-1 lg:order-2">
               
               {/* Exact BeyondWalls Rounded Triangular Polygon in Logo Pink #D61F69 (Fills the box with no awkward top gap) */}
               <div className="absolute inset-y-3 sm:inset-y-4 right-2 sm:right-6 left-2 sm:left-6 flex items-center justify-center pointer-events-none z-0">
@@ -206,8 +206,8 @@ export default function AboutPage() {
             <div 
               className="relative bg-gradient-to-r from-[#D61F69] via-[#E11D48] to-[#BE185D] text-white p-6 sm:p-8 md:py-10 md:pl-10 md:pr-18 lg:pr-20 rounded-3xl md:rounded-l-3xl shadow-xl flex flex-col md:flex-row items-center md:items-start lg:items-center gap-5 sm:gap-6 md:gap-8 overflow-hidden md:[clip-path:polygon(0%_0%,calc(100%-48px)_0%,100%_50%,calc(100%-48px)_100%,0%_100%)]"
             >
-              {/* Subtle Lotus Glow Watermark */}
-              <div className="absolute right-4 md:right-14 -top-8 w-44 h-44 opacity-15 pointer-events-none">
+              {/* Subtle Lotus Glow Watermark (Mobile: top-left corner away from text; Desktop: right chevron tip) */}
+              <div className="absolute -left-4 -top-4 sm:-left-2 md:left-auto md:right-14 md:-top-8 w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 opacity-10 sm:opacity-15 pointer-events-none">
                 <Image src="/lotus_icon.png" alt="" fill className="object-contain brightness-0 invert" />
               </div>
 
@@ -246,8 +246,8 @@ export default function AboutPage() {
             <div 
               className="relative bg-gradient-to-r from-[#004d3f] via-[#006452] to-[#007a63] text-white p-6 sm:p-8 md:py-10 md:pr-10 md:pl-18 lg:pl-20 rounded-3xl md:rounded-r-3xl shadow-xl flex flex-col md:flex-row-reverse items-center md:items-start lg:items-center gap-5 sm:gap-6 md:gap-8 overflow-hidden md:[clip-path:polygon(48px_0%,100%_0%,100%_100%,48px_100%,0%_50%)]"
             >
-              {/* Subtle Lotus Glow Watermark */}
-              <div className="absolute left-4 md:left-14 -top-8 w-44 h-44 opacity-15 pointer-events-none">
+              {/* Subtle Lotus Glow Watermark (Mobile: top-right corner away from text; Desktop: left chevron tip) */}
+              <div className="absolute -right-4 -top-4 sm:-right-2 md:right-auto md:left-14 md:-top-8 w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 opacity-10 sm:opacity-15 pointer-events-none">
                 <Image src="/lotus_icon.png" alt="" fill className="object-contain brightness-0 invert" />
               </div>
 
@@ -300,9 +300,8 @@ export default function AboutPage() {
 
           {/* STEP 1 (1991): Left Stadium Image with Top Curve & Left Loop -> Right Clean Text */}
           <div className="relative py-8 lg:py-12">
-            {/* Seamless Connected Track Segment: Left U-loop + Bottom bar to right */}
-            <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-1/2 border-t-[10px] border-l-[10px] border-b-[10px] border-[#006452] rounded-l-[4.5rem] pointer-events-none z-0" />
-            <div className="hidden lg:block absolute right-0 bottom-0 w-1/2 border-b-[10px] border-[#006452] pointer-events-none z-0" />
+            {/* Seamless Connected Track Segment: Left U-loop */}
+            <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-[calc(50%+2px)] border-t-[10px] border-l-[10px] border-b-[10px] border-[#006452] rounded-l-[4.5rem] pointer-events-none z-0" />
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center relative z-10 px-2 sm:px-6">
               {/* Left Image: Pure Clean Stadium Framed Photo (ZERO Text, NO Shop Name) */}
@@ -344,9 +343,8 @@ export default function AboutPage() {
 
           {/* STEP 2 (2007): Left Clean Text -> Right Stadium Image with Connected Right Loop */}
           <div className="relative py-8 lg:py-12 -mt-[10px]">
-            {/* Seamless Connected Track Segment: Right U-loop connects to Step 1 + Bottom bar back to left */}
-            <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-1/2 border-t-[10px] border-r-[10px] border-b-[10px] border-[#006452] rounded-r-[4.5rem] pointer-events-none z-0" />
-            <div className="hidden lg:block absolute left-0 bottom-0 w-1/2 border-b-[10px] border-[#006452] pointer-events-none z-0" />
+            {/* Seamless Connected Track Segment: Right U-loop connects to Step 1 */}
+            <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[calc(50%+2px)] border-t-[10px] border-r-[10px] border-b-[10px] border-[#006452] rounded-r-[4.5rem] pointer-events-none z-0" />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center relative z-10 px-2 sm:px-6">
               {/* Left Text Block */}
@@ -388,9 +386,8 @@ export default function AboutPage() {
 
           {/* STEP 3 (2016): Left Stadium Image with Connected Left Loop -> Right Clean Text */}
           <div className="relative py-8 lg:py-12 -mt-[10px]">
-            {/* Seamless Connected Track Segment: Left U-loop connects to Step 2 + Bottom bar to right */}
-            <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-1/2 border-t-[10px] border-l-[10px] border-b-[10px] border-[#006452] rounded-l-[4.5rem] pointer-events-none z-0" />
-            <div className="hidden lg:block absolute right-0 bottom-0 w-1/2 border-b-[10px] border-[#006452] pointer-events-none z-0" />
+            {/* Seamless Connected Track Segment: Left U-loop connects to Step 2 */}
+            <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-[calc(50%+2px)] border-t-[10px] border-l-[10px] border-b-[10px] border-[#006452] rounded-l-[4.5rem] pointer-events-none z-0" />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center relative z-10 px-2 sm:px-6">
               {/* Left Image: Pure Clean Stadium Framed Photo (ZERO Text, NO Shop Name) */}
@@ -432,9 +429,8 @@ export default function AboutPage() {
 
           {/* STEP 4 (2022 - 2025): Left Clean Text -> Right Stadium Image with Connected Right Loop */}
           <div className="relative py-8 lg:py-12 -mt-[10px]">
-            {/* Seamless Connected Track Segment: Right U-loop connects to Step 3 + Bottom bar back to left */}
-            <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-1/2 border-t-[10px] border-r-[10px] border-b-[10px] border-[#006452] rounded-r-[4.5rem] pointer-events-none z-0" />
-            <div className="hidden lg:block absolute left-0 bottom-0 w-1/2 border-b-[10px] border-[#006452] pointer-events-none z-0" />
+            {/* Seamless Connected Track Segment: Right U-loop connects to Step 3 */}
+            <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-[calc(50%+2px)] border-t-[10px] border-r-[10px] border-b-[10px] border-[#006452] rounded-r-[4.5rem] pointer-events-none z-0" />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center relative z-10 px-2 sm:px-6">
               {/* Left Text Block */}
@@ -477,7 +473,7 @@ export default function AboutPage() {
           {/* STEP 5 (2026 & Beyond): Left Stadium Image with Connected Left Loop -> Right Clean Text */}
           <div className="relative py-8 lg:py-12 -mt-[10px]">
             {/* Seamless Connected Track Segment: Left U-loop connects to Step 4 + Bottom finish bar */}
-            <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-1/2 border-t-[10px] border-l-[10px] border-b-[10px] border-[#006452] rounded-l-[4.5rem] pointer-events-none z-0" />
+            <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-[calc(50%+2px)] border-t-[10px] border-l-[10px] border-b-[10px] border-[#006452] rounded-l-[4.5rem] pointer-events-none z-0" />
             <div className="hidden lg:block absolute right-0 bottom-0 w-1/2 border-b-[10px] border-[#006452] pointer-events-none z-0" />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center relative z-10 px-2 sm:px-6">
@@ -485,7 +481,7 @@ export default function AboutPage() {
               <div className="lg:col-span-6 relative">
                 <div className="relative h-64 sm:h-76 lg:h-84 w-full rounded-3xl lg:rounded-l-full lg:rounded-r-2xl overflow-hidden border-4 border-[#006452] shadow-xl">
                   <Image
-                    src="/hero_gate_entrance.png"
+                    src="/project_park_avenue_new.jpg"
                     alt="Park Avenue Flagship Gated Township"
                     fill
                     sizes="(max-width: 1024px) 100vw, 50vw"
@@ -585,7 +581,7 @@ export default function AboutPage() {
           <div className="bg-white rounded-3xl border border-amber-200/90 shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
             <div className="relative h-52 w-full overflow-hidden bg-stone-100">
               <Image
-                src="/project_sri_amman_nagar.jpg"
+                src="/project_sri_amman_nagar_new.jpg"
                 alt="Sri Amman Nagar"
                 fill
                 sizes="(max-width: 768px) 100vw, 33vw"
@@ -619,11 +615,10 @@ export default function AboutPage() {
           <div className="bg-white rounded-3xl border-2 border-pink-200 shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
             <div className="relative h-52 w-full overflow-hidden bg-stone-100">
               <Image
-                src="/hero_gate_entrance.png"
+                src="/project_park_avenue_new.jpg"
                 alt="Park Avenue"
                 fill
                 sizes="(max-width: 768px) 100vw, 33vw"
-                unoptimized
                 className="object-cover group-hover:scale-106 transition-transform duration-700"
               />
               <div className="absolute top-3.5 left-3.5 bg-[#006452] text-white px-3 py-1 rounded-full text-[10px] font-extrabold uppercase shadow-sm">
@@ -733,19 +728,19 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Center Column: Tall, Elegant, Trustworthy Family-Oriented Photo (ZERO Text, NO Words) */}
+          {/* Center Column: Tall, Elegant, Trustworthy Family-Oriented Photo (ZERO Text, Back-Facing Family) */}
           <div className="lg:col-span-4 flex">
-            <div className="relative w-full min-h-[460px] sm:min-h-[520px] lg:min-h-full rounded-3xl overflow-hidden shadow-xl border-2 border-amber-200/90 bg-stone-100 group">
+            <div className="relative w-full h-[400px] sm:h-[480px] lg:h-auto lg:min-h-full rounded-3xl overflow-hidden shadow-xl border-2 border-amber-200/90 bg-stone-100 group">
               <Image
-                src="/lifestyle_family.jpg"
-                alt="Happy Indian Family in Gated Community Township"
+                src="/living_values_family_new.jpg"
+                alt="Indian Family Living in Gated Community Township"
                 fill
                 priority
                 sizes="(max-width: 1024px) 100vw, 33vw"
-                className="object-cover object-[center_30%] group-hover:scale-104 transition-transform duration-700 ease-out"
+                className="object-cover object-center group-hover:scale-104 transition-transform duration-700 ease-out"
               />
-              {/* Subtle Warm Vignette (Strictly Zero Text or Wordings) */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 pointer-events-none" />
+              {/* Subtle Warm Vignette */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-black/10 pointer-events-none" />
             </div>
           </div>
 
@@ -821,70 +816,180 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
-          {/* Pillar 1: Location First */}
-          <div className="bg-white rounded-t-[40px] rounded-b-2xl p-6 border border-amber-200/80 shadow-xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-center flex flex-col items-center justify-start group">
-            <div className="w-12 h-12 rounded-full bg-[#e8f5e9] flex items-center justify-center mb-3 shadow-2xs group-hover:scale-105 transition-transform">
-              <MapPin className="w-5 h-5 text-gray-950 stroke-[2.2]" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+          {/* Pillar 01: Location First */}
+          <div className="bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
+            {/* Top Hover Gradient Stripe */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006452] to-[#D61F69] opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div>
+              {/* Header: Number & Icon */}
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-black text-gray-200 group-hover:text-[#D61F69] transition-colors font-mono">
+                  01
+                </span>
+                <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-[#006452] flex items-center justify-center border border-emerald-100 group-hover:bg-[#006452] group-hover:text-white transition-all duration-300 shadow-2xs">
+                  <MapPin className="w-5 h-5 stroke-[2.2]" />
+                </div>
+              </div>
+
+              {/* Title & Badge */}
+              <h3 className="text-base font-extrabold text-gray-950 tracking-tight mt-4">
+                Location First
+              </h3>
+              <div className="mt-1 mb-2.5">
+                <span className="inline-flex items-center text-[10px] font-extrabold text-[#006452] bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60 uppercase tracking-wide">
+                  Prime Highway Corridors
+                </span>
+              </div>
+
+              {/* Description */}
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Carefully scouted high-growth zones along major highways, educational hubs & zero-flood corridors.
+              </p>
             </div>
-            <h3 className="text-sm font-extrabold text-gray-950 tracking-tight">
-              Location First
-            </h3>
-            <p className="text-xs text-gray-500 font-medium leading-relaxed mt-1">
-              Carefully chosen close to existing residential growth and essential daily facilities.
-            </p>
+
+            {/* Sub-feature Highlight */}
+            <div className="pt-3 mt-4 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#006452] flex-shrink-0" />
+              <span>Sweet Groundwater Access</span>
+            </div>
           </div>
 
-          {/* Pillar 2: Customer Centric */}
-          <div className="bg-white rounded-t-[40px] rounded-b-2xl p-6 border border-amber-200/80 shadow-xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-center flex flex-col items-center justify-start group">
-            <div className="w-12 h-12 rounded-full bg-[#e8f5e9] flex items-center justify-center mb-3 shadow-2xs group-hover:scale-105 transition-transform">
-              <HeartHandshake className="w-5 h-5 text-gray-950 stroke-[2.2]" />
+          {/* Pillar 02: Customer Centric */}
+          <div className="bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006452] to-[#D61F69] opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-black text-gray-200 group-hover:text-[#D61F69] transition-colors font-mono">
+                  02
+                </span>
+                <div className="w-11 h-11 rounded-2xl bg-pink-50 text-[#D61F69] flex items-center justify-center border border-pink-100 group-hover:bg-[#D61F69] group-hover:text-white transition-all duration-300 shadow-2xs">
+                  <HeartHandshake className="w-5 h-5 stroke-[2.2]" />
+                </div>
+              </div>
+
+              <h3 className="text-base font-extrabold text-gray-950 tracking-tight mt-4">
+                Customer-Centric
+              </h3>
+              <div className="mt-1 mb-2.5">
+                <span className="inline-flex items-center text-[10px] font-extrabold text-[#D61F69] bg-pink-50 px-2.5 py-0.5 rounded-full border border-pink-200/60 uppercase tracking-wide">
+                  Flexible Payment Ease
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Every layout is planned around homebuyer convenience, safety, and tailored 1-month payment schedules.
+              </p>
             </div>
-            <h3 className="text-sm font-extrabold text-gray-950 tracking-tight">
-              Customer-Centric
-            </h3>
-            <p className="text-xs text-gray-500 font-medium leading-relaxed mt-1">
-              Every layout is planned around homebuyer convenience, safety, and long-term value.
-            </p>
+
+            <div className="pt-3 mt-4 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#D61F69] flex-shrink-0" />
+              <span>₹1 Lakh Booking Advance</span>
+            </div>
           </div>
 
-          {/* Pillar 3: Community Focused */}
-          <div className="bg-white rounded-t-[40px] rounded-b-2xl p-6 border border-amber-200/80 shadow-xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-center flex flex-col items-center justify-start group">
-            <div className="w-12 h-12 rounded-full bg-[#e8f5e9] flex items-center justify-center mb-3 shadow-2xs group-hover:scale-105 transition-transform">
-              <Users className="w-5 h-5 text-gray-950 stroke-[2.2]" />
+          {/* Pillar 03: Community Focused */}
+          <div className="bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006452] to-[#D61F69] opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-black text-gray-200 group-hover:text-[#D61F69] transition-colors font-mono">
+                  03
+                </span>
+                <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-[#006452] flex items-center justify-center border border-emerald-100 group-hover:bg-[#006452] group-hover:text-white transition-all duration-300 shadow-2xs">
+                  <Users className="w-5 h-5 stroke-[2.2]" />
+                </div>
+              </div>
+
+              <h3 className="text-base font-extrabold text-gray-950 tracking-tight mt-4">
+                Community-Focused
+              </h3>
+              <div className="mt-1 mb-2.5">
+                <span className="inline-flex items-center text-[10px] font-extrabold text-[#006452] bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60 uppercase tracking-wide">
+                  Gated Township Life
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                We design spaces that naturally evolve into vibrant, living residential neighborhoods with parks and wide tar roads.
+              </p>
             </div>
-            <h3 className="text-sm font-extrabold text-gray-950 tracking-tight">
-              Community-Focused
-            </h3>
-            <p className="text-xs text-gray-500 font-medium leading-relaxed mt-1">
-              We design spaces that naturally evolve into vibrant, living residential neighborhoods.
-            </p>
+
+            <div className="pt-3 mt-4 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#006452] flex-shrink-0" />
+              <span>Children&apos;s Park & Streetlights</span>
+            </div>
           </div>
 
-          {/* Pillar 4: Experience & Trust */}
-          <div className="bg-white rounded-t-[40px] rounded-b-2xl p-6 border border-amber-200/80 shadow-xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-center flex flex-col items-center justify-start group">
-            <div className="w-12 h-12 rounded-full bg-[#e8f5e9] flex items-center justify-center mb-3 shadow-2xs group-hover:scale-105 transition-transform">
-              <Award className="w-5 h-5 text-gray-950 stroke-[2.2]" />
+          {/* Pillar 04: Experience & Trust */}
+          <div className="bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006452] to-[#D61F69] opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-black text-gray-200 group-hover:text-[#D61F69] transition-colors font-mono">
+                  04
+                </span>
+                <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300 shadow-2xs">
+                  <Award className="w-5 h-5 stroke-[2.2]" />
+                </div>
+              </div>
+
+              <h3 className="text-base font-extrabold text-gray-950 tracking-tight mt-4">
+                Experience & Trust
+              </h3>
+              <div className="mt-1 mb-2.5">
+                <span className="inline-flex items-center text-[10px] font-extrabold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/60 uppercase tracking-wide">
+                  34+ Years Legacy
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Roots since 1991 and 300+ acres of development experience through our established parent enterprise.
+              </p>
             </div>
-            <h3 className="text-sm font-extrabold text-gray-950 tracking-tight">
-              Experience & Trust
-            </h3>
-            <p className="text-xs text-gray-500 font-medium leading-relaxed mt-1">
-              Roots since 1991 and 300+ acres of development experience through our parent business.
-            </p>
+
+            <div className="pt-3 mt-4 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+              <CheckCircle2 className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
+              <span>300+ Acres Handed Over</span>
+            </div>
           </div>
 
-          {/* Pillar 5: Quality & Transparency */}
-          <div className="bg-white rounded-t-[40px] rounded-b-2xl p-6 border border-amber-200/80 shadow-xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 text-center flex flex-col items-center justify-start group">
-            <div className="w-12 h-12 rounded-full bg-[#e8f5e9] flex items-center justify-center mb-3 shadow-2xs group-hover:scale-105 transition-transform">
-              <ShieldCheck className="w-5 h-5 text-gray-950 stroke-[2.2]" />
+          {/* Pillar 05: Quality & Transparency */}
+          <div className="bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group sm:col-span-2 lg:col-span-1 sm:max-w-md sm:mx-auto lg:max-w-none w-full">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006452] to-[#D61F69] opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-black text-gray-200 group-hover:text-[#D61F69] transition-colors font-mono">
+                  05
+                </span>
+                <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-[#006452] flex items-center justify-center border border-emerald-100 group-hover:bg-[#006452] group-hover:text-white transition-all duration-300 shadow-2xs">
+                  <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
+                </div>
+              </div>
+
+              <h3 className="text-base font-extrabold text-gray-950 tracking-tight mt-4">
+                100% Transparency
+              </h3>
+              <div className="mt-1 mb-2.5">
+                <span className="inline-flex items-center text-[10px] font-extrabold text-[#006452] bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200/60 uppercase tracking-wide">
+                  DTCP & RERA Approved
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                Crystal-clear 30-year parent deed lineage, transparent legal vetting, and approved bank loans with leading banks.
+              </p>
             </div>
-            <h3 className="text-sm font-extrabold text-gray-950 tracking-tight">
-              100% Transparency
-            </h3>
-            <p className="text-xs text-gray-500 font-medium leading-relaxed mt-1">
-              Clear titles, complete DTCP & RERA approvals, and a transparent legal approach.
-            </p>
+
+            <div className="pt-3 mt-4 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#006452] flex-shrink-0" />
+              <span>Pre-Approved Bank Loans</span>
+            </div>
           </div>
         </div>
       </section>

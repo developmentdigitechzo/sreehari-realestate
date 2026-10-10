@@ -14,7 +14,6 @@ import {
   MapPin,
   Calendar,
   Phone,
-  MessageSquare,
   CheckCircle2,
   Trees,
   Sun,
@@ -29,6 +28,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import EnquiryModal from '@/components/EnquiryModal';
+import { WhatsAppSvgIcon } from '@/components/FloatingCTA';
 
 export default function PropertyDetailClient({ property }: { property: Property }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -163,27 +163,31 @@ export default function PropertyDetailClient({ property }: { property: Property 
                   priority
                   className="object-cover transition-all duration-300"
                 />
-                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs">
-                  Layout Photo {activeImageIndex + 1} of {property.images.length}
-                </div>
+                {property.images.length > 1 && (
+                  <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs">
+                    Layout Photo {activeImageIndex + 1} of {property.images.length}
+                  </div>
+                )}
               </div>
 
               {/* Thumbnails */}
-              <div className="grid grid-cols-4 gap-2">
-                {property.images.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImageIndex(idx)}
-                    className={`relative h-20 rounded-xl overflow-hidden border-2 transition ${
-                      activeImageIndex === idx
-                        ? 'border-[#075E43] shadow-md scale-[1.02]'
-                        : 'border-transparent opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <Image src={img} alt="" fill className="object-cover" />
-                  </button>
-                ))}
-              </div>
+              {property.images.length > 1 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {property.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`relative h-20 rounded-xl overflow-hidden border-2 transition ${
+                        activeImageIndex === idx
+                          ? 'border-[#075E43] shadow-md scale-[1.02]'
+                          : 'border-transparent opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <Image src={img} alt="" fill className="object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quick Specs Grid */}
@@ -396,7 +400,7 @@ export default function PropertyDetailClient({ property }: { property: Property 
                   rel="noopener noreferrer"
                   className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow"
                 >
-                  <MessageSquare className="w-4 h-4" />
+                  <WhatsAppSvgIcon className="w-4 h-4 fill-white" />
                   Chat on WhatsApp
                 </a>
 
