@@ -186,7 +186,7 @@ export default function AdminLeadsPage() {
     setEditingLead(lead);
     setEditForm({
       name: lead.name || '',
-      phone: lead.phone || '',
+      phone: (lead.phone || '').replace(/\D/g, '').slice(0, 10),
       email: lead.email || '',
       project_id: lead.project_id || '',
       plot_id: lead.plot_id || '',
@@ -207,9 +207,27 @@ export default function AdminLeadsPage() {
       const autoPriority = getPriorityForStatus(editForm.stage);
       await api.updateCrmLead(editingLead.id, {
         ...editForm,
+        source: editForm.source,
         status: editForm.stage,
         priority: autoPriority
       });
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === editingLead.id
+            ? { ...l, ...editForm, source: editForm.source, stage: editForm.stage, status: editForm.stage, priority: autoPriority }
+            : l
+        )
+      );
+      if (selectedLeadForDetail && selectedLeadForDetail.id === editingLead.id) {
+        setSelectedLeadForDetail({
+          ...selectedLeadForDetail,
+          ...editForm,
+          source: editForm.source,
+          stage: editForm.stage,
+          status: editForm.stage,
+          priority: autoPriority
+        });
+      }
       setEditingLead(null);
       loadData();
     } catch (err: any) {
@@ -220,16 +238,33 @@ export default function AdminLeadsPage() {
   const handleAddNote = async (leadId: string) => {
     if (!newNoteContent.trim()) return;
     try {
-      await api.addLeadNote(leadId, {
+      const res = await api.addLeadNote(leadId, {
         content: newNoteContent,
         type: 'call',
         created_by: 'Admin Sales'
       });
+      const noteObj = res?.data || {
+        id: Date.now().toString(),
+        content: newNoteContent.trim(),
+        type: 'call',
+        created_by: 'Admin Sales',
+        created_at: new Date().toISOString()
+      };
       setNewNoteContent('');
-      const updated = await api.getCrmLeads({ search: leadId });
-      if (updated?.data?.[0]) {
-        setSelectedLeadForDetail(updated.data[0]);
+      if (selectedLeadForDetail && selectedLeadForDetail.id === leadId) {
+        const existingNotes = Array.isArray(selectedLeadForDetail.notes) ? selectedLeadForDetail.notes : [];
+        setSelectedLeadForDetail({
+          ...selectedLeadForDetail,
+          notes: [noteObj, ...existingNotes]
+        });
       }
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === leadId
+            ? { ...l, notes: [noteObj, ...(Array.isArray(l.notes) ? l.notes : [])] }
+            : l
+        )
+      );
       loadData();
     } catch (err: any) {
       alert(err.message || 'Failed to add note');
@@ -521,12 +556,14 @@ export default function AdminLeadsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Phone Number *</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Phone Number * (10 Digits)</label>
                   <input
-                    type="text"
+                    type="tel"
                     required
+                    maxLength={10}
+                    placeholder="10-digit number"
                     value={newLead.phone}
-                    onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
+                    onChange={(e) => setNewLead({ ...newLead, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
                   />
                 </div>
@@ -669,12 +706,14 @@ export default function AdminLeadsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Phone Number *</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Phone Number * (10 Digits)</label>
                   <input
-                    type="text"
+                    type="tel"
                     required
+                    maxLength={10}
+                    placeholder="10-digit number"
                     value={editForm.phone}
-                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
                   />
                 </div>

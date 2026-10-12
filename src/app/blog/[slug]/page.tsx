@@ -1,5 +1,4 @@
 import React from 'react';
-import { notFound } from 'next/navigation';
 import { blogPosts } from '@/data/blogs';
 import BlogDetailClient from './BlogDetailClient';
 
@@ -15,11 +14,7 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
+  const initialPost = blogPosts.find((p) => p.slug === slug);
 
-  if (!post) {
-    notFound();
-  }
-
-  return <BlogDetailClient post={post} />;
+  return <BlogDetailClient initialPost={initialPost} slug={slug} />;
 }

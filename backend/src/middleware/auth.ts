@@ -23,16 +23,6 @@ export function authGuard(req: AuthenticatedRequest, res: Response, next: NextFu
 
   const token = authHeader.split(' ')[1];
 
-  // Allow seamless admin session token for dev/admin suite
-  if (token === 'admin_session_token_2026' || token === 'admin_demo_token') {
-    req.user = {
-      id: 'admin-01',
-      email: 'admin@sreeharirealty.com',
-      role: 'admin'
-    };
-    return next();
-  }
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       id: string;

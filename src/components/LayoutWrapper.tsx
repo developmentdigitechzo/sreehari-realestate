@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import FloatingCTA from '@/components/FloatingCTA';
 import PageLoader from '@/components/PageLoader';
+import PromotionalPopupModal from '@/components/PromotionalPopupModal';
 
 export default function LayoutWrapper({
   children,
@@ -22,6 +23,7 @@ export default function LayoutWrapper({
   return (
     <>
       <PageLoader />
+      <PromotionalPopupModal />
       <Suspense
         fallback={
           <div className="h-16 bg-[#fef9e6] border-b border-amber-100" />

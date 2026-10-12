@@ -18,25 +18,13 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
+import { applyCrmTheme, getContrastTextColor } from '@/lib/theme';
+
 interface SidebarProps {
   userEmail?: string;
   username?: string;
   role?: string;
   permissions?: string[];
-}
-
-function getContrastTextColor(hexColor?: string) {
-  if (!hexColor) return '#ffffff';
-  let hex = hexColor.replace('#', '');
-  if (hex.length === 3) {
-    hex = hex.split('').map(c => c + c).join('');
-  }
-  if (hex.length !== 6) return '#ffffff';
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 150 ? '#090d16' : '#ffffff';
 }
 
 export default function Sidebar({ userEmail, username, role, permissions = ['ALL'] }: SidebarProps) {
@@ -57,9 +45,7 @@ export default function Sidebar({ userEmail, username, role, permissions = ['ALL
     const handleColorPreview = (e: any) => {
       if (e.detail?.color) {
         setPrimaryColor(e.detail.color);
-        if (typeof document !== 'undefined') {
-          document.documentElement.style.setProperty('--brand-primary', e.detail.color);
-        }
+        applyCrmTheme(e.detail.color);
       }
     };
 
@@ -78,9 +64,7 @@ export default function Sidebar({ userEmail, username, role, permissions = ['ALL
       const savedColor = typeof window !== 'undefined' ? localStorage.getItem('crm_primary_color') : null;
       if (savedColor) {
         setPrimaryColor(savedColor);
-        if (typeof document !== 'undefined') {
-          document.documentElement.style.setProperty('--brand-primary', savedColor);
-        }
+        applyCrmTheme(savedColor);
       }
 
       const res = await api.getSettings().catch(() => null);
@@ -92,8 +76,8 @@ export default function Sidebar({ userEmail, username, role, permissions = ['ALL
           setPrimaryColor(res.data.primary_color);
           if (typeof window !== 'undefined') {
             localStorage.setItem('crm_primary_color', res.data.primary_color);
-            document.documentElement.style.setProperty('--brand-primary', res.data.primary_color);
           }
+          applyCrmTheme(res.data.primary_color);
         }
       }
     } catch {
