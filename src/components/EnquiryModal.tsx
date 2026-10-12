@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, CheckCircle, ShieldCheck, Send, Phone, User, Mail, Calendar, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, CheckCircle, ShieldCheck, Send, Phone, User, Mail, Calendar, Clock, MapPin } from 'lucide-react';
 import { COMPANY_WHATSAPP } from '@/data/properties';
 
 import { api } from '@/lib/api';
@@ -10,6 +10,7 @@ interface EnquiryModalProps {
   isOpen: boolean;
   onClose: () => void;
   propertyName?: string;
+  source?: string;
   title?: string;
   subtitle?: string;
 }
@@ -18,6 +19,7 @@ export default function EnquiryModal({
   isOpen,
   onClose,
   propertyName,
+  source,
   title = 'Enquire for Gated Community Plots',
   subtitle = 'Get instant layout blueprints, plot pricing breakdown & free site visit pickup.'
 }: EnquiryModalProps) {
@@ -26,15 +28,35 @@ export default function EnquiryModal({
     phone: '',
     email: '',
     preferredDate: '',
-    budget: '20-30L',
-    message: propertyName ? `Interested in ${propertyName}` : 'Interested in visiting gated plots.',
+    preferredTime: '',
+    budget: '',
+    message: '',
   });
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Reset all fields to blank whenever modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        name: '',
+        phone: '',
+        email: '',
+        preferredDate: '',
+        preferredTime: '',
+        budget: '',
+        message: '',
+      });
+      setSubmitted(false);
+      setErrorMessage('');
+    }
+  }, [isOpen, propertyName]);
+
   if (!isOpen) return null;
+
+  const resolvedSource = source || (propertyName ? 'Property Form' : 'Website Form');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,8 +71,10 @@ export default function EnquiryModal({
           customer_email: formData.email,
           project_name: propertyName || 'General Enquiry',
           visit_date: formData.preferredDate,
+          visit_time: formData.preferredTime,
           preferred_plot_size: formData.budget,
           notes: formData.message,
+          source: resolvedSource,
         });
       } else {
         await api.submitPublicLead({
@@ -58,8 +82,10 @@ export default function EnquiryModal({
           phone: formData.phone,
           email: formData.email,
           preferred_plot_size: formData.budget,
-          message: `${propertyName ? `[${propertyName}] ` : ''}${formData.message}`,
-          source: 'Website Enquiry Modal',
+          message: `${propertyName ? `[${propertyName}] ` : ''}${formData.message}`.trim(),
+          source: resolvedSource,
+          visit_date: formData.preferredDate,
+          visit_time: formData.preferredTime,
         });
       }
 
@@ -69,6 +95,7 @@ export default function EnquiryModal({
         existingLeads.unshift({
           ...formData,
           propertyName: propertyName || 'General Enquiry',
+          source: resolvedSource,
           timestamp: new Date().toISOString(),
           id: 'LEAD-' + Date.now(),
         });
@@ -88,7 +115,7 @@ export default function EnquiryModal({
 
   const handleWhatsAppRedirect = () => {
     const text = encodeURIComponent(
-      `Hello Sree Hari Realty,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nProject: ${propertyName || 'All Layouts'}\nBudget: ${formData.budget}\nPreferred Visit Date: ${formData.preferredDate || 'This Weekend'}\nMessage: ${formData.message}`
+      `Hello Sree Hari Realty,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nProject: ${propertyName || 'All Layouts'}\nBudget: ${formData.budget || 'Not specified'}\nPreferred Visit Date: ${formData.preferredDate || 'Flexible'}${formData.preferredTime ? ` at ${formData.preferredTime}` : ''}\nMessage: ${formData.message || 'General Enquiry'}`
     );
     window.open(`https://wa.me/${COMPANY_WHATSAPP}?text=${text}`, '_blank');
   };
@@ -186,7 +213,7 @@ export default function EnquiryModal({
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Email (Optional)
+                    Email Address
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
@@ -201,23 +228,24 @@ export default function EnquiryModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Budget Range
-                  </label>
-                  <select
-                    value={formData.budget}
-                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                    className="w-full px-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#075E43] focus:bg-white text-gray-800"
-                  >
-                    <option value="Under 15L">Under ₹15 Lakhs</option>
-                    <option value="15-25L">₹15 Lakhs - ₹25 Lakhs</option>
-                    <option value="25-40L">₹25 Lakhs - ₹40 Lakhs</option>
-                    <option value="Above 40L">₹40 Lakhs & Above</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Budget Range
+                </label>
+                <select
+                  value={formData.budget}
+                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                  className="w-full px-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#075E43] focus:bg-white text-gray-800"
+                >
+                  <option value="">Select Budget Range</option>
+                  <option value="Under 15L">Under ₹15 Lakhs</option>
+                  <option value="15-25L">₹15 Lakhs - ₹25 Lakhs</option>
+                  <option value="25-40L">₹25 Lakhs - ₹40 Lakhs</option>
+                  <option value="Above 40L">₹40 Lakhs & Above</option>
+                </select>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                     Preferred Visit Date
@@ -228,6 +256,21 @@ export default function EnquiryModal({
                       type="date"
                       value={formData.preferredDate}
                       onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
+                      className="w-full pl-9 pr-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#075E43] focus:bg-white text-gray-800"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Preferred Visit Time
+                  </label>
+                  <div className="relative">
+                    <Clock className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                    <input
+                      type="time"
+                      value={formData.preferredTime}
+                      onChange={(e) => setFormData({ ...formData, preferredTime: e.target.value })}
                       className="w-full pl-9 pr-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#075E43] focus:bg-white text-gray-800"
                     />
                   </div>
