@@ -86,7 +86,7 @@ export default function BlogDetailClient({
     );
   }
 
-  const handleInlineSubmit = (e: React.FormEvent) => {
+  const handleInlineSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setInlineLoading(true);
 
