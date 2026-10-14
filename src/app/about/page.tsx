@@ -110,9 +110,9 @@ export default function AboutPage() {
               </div>
 
               {/* Founder / Leadership Sign-Off Block */}
-              <div className="pt-6 border-t border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-                <div>
-                  <h4 className="text-xl font-black text-gray-950 tracking-tight">
+              <div className="pt-6 border-t border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
+                <div className="min-w-0">
+                  <h4 className="text-lg sm:text-xl font-black text-gray-950 tracking-tight">
                     Promoters & Executive Leadership
                   </h4>
                   <p className="text-xs text-gray-500 font-semibold tracking-wide">
@@ -120,20 +120,20 @@ export default function AboutPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
                   <button
                     onClick={() => handleOpenEnquiry('Leadership Spotlight')}
-                    className="inline-flex items-center gap-2 bg-[#D61F69] hover:bg-[#BE185D] text-white px-5 py-3 rounded-full text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer hover:-translate-y-0.5"
+                    className="inline-flex items-center justify-center gap-2 bg-[#D61F69] hover:bg-[#BE185D] text-white px-5 py-3 rounded-full text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer hover:-translate-y-0.5 whitespace-nowrap flex-shrink-0"
                   >
-                    <span>Connect With Us</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span className="whitespace-nowrap">Connect With Us</span>
+                    <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" />
                   </button>
                   <a
                     href={`tel:${COMPANY_PHONE_RAW}`}
-                    className="w-10 h-10 rounded-full bg-pink-50 border border-pink-200 text-[#D61F69] hover:bg-[#D61F69] hover:text-white transition flex items-center justify-center shadow-xs"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-pink-50 border border-pink-200 text-[#D61F69] hover:bg-[#D61F69] hover:text-white transition flex items-center justify-center shadow-xs flex-shrink-0"
                     title="Call Leadership Team"
                   >
-                    <Phone className="w-4 h-4" />
+                    <Phone className="w-4 h-4 flex-shrink-0" />
                   </a>
                 </div>
               </div>

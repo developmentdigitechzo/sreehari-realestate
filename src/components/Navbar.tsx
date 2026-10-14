@@ -180,6 +180,7 @@ export default function Navbar() {
     <EnquiryModal
       isOpen={isEnquiryOpen}
       onClose={() => setIsEnquiryOpen(false)}
+      source="Website Form"
       title="Enquire About Sree Hari Communities"
       subtitle="Connect with our team to find your perfect plot in a gated community."
     />

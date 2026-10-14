@@ -43,6 +43,7 @@ export default function PropertyDetailClient({ property }: { property: Property 
     email: '',
     preferredVariant: property.plotVariants[0]?.dimension || '',
     visitDate: '',
+    visitTime: '',
     message: '',
   });
   const [inlineSubmitted, setInlineSubmitted] = useState(false);
@@ -62,8 +63,10 @@ export default function PropertyDetailClient({ property }: { property: Property 
           customer_email: inlineForm.email,
           project_name: property.title,
           visit_date: inlineForm.visitDate,
+          visit_time: inlineForm.visitTime,
           preferred_plot_size: inlineForm.preferredVariant,
           notes: inlineForm.message || `Preferred variant: ${inlineForm.preferredVariant}`,
+          source: 'Property Form',
         });
       } else {
         await api.submitPublicLead({
@@ -71,8 +74,10 @@ export default function PropertyDetailClient({ property }: { property: Property 
           phone: inlineForm.phone,
           email: inlineForm.email,
           preferred_plot_size: inlineForm.preferredVariant,
-          message: `[${property.title}] Variant: ${inlineForm.preferredVariant}. ${inlineForm.message || ''}`,
-          source: 'Website Property Detail Page',
+          message: `[${property.title}] Variant: ${inlineForm.preferredVariant}. ${inlineForm.message || ''}`.trim(),
+          source: 'Property Form',
+          visit_date: inlineForm.visitDate,
+          visit_time: inlineForm.visitTime,
         });
       }
 
@@ -81,6 +86,7 @@ export default function PropertyDetailClient({ property }: { property: Property 
         existingLeads.unshift({
           ...inlineForm,
           propertyName: property.title,
+          source: 'Property Form',
           timestamp: new Date().toISOString(),
           id: 'LEAD-' + Date.now(),
         });
@@ -126,7 +132,7 @@ export default function PropertyDetailClient({ property }: { property: Property 
               className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#075E43] hover:text-[#D61F69] bg-white px-4 py-1.5 rounded-full border border-emerald-200/90 shadow-2xs transition group cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              <span>← Back to All Properties</span>
+              <span>Back to All Properties</span>
             </Link>
           </div>
 
@@ -487,10 +493,11 @@ export default function PropertyDetailClient({ property }: { property: Property 
                         email: '',
                         preferredVariant: property.plotVariants[0]?.dimension || '',
                         visitDate: '',
+                        visitTime: '',
                         message: '',
                       });
                     }}
-                    className="mt-2 text-xs font-bold text-[#075E43] hover:underline block mx-auto"
+                    className="mt-2 text-xs font-bold text-[#075E43] hover:underline block mx-auto cursor-pointer"
                   >
                     Submit another enquiry
                   </button>
@@ -525,24 +532,24 @@ export default function PropertyDetailClient({ property }: { property: Property 
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
-                        Preferred Plot
-                      </label>
-                      <select
-                        value={inlineForm.preferredVariant}
-                        onChange={(e) => setInlineForm({ ...inlineForm, preferredVariant: e.target.value })}
-                        className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
-                      >
-                        {property.plotVariants.map((v, i) => (
-                          <option key={i} value={v.dimension}>
-                            {v.dimension} ({v.sqft} sqft)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                      Preferred Plot
+                    </label>
+                    <select
+                      value={inlineForm.preferredVariant}
+                      onChange={(e) => setInlineForm({ ...inlineForm, preferredVariant: e.target.value })}
+                      className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
+                    >
+                      {property.plotVariants.map((v, i) => (
+                        <option key={i} value={v.dimension}>
+                          {v.dimension} ({v.sqft} sqft)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
                         Preferred Visit Date
@@ -554,11 +561,23 @@ export default function PropertyDetailClient({ property }: { property: Property 
                         className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
                       />
                     </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Preferred Visit Time
+                      </label>
+                      <input
+                        type="time"
+                        value={inlineForm.visitTime}
+                        onChange={(e) => setInlineForm({ ...inlineForm, visitTime: e.target.value })}
+                        className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
+                      />
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
-                      Message / Requirement (Optional)
+                      Message / Requirement
                     </label>
                     <textarea
                       rows={2}
@@ -572,7 +591,7 @@ export default function PropertyDetailClient({ property }: { property: Property 
                   <button
                     type="submit"
                     disabled={inlineLoading}
-                    className="w-full bg-[#D61F69] hover:bg-[#b81857] text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50"
+                    className="w-full bg-[#D61F69] hover:bg-[#b81857] text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
                   >
                     {inlineLoading ? (
                       <span>Submitting Enquiry...</span>
@@ -599,6 +618,7 @@ export default function PropertyDetailClient({ property }: { property: Property 
         isOpen={isEnquiryOpen}
         onClose={() => setIsEnquiryOpen(false)}
         propertyName={property.title}
+        source="Property Form"
         title={`Enquire for ${property.title}`}
       />
     </div>

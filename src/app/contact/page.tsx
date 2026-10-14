@@ -34,8 +34,9 @@ export default function ContactPage() {
     name: '',
     phone: '',
     email: '',
-    interestedProject: 'Sree Hari Garden',
+    interestedProject: '',
     visitDate: '',
+    visitTime: '',
     message: '',
   });
 
@@ -62,17 +63,23 @@ export default function ContactPage() {
           customer_name: formData.name,
           customer_phone: formData.phone,
           customer_email: formData.email,
-          project_name: formData.interestedProject,
+          project_name: formData.interestedProject || 'General Enquiry',
           visit_date: formData.visitDate,
+          visit_time: formData.visitTime,
           notes: formData.message,
+          source: 'Contact Form',
         });
       } else {
         await api.submitPublicLead({
           name: formData.name,
           phone: formData.phone,
           email: formData.email,
-          message: `Interested Project: ${formData.interestedProject}. ${formData.message || ''}`,
-          source: 'Website Contact Page',
+          message: formData.interestedProject
+            ? `Interested Project: ${formData.interestedProject}. ${formData.message || ''}`.trim()
+            : formData.message || '',
+          source: 'Contact Form',
+          visit_date: formData.visitDate,
+          visit_time: formData.visitTime,
         });
       }
 
@@ -81,6 +88,7 @@ export default function ContactPage() {
         const existing = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
         existing.unshift({
           ...formData,
+          source: 'Contact Form',
           timestamp: new Date().toISOString(),
           id: 'LEAD-CONTACT-' + Date.now(),
         });
@@ -100,7 +108,7 @@ export default function ContactPage() {
 
   const handleWhatsAppChat = () => {
     const text = encodeURIComponent(
-      `Hi Sree Hari Realty Promoters,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nInterested Project: ${formData.interestedProject}\nVisit Date: ${formData.visitDate || 'This Weekend'}\nMessage: ${formData.message || 'Looking for DTCP/RERA plot details in Trichy.'}`
+      `Hi Sree Hari Realty Promoters,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nInterested Project: ${formData.interestedProject || 'All Projects'}\nVisit Date: ${formData.visitDate || 'Flexible'}${formData.visitTime ? ` at ${formData.visitTime}` : ''}\nMessage: ${formData.message || 'Looking for DTCP/RERA plot details in Trichy.'}`
     );
     window.open(`https://wa.me/${COMPANY_WHATSAPP}?text=${text}`, '_blank');
   };
@@ -376,6 +384,7 @@ export default function ContactPage() {
                       }
                       className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
                     >
+                      <option value="">Select Project</option>
                       {properties.map((p) => (
                         <option key={p.id} value={p.title}>
                           {p.title} ({p.location})
@@ -385,16 +394,30 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Preferred Site Visit Date
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.visitDate}
-                    onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })}
-                    className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                      Preferred Site Visit Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.visitDate}
+                      onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })}
+                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                      Preferred Site Visit Time
+                    </label>
+                    <input
+                      type="time"
+                      value={formData.visitTime}
+                      onChange={(e) => setFormData({ ...formData, visitTime: e.target.value })}
+                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
+                    />
+                  </div>
                 </div>
 
                 <div>

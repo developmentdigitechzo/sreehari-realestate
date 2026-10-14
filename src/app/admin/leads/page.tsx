@@ -316,11 +316,38 @@ export default function AdminLeadsPage() {
   const renderSourceBadge = (sourceStr?: string) => {
     const src = (sourceStr || 'Manual').trim();
 
-    if (src.toLowerCase().includes('website') || src.toLowerCase().includes('contact form') || src.toLowerCase().includes('form')) {
+    if (src.toLowerCase() === 'contact form' || (src.toLowerCase().includes('contact') && src.toLowerCase().includes('form'))) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-950 text-amber-300 border border-amber-800/60">
+          <Globe className="w-3 h-3 text-amber-400" />
+          <span>Contact Form</span>
+        </span>
+      );
+    }
+
+    if (src.toLowerCase() === 'property form' || (src.toLowerCase().includes('property') && src.toLowerCase().includes('form'))) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+          <Globe className="w-3 h-3 text-emerald-400" />
+          <span>Property Form</span>
+        </span>
+      );
+    }
+
+    if (src.toLowerCase() === 'blog form' || (src.toLowerCase().includes('blog') && src.toLowerCase().includes('form'))) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-950 text-purple-300 border border-purple-800/60">
+          <Globe className="w-3 h-3 text-purple-400" />
+          <span>Blog Form</span>
+        </span>
+      );
+    }
+
+    if (src.toLowerCase().includes('website') || src.toLowerCase().includes('form')) {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/60">
           <Globe className="w-3 h-3 text-indigo-400" />
-          <span>Website Contact Form</span>
+          <span>{src.toLowerCase().includes('modal') ? 'Website Form' : src}</span>
         </span>
       );
     }
@@ -346,7 +373,7 @@ export default function AdminLeadsPage() {
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-950 text-teal-300 border border-teal-800/60">
         <UserCheck className="w-3 h-3 text-teal-400" />
-        <span>Manual</span>
+        <span>{src}</span>
       </span>
     );
   };
@@ -600,17 +627,17 @@ export default function AdminLeadsPage() {
                 </div>
               </div>
 
-              {/* Optional Plot Information */}
+              {/* Plot Information */}
               <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Plot Details (Optional)</span>
-                  <span className="text-[10px] text-slate-500 font-medium">Optional Fields</span>
+                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Plot Details</span>
+                  <span className="text-[10px] text-slate-500 font-medium">Plot Info</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
-                      Plot ID <span className="text-slate-500 font-normal">(Optional)</span>
+                      Plot ID
                     </label>
                     <input
                       type="text"
@@ -622,7 +649,7 @@ export default function AdminLeadsPage() {
                   </div>
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
-                      Plot Name <span className="text-slate-500 font-normal">(Optional)</span>
+                      Plot Name
                     </label>
                     <input
                       type="text"
@@ -636,7 +663,7 @@ export default function AdminLeadsPage() {
 
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
-                    Plot Description <span className="text-slate-500 font-normal">(Optional)</span>
+                    Plot Description
                   </label>
                   <input
                     type="text"
@@ -750,17 +777,17 @@ export default function AdminLeadsPage() {
                 </div>
               </div>
 
-              {/* Optional Plot Information */}
+              {/* Plot Information */}
               <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                  <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Plot Details (Optional)</span>
-                  <span className="text-[10px] text-slate-500 font-medium">Optional Fields</span>
+                  <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Plot Details</span>
+                  <span className="text-[10px] text-slate-500 font-medium">Plot Info</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
-                      Plot ID <span className="text-slate-500 font-normal">(Optional)</span>
+                      Plot ID
                     </label>
                     <input
                       type="text"
@@ -772,7 +799,7 @@ export default function AdminLeadsPage() {
                   </div>
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
-                      Plot Name <span className="text-slate-500 font-normal">(Optional)</span>
+                      Plot Name
                     </label>
                     <input
                       type="text"
@@ -786,7 +813,7 @@ export default function AdminLeadsPage() {
 
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
-                    Plot Description <span className="text-slate-500 font-normal">(Optional)</span>
+                    Plot Description
                   </label>
                   <input
                     type="text"

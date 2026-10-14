@@ -601,7 +601,7 @@ export default function AdminSiteVisitsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Email Address (Optional)</label>
+                  <label className="text-xs font-medium text-slate-300">Email Address</label>
                   <input
                     type="email"
                     value={formData.customer_email || ''}

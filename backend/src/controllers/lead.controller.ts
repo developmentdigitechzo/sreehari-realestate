@@ -4,7 +4,7 @@ import { db } from '../config/db';
 
 export async function submitPublicLead(req: Request, res: Response): Promise<void> {
   try {
-    const { name, phone, email, project_id, preferred_plot_size, message, source } = req.body;
+    const { name, phone, email, project_id, preferred_plot_size, message, source, visit_date, visit_time } = req.body;
 
     if (!name || !phone) {
       res.status(400).json({ success: false, message: 'Name and Phone number are required' });
@@ -30,6 +30,8 @@ export async function submitPublicLead(req: Request, res: Response): Promise<voi
       source: source || 'Website Form',
       status: 'New', // New, Contacted, Follow-up, Converted, Closed
       admin_notes: '',
+      site_visit_date: visit_date || '',
+      site_visit_time: visit_time || '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };

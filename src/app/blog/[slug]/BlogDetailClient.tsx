@@ -7,6 +7,7 @@ import { BlogPost } from '@/data/blogs';
 import { properties } from '@/data/properties';
 import { Calendar, Clock, User, ArrowLeft, Send, CheckCircle } from 'lucide-react';
 import EnquiryModal from '@/components/EnquiryModal';
+import { api } from '@/lib/api';
 
 export default function BlogDetailClient({
   initialPost,
@@ -22,8 +23,9 @@ export default function BlogDetailClient({
     name: '',
     phone: '',
     email: '',
-    preferredProject: properties[0]?.title || 'Park Avenue',
+    preferredProject: '',
     visitDate: '',
+    visitTime: '',
     message: '',
   });
   const [inlineLoading, setInlineLoading] = useState(false);
@@ -88,25 +90,51 @@ export default function BlogDetailClient({
     e.preventDefault();
     setInlineLoading(true);
 
-    const newLead = {
-      ...inlineForm,
-      source: `Blog: ${post.title}`,
-      timestamp: new Date().toISOString(),
-      id: 'LEAD-' + Date.now(),
-    };
-
     try {
-      const existingLeads = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
-      existingLeads.unshift(newLead);
-      localStorage.setItem('sree_hari_leads', JSON.stringify(existingLeads));
-    } catch {
-      // ignore storage error
-    }
+      if (inlineForm.visitDate) {
+        await api.submitPublicSiteVisit({
+          customer_name: inlineForm.name,
+          customer_phone: inlineForm.phone,
+          customer_email: inlineForm.email,
+          project_name: inlineForm.preferredProject || 'General Enquiry',
+          visit_date: inlineForm.visitDate,
+          visit_time: inlineForm.visitTime,
+          notes: inlineForm.message ? `[Blog: ${post.title}] ${inlineForm.message}` : `Enquiry from Blog: ${post.title}`,
+          source: 'Blog Form',
+        });
+      } else {
+        await api.submitPublicLead({
+          name: inlineForm.name,
+          phone: inlineForm.phone,
+          email: inlineForm.email,
+          message: `[Blog: ${post.title}] Project: ${inlineForm.preferredProject || 'General Enquiry'}. ${inlineForm.message || ''}`.trim(),
+          source: 'Blog Form',
+          visit_date: inlineForm.visitDate,
+          visit_time: inlineForm.visitTime,
+        });
+      }
 
-    setTimeout(() => {
-      setInlineLoading(false);
+      const newLead = {
+        ...inlineForm,
+        source: 'Blog Form',
+        timestamp: new Date().toISOString(),
+        id: 'LEAD-' + Date.now(),
+      };
+
+      try {
+        const existingLeads = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
+        existingLeads.unshift(newLead);
+        localStorage.setItem('sree_hari_leads', JSON.stringify(existingLeads));
+      } catch {
+        // ignore storage error
+      }
+
       setInlineSubmitted(true);
-    }, 600);
+    } catch (err) {
+      console.error('Blog inline submit error:', err);
+    } finally {
+      setInlineLoading(false);
+    }
   };
 
   return (
@@ -211,8 +239,9 @@ export default function BlogDetailClient({
                         name: '',
                         phone: '',
                         email: '',
-                        preferredProject: properties[0]?.title || 'Park Avenue',
+                        preferredProject: '',
                         visitDate: '',
+                        visitTime: '',
                         message: '',
                       });
                     }}
@@ -251,24 +280,25 @@ export default function BlogDetailClient({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
-                        Preferred Project
-                      </label>
-                      <select
-                        value={inlineForm.preferredProject}
-                        onChange={(e) => setInlineForm({ ...inlineForm, preferredProject: e.target.value })}
-                        className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
-                      >
-                        {properties.map((p) => (
-                          <option key={p.id} value={p.title}>
-                            {p.title}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                      Preferred Project
+                    </label>
+                    <select
+                      value={inlineForm.preferredProject}
+                      onChange={(e) => setInlineForm({ ...inlineForm, preferredProject: e.target.value })}
+                      className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
+                    >
+                      <option value="">Select Project</option>
+                      {properties.map((p) => (
+                        <option key={p.id} value={p.title}>
+                          {p.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
                         Preferred Visit Date
@@ -280,11 +310,23 @@ export default function BlogDetailClient({
                         className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
                       />
                     </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Preferred Visit Time
+                      </label>
+                      <input
+                        type="time"
+                        value={inlineForm.visitTime}
+                        onChange={(e) => setInlineForm({ ...inlineForm, visitTime: e.target.value })}
+                        className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
+                      />
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
-                      Message / Requirement (Optional)
+                      Message / Requirement
                     </label>
                     <textarea
                       rows={2}
@@ -352,6 +394,7 @@ export default function BlogDetailClient({
       <EnquiryModal
         isOpen={isEnquiryOpen}
         onClose={() => setIsEnquiryOpen(false)}
+        source="Blog Form"
         title="Schedule a Site Visit"
       />
     </div>

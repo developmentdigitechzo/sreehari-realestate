@@ -96,7 +96,8 @@ export async function createSiteVisit(req: Request, res: Response): Promise<void
       pickup_needed,
       pickup_location,
       notes,
-      assigned_staff
+      assigned_staff,
+      source
     } = req.body;
 
     if (!customer_name || !customer_phone || !visit_date) {
@@ -127,12 +128,13 @@ export async function createSiteVisit(req: Request, res: Response): Promise<void
         email: customer_email ? customer_email.trim() : '',
         preferred_plot_size: preferred_plot_size || '',
         message: `Booked Site Visit for ${visit_date} at ${visit_time || '10:00 AM'}`,
-        source: 'Website Site Visit Form',
+        source: source || 'Website Form',
         stage: 'Site Visit Scheduled',
         status: 'Site Visit Scheduled',
         priority: 'Hot',
         assigned_to: assigned_staff || 'Sales Team',
         site_visit_date: visit_date,
+        site_visit_time: visit_time || '',
         site_visit_pickup_needed: Boolean(pickup_needed),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -142,6 +144,7 @@ export async function createSiteVisit(req: Request, res: Response): Promise<void
       lead.stage = 'Site Visit Scheduled';
       lead.status = 'Site Visit Scheduled';
       lead.site_visit_date = visit_date;
+      lead.site_visit_time = visit_time || '';
       lead.priority = 'Hot';
       lead.updated_at = new Date().toISOString();
     }
