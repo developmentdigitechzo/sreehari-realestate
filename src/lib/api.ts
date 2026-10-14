@@ -111,6 +111,8 @@ export const api = {
     preferred_plot_size?: string;
     message?: string;
     source?: string;
+    visit_date?: string;
+    visit_time?: string;
   }) {
     const res = await fetch(`${API_BASE_URL}/public/leads`, {
       method: 'POST',
@@ -132,6 +134,7 @@ export const api = {
     pickup_needed?: boolean;
     pickup_location?: string;
     notes?: string;
+    source?: string;
   }) {
     const res = await fetch(`${API_BASE_URL}/public/site-visits`, {
       method: 'POST',

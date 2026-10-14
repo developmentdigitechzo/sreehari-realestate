@@ -567,7 +567,7 @@ export default function AdminPopupsPage() {
                 {/* Dates & Layout Settings */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-300">Start Date (Optional)</label>
+                    <label className="text-xs font-medium text-slate-300">Start Date</label>
                     <input
                       type="date"
                       value={formData.start_date || ''}
@@ -577,7 +577,7 @@ export default function AdminPopupsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-300">End Date (Optional)</label>
+                    <label className="text-xs font-medium text-slate-300">End Date</label>
                     <input
                       type="date"
                       value={formData.end_date || ''}

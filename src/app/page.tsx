@@ -232,7 +232,7 @@ export default function HomePage() {
       </section>
 
       {/* 4. EXPLORE THE MASTERPLAN WITH SEAMLESS BLEND & AIRY SPACING */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 my-2">
         <div className="group relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           {/* Left Column: Text & CTAs */}
           <div className="lg:col-span-5 space-y-4">
@@ -281,89 +281,52 @@ export default function HomePage() {
 
           {/* Right Column: Seamless Masterplan with Zoomed Layout & Vertical Staggered Birds */}
           <div className="lg:col-span-7 relative">
-            {/* North Direction Compass Rose (Positioned in Open Sky Above Top-Right Tree) */}
-            <div className="absolute top-[-3%] sm:top-[-4%] right-[2%] sm:right-[3%] pointer-events-none z-10 select-none flex flex-col items-center">
+            {/* North Direction Compass Rose - Lifted Cleanly Into Sky with Zero Tree Overlap */}
+            <div className="absolute -top-7 sm:-top-9 lg:-top-10 right-[6%] sm:right-[8%] pointer-events-none z-10 select-none flex flex-col items-center">
               <span className="text-[11px] font-black text-gray-800 tracking-tighter leading-none mb-0.5">N</span>
-              <svg width="22" height="32" viewBox="0 0 24 36" fill="none" className="drop-shadow-xs">
-                <circle cx="12" cy="18" r="7.5" stroke="#374151" strokeWidth="1" strokeDasharray="2 1.5" opacity="0.6" />
-                <line x1="2" y1="18" x2="22" y2="18" stroke="#374151" strokeWidth="0.8" opacity="0.5" />
-                <polygon points="12,4 9.5,18 12,16" fill="#111827" />
-                <polygon points="12,4 14.5,18 12,16" fill="#374151" />
-                <polygon points="12,32 9.5,18 12,20" fill="#9CA3AF" />
-                <polygon points="12,32 14.5,18 12,20" fill="#CBD5E1" />
+              <svg width="26" height="30" viewBox="0 0 36 36" fill="none" className="drop-shadow-xs">
+                {/* Thin Crosshairs */}
+                <line x1="18" y1="2" x2="18" y2="34" stroke="#4b5563" strokeWidth="0.8" opacity="0.6" />
+                <line x1="2" y1="18" x2="34" y2="18" stroke="#4b5563" strokeWidth="0.8" opacity="0.6" />
+                {/* Subtle Dotted Orbit Ring */}
+                <circle cx="18" cy="18" r="9" stroke="#6b7280" strokeWidth="0.7" strokeDasharray="1.5 2" opacity="0.5" />
+                
+                {/* 4-Point Nautical Star Points */}
+                <polygon points="18,4 16,18 18,16.5" fill="#18181b" />
+                <polygon points="18,4 20,18 18,16.5" fill="#52525b" />
+                <polygon points="18,32 16,18 18,19.5" fill="#a1a1aa" />
+                <polygon points="18,32 20,18 18,19.5" fill="#d4d4d8" />
+                <polygon points="32,18 18,16 19.5,18" fill="#52525b" />
+                <polygon points="32,18 18,20 19.5,18" fill="#71717a" />
+                <polygon points="4,18 18,16 16.5,18" fill="#d4d4d8" />
+                <polygon points="4,18 18,20 16.5,18" fill="#a1a1aa" />
+                
+                {/* Center Hub Dot */}
+                <circle cx="18" cy="18" r="1.5" fill="#18181b" stroke="#ffffff" strokeWidth="0.6" />
               </svg>
             </div>
 
-            {/* Animated Flying Crows / Birds (Left Airspace - Sharp, Clearly Visible Soaring Flock in Open Sky) */}
-            <div className="absolute top-[10%] sm:top-[12%] lg:top-[13%] left-[-12%] sm:left-[-8%] lg:left-[-6%] w-36 sm:w-44 h-24 sm:h-28 z-20 pointer-events-none animate-crow-left select-none">
-              {/* Lead Bird 1 (Front Left - Largest & Deep Charcoal Black) */}
-              <div className="absolute bottom-[4%] left-[2%] rotate-[-6deg]">
-                <svg width="22" height="12" viewBox="0 0 24 13" fill="#111827" className="drop-shadow-xs">
-                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
-                </svg>
-              </div>
-
-              {/* Companion Bird 2 */}
-              <div className="absolute bottom-[10%] left-[24%] rotate-[-4deg]">
-                <svg width="18" height="10" viewBox="0 0 24 13" fill="#111827" className="opacity-95 drop-shadow-2xs">
-                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
-                </svg>
-              </div>
-
-              {/* Ascending Bird 3 */}
-              <div className="absolute bottom-[30%] left-[28%] rotate-[-10deg]">
-                <svg width="16" height="9" viewBox="0 0 24 13" fill="#1F2937" className="opacity-95">
-                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
-                </svg>
-              </div>
-
-              {/* Middle Cluster Bird 4 */}
-              <div className="absolute bottom-[50%] left-[44%] rotate-[-8deg]">
-                <svg width="17" height="9" viewBox="0 0 24 13" fill="#111827" className="opacity-95">
-                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
-                </svg>
-              </div>
-
-              {/* Middle Companion Bird 5 */}
-              <div className="absolute bottom-[44%] left-[60%] rotate-[-5deg]">
-                <svg width="13" height="7" viewBox="0 0 24 13" fill="#1F2937" className="opacity-90">
-                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
-                </svg>
-              </div>
-
-              {/* Trailing Bird 6 */}
-              <div className="absolute top-[20%] left-[68%] rotate-[-12deg]">
-                <svg width="14" height="8" viewBox="0 0 24 13" fill="#111827" className="opacity-90">
-                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
-                </svg>
-              </div>
-
-              {/* Distant Climber Bird 7 */}
-              <div className="absolute top-[8%] left-[82%] rotate-[-8deg]">
-                <svg width="13" height="7" viewBox="0 0 24 13" fill="#1F2937" className="opacity-85">
-                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
-                </svg>
-              </div>
-
-              {/* Peak Bird 8 */}
-              <div className="absolute top-[0%] left-[94%] rotate-[-10deg]">
-                <svg width="10" height="5" viewBox="0 0 24 13" fill="#374151" className="opacity-85">
-                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
-                </svg>
+            {/* Right Airspace - Exact Horizontal Bird String Below Compass from Reference */}
+            <div className="absolute top-[13%] sm:top-[14%] lg:top-[15%] right-[5%] sm:right-[6.5%] lg:right-[7%] w-[48px] sm:w-[54px] lg:w-[60px] z-20 pointer-events-none animate-crow-right select-none">
+              <div className="relative w-full aspect-[45/45]">
+                <Image
+                  src="/masterplan_birds_right.png"
+                  alt="Horizontal soaring birds string"
+                  fill
+                  className="object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]"
+                />
               </div>
             </div>
 
-            {/* Animated Flying Crows (Right Airspace - 2 Distant Birds in Open Sky) */}
-            <div className="absolute top-[6%] sm:top-[8%] right-[1%] sm:right-[2%] w-16 h-12 pointer-events-none z-20 animate-crow-right select-none">
-              <div className="absolute top-[10%] left-[30%] rotate-[6deg]">
-                <svg width="15" height="8" viewBox="0 0 24 13" fill="#111827" className="drop-shadow-xs">
-                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
-                </svg>
-              </div>
-              <div className="absolute top-[55%] left-[65%] rotate-[10deg]">
-                <svg width="11" height="6" viewBox="0 0 24 13" fill="#1F2937" className="opacity-95">
-                  <path d="M 0,7.5 C 3,2 8,0 12,5.5 C 16,0 21,2 24,7.5 C 20,4.5 16,4 12,6.5 C 8,4 4,4.5 0,7.5 Z" />
-                </svg>
+            {/* Left Airspace - Exact Authentic Flock (Positioned Closer to Layout with Zero Overlap) */}
+            <div className="absolute top-[12%] sm:top-[13%] lg:top-[14%] left-[-4.5%] sm:left-[-3%] lg:left-[-3.5%] w-[76px] sm:w-[84px] lg:w-[90px] z-20 pointer-events-none animate-crow-left select-none">
+              <div className="relative w-full aspect-[75/95]">
+                <Image
+                  src="/masterplan_birds_left.png"
+                  alt="Soaring birds flock"
+                  fill
+                  className="object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]"
+                />
               </div>
             </div>
 
