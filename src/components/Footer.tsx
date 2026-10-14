@@ -1,13 +1,27 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Phone, Mail, MapPin, ArrowRight } from 'lucide-react';
+import { Phone, Mail, MapPin, ArrowRight, Clock } from 'lucide-react';
 import { COMPANY_PHONE, COMPANY_PHONE_RAW, COMPANY_EMAIL, COMPANY_ADDRESS } from '@/data/properties';
 import BrandLogo from './BrandLogo';
+import { api } from '@/lib/api';
 
 export default function Footer() {
+  const [workingHours, setWorkingHours] = useState('Mon - Sat: 9:00 AM - 7:00 PM');
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await api.getPublicSettings();
+        if (res?.data?.working_hours) {
+          setWorkingHours(res.data.working_hours);
+        }
+      } catch {}
+    }
+    loadSettings();
+  }, []);
   return (
     <footer className="bg-[#fef9e6] text-gray-700 pt-14 pb-8 border-t border-amber-200/70 font-sans relative overflow-hidden text-[15px]">
       {/* Subtle Brand Watermark in Footer background */}
@@ -170,6 +184,17 @@ export default function Footer() {
                 <span className="leading-snug text-gray-800">
                   {COMPANY_ADDRESS}
                 </span>
+              </li>
+              <li className="flex items-start gap-2 pt-1 border-t border-amber-200/60">
+                <Clock className="w-4 h-4 text-[#D61F69] flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-[11px] text-gray-500 uppercase font-bold tracking-wider block">
+                    Working Hours
+                  </span>
+                  <span className="leading-snug text-gray-900 font-semibold text-xs sm:text-sm">
+                    {workingHours}
+                  </span>
+                </div>
               </li>
             </ul>
           </div>

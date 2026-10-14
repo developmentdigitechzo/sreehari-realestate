@@ -98,6 +98,26 @@ export async function getCrmLeads(req: Request, res: Response): Promise<void> {
     const enrichedLeads = leads.map(l => {
       const proj = store.projects.find((p: any) => p.id === l.project_id);
       const normalizedStage = normalizeLeadStage(l.stage || l.status);
+
+      let leadNotes: any[] = [];
+      if (Array.isArray(l.notes) && l.notes.length > 0) {
+        leadNotes = l.notes;
+      } else if (typeof l.notes === 'string' && l.notes.trim()) {
+        try {
+          const parsed = JSON.parse(l.notes);
+          if (Array.isArray(parsed) && parsed.length > 0) leadNotes = parsed;
+        } catch {}
+      }
+      if (leadNotes.length === 0 && l.admin_notes && l.admin_notes.trim()) {
+        leadNotes = [{
+          id: uuidv4(),
+          content: l.admin_notes.trim(),
+          type: 'general',
+          created_by: l.assigned_to || 'Admin',
+          created_at: l.updated_at || l.created_at
+        }];
+      }
+
       return {
         ...l,
         plot_id: l.plot_id || '',
@@ -111,13 +131,7 @@ export async function getCrmLeads(req: Request, res: Response): Promise<void> {
         facing_preference: l.facing_preference || 'Any',
         site_visit_date: l.site_visit_date || null,
         next_follow_up_date: l.next_follow_up_date || null,
-        notes: Array.isArray(l.notes) ? l.notes : (l.admin_notes ? [{
-          id: uuidv4(),
-          content: l.admin_notes,
-          type: 'general',
-          created_by: 'Admin',
-          created_at: l.updated_at || l.created_at
-        }] : []),
+        notes: leadNotes,
         project_name: proj ? proj.name : 'General Plot Enquiry',
         project_location: proj ? `${proj.location_area}, ${proj.location_city}` : ''
       };
@@ -155,6 +169,25 @@ export async function getCrmLeadById(req: Request, res: Response): Promise<void>
 
     const proj = store.projects.find((p: any) => p.id === lead.project_id);
 
+    let leadNotes: any[] = [];
+    if (Array.isArray(lead.notes) && lead.notes.length > 0) {
+      leadNotes = lead.notes;
+    } else if (typeof lead.notes === 'string' && lead.notes.trim()) {
+      try {
+        const parsed = JSON.parse(lead.notes);
+        if (Array.isArray(parsed) && parsed.length > 0) leadNotes = parsed;
+      } catch {}
+    }
+    if (leadNotes.length === 0 && lead.admin_notes && lead.admin_notes.trim()) {
+      leadNotes = [{
+        id: uuidv4(),
+        content: lead.admin_notes.trim(),
+        type: 'general',
+        created_by: lead.assigned_to || 'Sales Team',
+        created_at: lead.updated_at || lead.created_at
+      }];
+    }
+
     const enriched = {
       ...lead,
       plot_id: lead.plot_id || '',
@@ -163,7 +196,7 @@ export async function getCrmLeadById(req: Request, res: Response): Promise<void>
       stage: lead.stage || lead.status || 'New',
       priority: lead.priority || 'Warm',
       assigned_to: lead.assigned_to || 'Sales Team',
-      notes: Array.isArray(lead.notes) ? lead.notes : [],
+      notes: leadNotes,
       project_name: proj ? proj.name : 'General Enquiry',
       project_location: proj ? `${proj.location_area}, ${proj.location_city}` : ''
     };
@@ -251,8 +284,8 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
     if (db.isPostgres()) {
       try {
         await db.query(
-          `INSERT INTO leads (id, project_id, name, phone, email, preferred_plot_size, message, source, status, stage, priority, admin_notes, plot_id, plot_name, plot_description, budget, facing_preference, assigned_to)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18);`,
+          `INSERT INTO leads (id, project_id, name, phone, email, preferred_plot_size, message, source, status, stage, priority, admin_notes, notes, plot_id, plot_name, plot_description, budget, facing_preference, assigned_to)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`,
           [
             newLead.id,
             newLead.project_id,
@@ -266,6 +299,7 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
             newLead.stage,
             newLead.priority,
             newLead.admin_notes,
+            JSON.stringify(initialNotes),
             newLead.plot_id,
             newLead.plot_name,
             newLead.plot_description,
@@ -305,6 +339,7 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
       name,
       phone,
       email,
+      source,
       project_id,
       plot_id,
       plot_name,
@@ -318,7 +353,8 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
       assigned_to,
       site_visit_date,
       next_follow_up_date,
-      message
+      message,
+      admin_notes
     } = req.body;
 
     const current = index !== -1 ? store.leads[index] : {};
@@ -330,6 +366,7 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
       name: name !== undefined ? name.trim() : current.name || '',
       phone: phone !== undefined ? phone.trim() : current.phone || '',
       email: email !== undefined ? email.trim() : current.email || '',
+      source: source !== undefined ? source.trim() : current.source || 'Manual',
       project_id: project_id !== undefined ? project_id : current.project_id,
       plot_id: plot_id !== undefined ? plot_id.trim() : current.plot_id || '',
       plot_name: plot_name !== undefined ? plot_name.trim() : current.plot_name || '',
@@ -344,17 +381,19 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
       site_visit_date: site_visit_date !== undefined ? site_visit_date : current.site_visit_date,
       next_follow_up_date: next_follow_up_date !== undefined ? next_follow_up_date : current.next_follow_up_date,
       message: message !== undefined ? message : current.message,
+      admin_notes: admin_notes !== undefined ? admin_notes : current.admin_notes,
       updated_at: new Date().toISOString()
     };
 
     if (db.isPostgres()) {
       try {
         await db.query(
-          `UPDATE leads SET name=$1, phone=$2, email=$3, status=$4, stage=$5, priority=$6, plot_id=$7, plot_name=$8, plot_description=$9, budget=$10, facing_preference=$11, assigned_to=$12, updated_at=CURRENT_TIMESTAMP WHERE id=$13;`,
+          `UPDATE leads SET name=$1, phone=$2, email=$3, source=$4, status=$5, stage=$6, priority=$7, plot_id=$8, plot_name=$9, plot_description=$10, budget=$11, facing_preference=$12, assigned_to=$13, updated_at=CURRENT_TIMESTAMP WHERE id=$14;`,
           [
             updated.name,
             updated.phone,
             updated.email,
+            updated.source,
             updated.status,
             updated.stage,
             updated.priority,
@@ -413,8 +452,36 @@ export async function addCrmLeadNote(req: Request, res: Response): Promise<void>
 
     if (db.isPostgres()) {
       try {
-        await db.query(`UPDATE leads SET admin_notes = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2;`, [newNote.content, id]);
-      } catch {}
+        const leadRes = await db.query('SELECT notes, admin_notes FROM leads WHERE id = $1;', [id]);
+        let existingNotes: any[] = [];
+        if (leadRes.rows.length > 0) {
+          const rawNotes = leadRes.rows[0].notes;
+          if (Array.isArray(rawNotes)) {
+            existingNotes = rawNotes;
+          } else if (typeof rawNotes === 'string' && rawNotes.trim()) {
+            try {
+              const p = JSON.parse(rawNotes);
+              if (Array.isArray(p)) existingNotes = p;
+            } catch {}
+          }
+          if (existingNotes.length === 0 && leadRes.rows[0].admin_notes && leadRes.rows[0].admin_notes.trim()) {
+            existingNotes.push({
+              id: uuidv4(),
+              content: leadRes.rows[0].admin_notes.trim(),
+              type: 'general',
+              created_by: 'Sales Team',
+              created_at: new Date().toISOString()
+            });
+          }
+        }
+        existingNotes.unshift(newNote);
+        await db.query(
+          `UPDATE leads SET notes = $1, admin_notes = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3;`,
+          [JSON.stringify(existingNotes), newNote.content, id]
+        );
+      } catch (pgErr: any) {
+        console.error('PostgreSQL add note error:', pgErr.message);
+      }
     }
 
     if (index !== -1) {

@@ -57,7 +57,7 @@ export default function StaffManagementPage() {
   // Form Fields
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('+91 98424 01991');
+  const [phone, setPhone] = useState('9842401991');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Sales Executive');
   const [status, setStatus] = useState('Active');
@@ -108,7 +108,7 @@ export default function StaffManagementPage() {
     setEditingStaff(staff);
     setUsername(staff.username || '');
     setEmail(staff.email || '');
-    setPhone(staff.phone || '+91 98424 01991');
+    setPhone(staff.phone ? staff.phone.replace(/\D/g, '').slice(0, 10) : '9842401991');
     setPassword(staff.password_plain || 'AdminPassword@2026');
     setRole(staff.role || 'Sales Executive');
     setStatus(staff.status || 'Active');
@@ -464,15 +464,16 @@ export default function StaffManagementPage() {
                 {/* Phone Number Field */}
                 <div>
                   <label className="block text-slate-300 font-semibold mb-1.5 uppercase tracking-wider text-[11px]">
-                    Phone Number
+                    Phone Number (10 Digits)
                   </label>
                   <div className="relative">
                     <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                     <input
-                      type="text"
-                      placeholder="e.g. +91 98424 01991"
+                      type="tel"
+                      maxLength={10}
+                      placeholder="10-digit number"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-white text-xs placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
                     />
                   </div>

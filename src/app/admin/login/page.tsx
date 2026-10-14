@@ -1,16 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import { Lock, Mail, ShieldAlert, ArrowRight, KeyRound } from 'lucide-react';
+import { api, getAuthToken, removeAuthToken } from '@/lib/api';
+import { Lock, Mail, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('admin@sreeharirealty.com');
-  const [password, setPassword] = useState('AdminPassword@2026');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const token = getAuthToken();
+    if (token) {
+      api.getMe()
+        .then((res) => {
+          if (res?.success && res?.user) {
+            router.replace('/admin/dashboard');
+          }
+        })
+        .catch(() => {
+          removeAuthToken();
+        });
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,11 +49,6 @@ export default function AdminLoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillQuickLogin = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
   };
 
   return (
@@ -87,13 +98,25 @@ export default function AdminLoginPage() {
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-11 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors focus:outline-none"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
             </div>
           </div>
 
@@ -112,47 +135,6 @@ export default function AdminLoginPage() {
             )}
           </button>
         </form>
-
-        {/* Quick Demo Logins for Testing */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80 text-left space-y-2">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-            <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Quick Login Presets (Click to Auto-fill)</span>
-          </p>
-
-          <button
-            onClick={() => fillQuickLogin('admin@sreeharirealty.com', 'AdminPassword@2026')}
-            className="w-full text-left p-2 rounded-lg bg-slate-950 hover:bg-slate-800/80 border border-slate-800/80 transition-colors flex items-center justify-between text-xs"
-          >
-            <div>
-              <p className="text-white font-semibold">Super Admin (All Modules Access)</p>
-              <p className="text-slate-400 text-[10px] font-mono">admin@sreeharirealty.com</p>
-            </div>
-            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800/40">Full Access</span>
-          </button>
-
-          <button
-            onClick={() => fillQuickLogin('vignesh.sales@gmail.com', 'AdminPassword@2026')}
-            className="w-full text-left p-2 rounded-lg bg-slate-950 hover:bg-slate-800/80 border border-slate-800/80 transition-colors flex items-center justify-between text-xs"
-          >
-            <div>
-              <p className="text-white font-semibold">R. Vignesh (Sales Manager)</p>
-              <p className="text-slate-400 text-[10px] font-mono">vignesh.sales@gmail.com</p>
-            </div>
-            <span className="text-[10px] text-teal-400 font-bold bg-teal-950 px-2 py-0.5 rounded border border-teal-800/40">4 Modules</span>
-          </button>
-
-          <button
-            onClick={() => fillQuickLogin('karthik.marketing@gmail.com', 'AdminPassword@2026')}
-            className="w-full text-left p-2 rounded-lg bg-slate-950 hover:bg-slate-800/80 border border-slate-800/80 transition-colors flex items-center justify-between text-xs"
-          >
-            <div>
-              <p className="text-white font-semibold">Karthik S. (Marketing Exec)</p>
-              <p className="text-slate-400 text-[10px] font-mono">karthik.marketing@gmail.com</p>
-            </div>
-            <span className="text-[10px] text-indigo-400 font-bold bg-indigo-950 px-2 py-0.5 rounded border border-indigo-800/40">3 Modules</span>
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
-import { SiteVisit, Project } from '@/lib/types';
+import { SiteVisit, Plot } from '@/lib/types';
 import {
   CalendarCheck,
   Plus,
@@ -23,14 +23,15 @@ import {
   AlertCircle,
   Filter,
   Check,
-  XCircle
+  XCircle,
+  ChevronDown
 } from 'lucide-react';
 
 const STATUSES = ['All Statuses', 'Requested', 'Confirmed', 'Completed', 'Cancelled'];
 
 export default function AdminSiteVisitsPage() {
   const [siteVisits, setSiteVisits] = useState<SiteVisit[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [plots, setPlots] = useState<Plot[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalVisits: 0,
@@ -43,13 +44,17 @@ export default function AdminSiteVisitsPage() {
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
-  const [projectFilter, setProjectFilter] = useState('All Projects');
+  const [plotFilter, setPlotFilter] = useState('All Plots');
 
   // Modals State
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingVisit, setEditingVisit] = useState<SiteVisit | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Plot Combobox State
+  const [isPlotDropdownOpen, setIsPlotDropdownOpen] = useState(false);
+  const plotDropdownRef = useRef<HTMLDivElement>(null);
 
   // Form State
   const [formData, setFormData] = useState<Partial<SiteVisit>>({
@@ -60,7 +65,7 @@ export default function AdminSiteVisitsPage() {
     project_name: '',
     visit_date: '',
     visit_time: '10:00',
-    preferred_plot_size: '1200 Sq.Ft',
+    preferred_plot_size: '',
     pickup_needed: false,
     pickup_location: '',
     status: 'Requested',
@@ -72,12 +77,35 @@ export default function AdminSiteVisitsPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (plotDropdownRef.current && !plotDropdownRef.current.contains(event.target as Node)) {
+        setIsPlotDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  async function fetchLatestPlots() {
+    try {
+      const res = await api.getPlots();
+      if (res && res.success && Array.isArray(res.data)) {
+        setPlots(res.data);
+        return res.data;
+      }
+    } catch (err) {
+      console.error('Failed to load plots inventory:', err);
+    }
+    return [];
+  }
+
   async function loadData() {
     setLoading(true);
     try {
-      const [visitsRes, projRes, statsRes] = await Promise.all([
+      const [visitsRes, plotsRes, statsRes] = await Promise.all([
         api.getSiteVisits(),
-        api.getProjects(),
+        api.getPlots(),
         api.getSiteVisitStats()
       ]);
 
@@ -87,8 +115,8 @@ export default function AdminSiteVisitsPage() {
         setSiteVisits([]);
       }
 
-      if (projRes && projRes.success && Array.isArray(projRes.data)) {
-        setProjects(projRes.data);
+      if (plotsRes && plotsRes.success && Array.isArray(plotsRes.data)) {
+        setPlots(plotsRes.data);
       }
 
       if (statsRes && statsRes.success && statsRes.data) {
@@ -107,17 +135,19 @@ export default function AdminSiteVisitsPage() {
     setTimeout(() => setToastMessage(null), 4000);
   }
 
-  function handleOpenCreate() {
+  async function handleOpenCreate() {
+    await fetchLatestPlots();
     setEditingVisit(null);
+    setIsPlotDropdownOpen(false);
     setFormData({
       customer_name: '',
       customer_phone: '',
       customer_email: '',
-      project_id: projects.length > 0 ? projects[0].id : '',
-      project_name: projects.length > 0 ? projects[0].name : 'Park Avenue Plotted Layout',
+      project_id: '',
+      project_name: '',
       visit_date: new Date().toISOString().split('T')[0],
       visit_time: '10:00',
-      preferred_plot_size: '1200 Sq.Ft',
+      preferred_plot_size: '',
       pickup_needed: false,
       pickup_location: '',
       status: 'Requested',
@@ -127,11 +157,13 @@ export default function AdminSiteVisitsPage() {
     setIsFormModalOpen(true);
   }
 
-  function handleOpenEdit(visit: SiteVisit) {
+  async function handleOpenEdit(visit: SiteVisit) {
+    await fetchLatestPlots();
     setEditingVisit(visit);
+    setIsPlotDropdownOpen(false);
     setFormData({
       customer_name: visit.customer_name || '',
-      customer_phone: visit.customer_phone || '',
+      customer_phone: (visit.customer_phone || '').replace(/\D/g, '').slice(0, 10),
       customer_email: visit.customer_email || '',
       project_id: visit.project_id || '',
       project_name: visit.project_name || '',
@@ -222,10 +254,12 @@ export default function AdminSiteVisitsPage() {
     const matchesStatus =
       statusFilter === 'All Statuses' || visit.status === statusFilter;
 
-    const matchesProject =
-      projectFilter === 'All Projects' || visit.project_name === projectFilter || visit.project_id === projectFilter;
+    const matchesPlot =
+      plotFilter === 'All Plots' ||
+      (visit.project_name && visit.project_name.toLowerCase().includes(plotFilter.toLowerCase())) ||
+      visit.project_id === plotFilter;
 
-    return matchesSearch && matchesStatus && matchesProject;
+    return matchesSearch && matchesStatus && matchesPlot;
   });
 
   return (
@@ -303,7 +337,7 @@ export default function AdminSiteVisitsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search customer name, phone, project, pickup point..."
+            placeholder="Search customer name, phone, plot, pickup point..."
             className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500/50 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors"
           />
           {searchQuery && (
@@ -327,24 +361,27 @@ export default function AdminSiteVisitsPage() {
           </select>
 
           <select
-            value={projectFilter}
-            onChange={(e) => setProjectFilter(e.target.value)}
+            value={plotFilter}
+            onChange={(e) => setPlotFilter(e.target.value)}
             className="bg-slate-950 border border-slate-800 focus:border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
           >
-            <option value="All Projects">All Projects</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.name}>
-                {p.name}
-              </option>
-            ))}
+            <option value="All Plots">All Plots</option>
+            {plots.map((p) => {
+              const label = `${p.plot_number || 'Plot'}${p.title ? ` - ${p.title}` : ''}`;
+              return (
+                <option key={p.id} value={p.plot_number || p.title || p.id}>
+                  {label} ({p.area_sqft} Sq.Ft)
+                </option>
+              );
+            })}
           </select>
 
-          {(searchQuery || statusFilter !== 'All Statuses' || projectFilter !== 'All Projects') && (
+          {(searchQuery || statusFilter !== 'All Statuses' || plotFilter !== 'All Plots') && (
             <button
               onClick={() => {
                 setSearchQuery('');
                 setStatusFilter('All Statuses');
-                setProjectFilter('All Projects');
+                setPlotFilter('All Plots');
               }}
               className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl transition-colors"
             >
@@ -407,8 +444,8 @@ export default function AdminSiteVisitsPage() {
                     {visit.status || 'Requested'}
                   </span>
 
-                  <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                    <Building2 className="w-3.5 h-3.5" /> {visit.project_name || 'Park Avenue'}
+                  <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 max-w-[200px] truncate">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> <span className="truncate">{visit.project_name || 'Plot Not Assigned'}</span>
                   </span>
                 </div>
 
@@ -547,14 +584,18 @@ export default function AdminSiteVisitsPage() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-slate-300">
-                    Phone Number <span className="text-emerald-500">*</span>
+                    Phone Number <span className="text-emerald-500">* (10 Digits)</span>
                   </label>
                   <input
                     type="tel"
                     required
+                    maxLength={10}
                     value={formData.customer_phone || ''}
-                    onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
-                    placeholder="+91 98401 23456"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setFormData({ ...formData, customer_phone: val });
+                    }}
+                    placeholder="10-digit number"
                     className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none"
                   />
                 </div>
@@ -570,26 +611,156 @@ export default function AdminSiteVisitsPage() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Project Venture</label>
-                  <select
-                    value={formData.project_name || (projects[0] ? projects[0].name : '')}
-                    onChange={(e) => {
-                      const selectedProj = projects.find((p) => p.name === e.target.value);
-                      setFormData({
-                        ...formData,
-                        project_name: e.target.value,
-                        project_id: selectedProj ? selectedProj.id : ''
-                      });
-                    }}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none"
-                  >
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.name}>
-                        {p.name} ({p.location_area})
-                      </option>
-                    ))}
-                  </select>
+                {/* Plot Selection with Search / Type from Plot Inventory */}
+                <div className="space-y-1.5 relative" ref={plotDropdownRef}>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-400" /> Plot (Select from Inventory or Type)
+                    </label>
+                    <span className="text-[10px] text-slate-400">
+                      {plots.length} in Plot Inventory
+                    </span>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formData.project_name || ''}
+                      onFocus={() => {
+                        fetchLatestPlots();
+                        setIsPlotDropdownOpen(true);
+                      }}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const matched = plots.find(
+                          (p) =>
+                            `${p.plot_number || ''}${p.title ? ` - ${p.title}` : ''}`.toLowerCase() === val.toLowerCase() ||
+                            (p.plot_number && p.plot_number.toLowerCase() === val.toLowerCase())
+                        );
+                        setFormData({
+                          ...formData,
+                          project_name: val,
+                          project_id: matched ? matched.id : '',
+                          preferred_plot_size: matched && matched.area_sqft ? `${matched.area_sqft} Sq.Ft` : formData.preferred_plot_size
+                        });
+                        setIsPlotDropdownOpen(true);
+                      }}
+                      placeholder="Type plot number or click arrow to choose..."
+                      className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500/50 rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!isPlotDropdownOpen) fetchLatestPlots();
+                        setIsPlotDropdownOpen(!isPlotDropdownOpen);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-white rounded-lg transition-colors"
+                      title="Toggle plot dropdown"
+                    >
+                      <ChevronDown className={`w-4 h-4 transition-transform ${isPlotDropdownOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+                    </button>
+                  </div>
+
+                  {/* Combobox Dropdown Menu */}
+                  {isPlotDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-slate-800/60 backdrop-blur-md">
+                      {plots.filter((p) => {
+                        const query = (formData.project_name || '').toLowerCase().trim();
+                        if (!query) return true;
+                        const num = (p.plot_number || '').toLowerCase();
+                        const tit = (p.title || '').toLowerCase();
+                        const proj = (p.project_name || '').toLowerCase();
+                        const loc = (p.locality || '').toLowerCase();
+                        return num.includes(query) || tit.includes(query) || proj.includes(query) || loc.includes(query);
+                      }).length === 0 ? (
+                        <div className="p-3 text-center">
+                          <p className="text-xs text-slate-400">
+                            No exact plot found in inventory matching &ldquo;{formData.project_name}&rdquo;
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setIsPlotDropdownOpen(false)}
+                            className="mt-2 px-3 py-1 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-[11px] font-medium rounded-lg transition-colors"
+                          >
+                            Use &ldquo;{formData.project_name}&rdquo; as custom plot
+                          </button>
+                        </div>
+                      ) : (
+                        plots
+                          .filter((p) => {
+                            const query = (formData.project_name || '').toLowerCase().trim();
+                            if (!query) return true;
+                            const num = (p.plot_number || '').toLowerCase();
+                            const tit = (p.title || '').toLowerCase();
+                            const proj = (p.project_name || '').toLowerCase();
+                            const loc = (p.locality || '').toLowerCase();
+                            return num.includes(query) || tit.includes(query) || proj.includes(query) || loc.includes(query);
+                          })
+                          .map((plot) => {
+                            const displayLabel = `${plot.plot_number || 'Plot'}${plot.title ? ` - ${plot.title}` : ''}`;
+                            const isSelected = formData.project_name === displayLabel || formData.project_id === plot.id;
+                            return (
+                              <button
+                                key={plot.id}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({
+                                    ...formData,
+                                    project_name: displayLabel,
+                                    project_id: plot.id,
+                                    preferred_plot_size: plot.area_sqft ? `${plot.area_sqft} Sq.Ft` : formData.preferred_plot_size
+                                  });
+                                  setIsPlotDropdownOpen(false);
+                                }}
+                                className={`w-full text-left p-3 hover:bg-slate-800/80 transition-colors flex items-center justify-between gap-3 ${
+                                  isSelected ? 'bg-emerald-500/10 border-l-2 border-emerald-500' : ''
+                                }`}
+                              >
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-xs text-white">
+                                      {plot.plot_number || 'Plot'}
+                                    </span>
+                                    {plot.title && (
+                                      <span className="text-[11px] text-slate-300 truncate">
+                                        {plot.title}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                                    {plot.project_name && <span>{plot.project_name}</span>}
+                                    {plot.project_name && <span>•</span>}
+                                    <span>{plot.area_sqft} Sq.Ft</span>
+                                    {plot.facing && (
+                                      <>
+                                        <span>•</span>
+                                        <span>{plot.facing} Facing</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="shrink-0 flex items-center gap-2">
+                                  <span
+                                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                                      plot.status === 'Available'
+                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                        : plot.status === 'Booked'
+                                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                        : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                                    }`}
+                                  >
+                                    {plot.status || 'Available'}
+                                  </span>
+                                  {isSelected && <Check className="w-4 h-4 text-emerald-400" />}
+                                </div>
+                              </button>
+                            );
+                          })
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">

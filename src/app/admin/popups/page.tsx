@@ -24,7 +24,8 @@ import {
   ArrowRight,
   ExternalLink,
   ShieldCheck,
-  Zap
+  Zap,
+  Send
 } from 'lucide-react';
 
 const DEFAULT_POPUP_IMAGE =
@@ -421,9 +422,9 @@ export default function AdminPopupsPage() {
             </div>
 
             {/* Modal Body: Split Columns */}
-            <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="flex-1 overflow-hidden p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* LEFT COLUMN: FORM CONTROLS (col-span-7) */}
-              <form onSubmit={handleSubmit} id="popupForm" className="lg:col-span-7 space-y-5">
+              <form onSubmit={handleSubmit} id="popupForm" className="lg:col-span-7 space-y-5 overflow-y-auto max-h-[calc(90vh-140px)] pr-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-slate-300">
                     Popup Title <span className="text-emerald-500">*</span>
@@ -648,87 +649,267 @@ export default function AdminPopupsPage() {
               </form>
 
               {/* RIGHT COLUMN: LIVE REALTIME PREVIEW (col-span-5) */}
-              <div className="lg:col-span-5 space-y-4 bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
-                <div className="space-y-4">
+              <div className="lg:col-span-5 space-y-4 bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between overflow-y-auto max-h-[calc(90vh-140px)]">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                       <Eye className="w-4 h-4 text-emerald-400" /> Live Realtime Preview
                     </span>
                     <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
-                      Front-End View
+                      {formData.layout_style === 'Full Poster Card'
+                        ? 'Full Poster'
+                        : formData.layout_style === 'Top Banner + Content Card'
+                        ? 'Top Banner'
+                        : 'Side-by-Side'}
                     </span>
                   </div>
 
-                  {/* PREVIEW CONTAINER MODAL CARD */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl space-y-0 relative group">
-                    {/* Poster Banner Image */}
-                    <div className="relative h-48 bg-slate-950 overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={formData.banner_image && formData.banner_image.trim() !== '' ? formData.banner_image : DEFAULT_POPUP_IMAGE}
-                        alt="Preview Poster"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = DEFAULT_POPUP_IMAGE;
-                        }}
-                      />
+                  {/* 1. PREVIEW: FULL POSTER CARD */}
+                  {formData.layout_style === 'Full Poster Card' && (
+                    <div className="bg-slate-900 border border-amber-400/30 rounded-3xl overflow-hidden shadow-2xl relative group">
+                      <div className="relative h-96 w-full bg-slate-950 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={formData.banner_image && formData.banner_image.trim() !== '' ? formData.banner_image : DEFAULT_POPUP_IMAGE}
+                          alt="Preview Poster"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = DEFAULT_POPUP_IMAGE;
+                          }}
+                        />
 
-                      {/* Badge Tag Overlaid */}
-                      <div className="absolute top-3 left-3">
-                        <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg uppercase tracking-wider border border-white/20">
-                          {formData.badge_tag || 'FESTIVE OFFER'}
-                        </span>
-                      </div>
-
-                      {/* Close X Button Preview */}
-                      <div className="absolute top-3 right-3">
-                        <div className="w-7 h-7 rounded-full bg-slate-950/70 text-slate-300 flex items-center justify-center border border-white/20 backdrop-blur-md">
-                          <X className="w-4 h-4" />
+                        {/* Top Overlays */}
+                        <div className="absolute top-3 left-3 z-10">
+                          <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-gradient-to-r from-[#D61F69] to-pink-600 text-white shadow-lg uppercase tracking-wider border border-white/20">
+                            {formData.badge_tag || 'FESTIVE OFFER'}
+                          </span>
                         </div>
-                      </div>
-                    </div>
+                        <div className="absolute top-3 right-3 z-10">
+                          <div className="w-7 h-7 rounded-full bg-slate-950/70 text-slate-300 flex items-center justify-center border border-white/20 backdrop-blur-md">
+                            <X className="w-4 h-4" />
+                          </div>
+                        </div>
 
-                    {/* Preview Content Body */}
-                    <div className="p-5 space-y-4 bg-slate-950 border-t border-slate-800 text-slate-100">
-                      <div className="space-y-1">
-                        <h3 className="text-base font-bold text-white leading-snug font-serif">
-                          {formData.title || '🌾 Your Offer Title Here'}
-                        </h3>
-                        {formData.subtitle && (
-                          <p className="text-xs text-slate-400 leading-relaxed">
-                            {formData.subtitle}
-                          </p>
-                        )}
-                      </div>
+                        {/* Bottom Gradient Content Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent flex flex-col justify-end p-5 space-y-2.5 z-10">
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-amber-300">
+                            {formData.category || 'Special Promotion'}
+                          </span>
+                          <h3 className="text-base font-bold text-white leading-snug font-serif">
+                            {formData.title || '🌾 Your Offer Title Here'}
+                          </h3>
+                          {formData.subtitle && (
+                            <p className="text-[11px] text-white/90 line-clamp-2 leading-relaxed">
+                              {formData.subtitle}
+                            </p>
+                          )}
 
-                      {/* Highlights Bullet List */}
-                      {highlightsList.length > 0 && (
-                        <div className="space-y-1.5 pt-1">
-                          {highlightsList.map((hl, i) => (
-                            <div key={i} className="flex items-start gap-2 text-xs text-slate-300">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                              <span>{hl}</span>
+                          {highlightsList.length > 0 && (
+                            <div className="space-y-1 py-0.5">
+                              {highlightsList.slice(0, 2).map((hl, i) => (
+                                <div key={i} className="flex items-center gap-1.5 text-[11px] text-white">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                  <span className="truncate">{hl}</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          )}
 
-                      {/* CTA Button Live Preview */}
-                      <div className="pt-2">
-                        <button
-                          type="button"
-                          className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 border border-emerald-400/30"
-                        >
-                          <MessageSquare className="w-4 h-4 fill-slate-950" />
-                          {formData.cta_text || 'Claim Festive Offer on WhatsApp'}
-                        </button>
+                          {/* CTA Button */}
+                          <div className="pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (formData.cta_action === 'lead_form') {
+                                  showToast('Action: Opens Site Visit Lead Form modal on website');
+                                } else if (formData.cta_action === 'call') {
+                                  showToast(`Action: Phone dialer to ${formData.whatsapp_number}`);
+                                } else {
+                                  showToast('Action: Opens WhatsApp direct chat');
+                                }
+                              }}
+                              className="w-full py-2.5 bg-gradient-to-r from-[#D61F69] via-pink-600 to-[#006452] hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 border border-white/20 transition cursor-pointer"
+                            >
+                              {formData.cta_action === 'lead_form' ? (
+                                <Send className="w-3.5 h-3.5" />
+                              ) : formData.cta_action === 'call' ? (
+                                <Phone className="w-3.5 h-3.5" />
+                              ) : (
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              )}
+                              <span>{formData.cta_text || 'Claim Festive Offer on WhatsApp'}</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* 2. PREVIEW: TOP BANNER + CONTENT CARD */}
+                  {formData.layout_style === 'Top Banner + Content Card' && (
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative group">
+                      <div className="relative h-44 bg-slate-950 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={formData.banner_image && formData.banner_image.trim() !== '' ? formData.banner_image : DEFAULT_POPUP_IMAGE}
+                          alt="Preview Poster"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = DEFAULT_POPUP_IMAGE;
+                          }}
+                        />
+
+                        {/* Badge Tag */}
+                        <div className="absolute top-3 left-3">
+                          <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-[#006452] text-white shadow-lg uppercase tracking-wider border border-white/20">
+                            {formData.badge_tag || 'FESTIVE OFFER'}
+                          </span>
+                        </div>
+
+                        {/* Close X */}
+                        <div className="absolute top-3 right-3">
+                          <div className="w-7 h-7 rounded-full bg-slate-950/70 text-slate-300 flex items-center justify-center border border-white/20 backdrop-blur-md">
+                            <X className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Content Body */}
+                      <div className="p-4 space-y-3 bg-slate-950 border-t border-slate-800 text-slate-100">
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-[#D61F69] uppercase tracking-wider block">
+                            {formData.category || 'Festival Deals'}
+                          </span>
+                          <h3 className="text-base font-bold text-white leading-snug font-serif">
+                            {formData.title || '🌾 Your Offer Title Here'}
+                          </h3>
+                          {formData.subtitle && (
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                              {formData.subtitle}
+                            </p>
+                          )}
+                        </div>
+
+                        {highlightsList.length > 0 && (
+                          <div className="space-y-1.5 pt-1">
+                            {highlightsList.map((hl, i) => (
+                              <div key={i} className="flex items-start gap-2 text-xs text-slate-300">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                                <span>{hl}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (formData.cta_action === 'lead_form') {
+                                showToast('Action: Opens Site Visit Lead Form modal on website');
+                              } else if (formData.cta_action === 'call') {
+                                showToast(`Action: Phone dialer to ${formData.whatsapp_number}`);
+                              } else {
+                                showToast('Action: Opens WhatsApp direct chat');
+                              }
+                            }}
+                            className="w-full py-2.5 bg-[#006452] hover:bg-[#005243] text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 border border-emerald-400/30 cursor-pointer"
+                          >
+                            {formData.cta_action === 'lead_form' ? (
+                              <Send className="w-3.5 h-3.5" />
+                            ) : formData.cta_action === 'call' ? (
+                              <Phone className="w-3.5 h-3.5" />
+                            ) : (
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            )}
+                            <span>{formData.cta_text || 'Claim Festive Offer on WhatsApp'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. PREVIEW: AUTO DETECT / SIDE-BY-SIDE SPLIT */}
+                  {formData.layout_style !== 'Full Poster Card' && formData.layout_style !== 'Top Banner + Content Card' && (
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative grid grid-cols-12 group">
+                      {/* Left: Image */}
+                      <div className="col-span-5 relative min-h-[220px] bg-slate-950 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={formData.banner_image && formData.banner_image.trim() !== '' ? formData.banner_image : DEFAULT_POPUP_IMAGE}
+                          alt="Preview Poster"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = DEFAULT_POPUP_IMAGE;
+                          }}
+                        />
+
+                        {/* Badge Tag */}
+                        <div className="absolute top-2.5 left-2.5">
+                          <span className="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#D61F69] text-white shadow-lg uppercase tracking-wider border border-white/20">
+                            {formData.badge_tag || 'OFFER'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right: Content */}
+                      <div className="col-span-7 p-3.5 space-y-2.5 bg-slate-950 flex flex-col justify-between text-slate-100">
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider block">
+                            {formData.category || 'Special Opportunity'}
+                          </span>
+                          <h3 className="text-sm font-bold text-white leading-snug font-serif">
+                            {formData.title || '🌾 Your Offer Title Here'}
+                          </h3>
+                          {formData.subtitle && (
+                            <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                              {formData.subtitle}
+                            </p>
+                          )}
+
+                          {highlightsList.length > 0 && (
+                            <div className="space-y-1 pt-1">
+                              {highlightsList.slice(0, 2).map((hl, i) => (
+                                <div key={i} className="flex items-start gap-1.5 text-[10px] text-slate-300">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
+                                  <span className="truncate">{hl}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (formData.cta_action === 'lead_form') {
+                                showToast('Action: Opens Site Visit Lead Form modal on website');
+                              } else if (formData.cta_action === 'call') {
+                                showToast(`Action: Phone dialer to ${formData.whatsapp_number}`);
+                              } else {
+                                showToast('Action: Opens WhatsApp direct chat');
+                              }
+                            }}
+                            className="w-full py-2 bg-gradient-to-r from-[#006452] to-[#004f41] hover:opacity-95 text-white font-bold text-[11px] rounded-lg shadow-md flex items-center justify-center gap-1.5 border border-emerald-400/30 cursor-pointer"
+                          >
+                            {formData.cta_action === 'lead_form' ? (
+                              <Send className="w-3 h-3" />
+                            ) : formData.cta_action === 'call' ? (
+                              <Phone className="w-3 h-3" />
+                            ) : (
+                              <MessageSquare className="w-3 h-3" />
+                            )}
+                            <span className="truncate">{formData.cta_text || 'Claim Festive Offer'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="pt-3 border-t border-slate-800 text-[11px] text-slate-400 text-center italic">
-                  Live preview updates automatically as you type in the form fields.
+                <div className="pt-2 border-t border-slate-800 text-[10px] text-slate-400 text-center italic">
+                  Live preview changes layout and CTA action automatically as you edit.
                 </div>
               </div>
             </div>

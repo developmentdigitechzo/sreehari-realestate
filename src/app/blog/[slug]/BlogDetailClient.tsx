@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { BlogPost } from '@/data/blogs';
@@ -9,7 +9,15 @@ import { Calendar, Clock, User, ArrowLeft, Send, CheckCircle } from 'lucide-reac
 import EnquiryModal from '@/components/EnquiryModal';
 import { api } from '@/lib/api';
 
-export default function BlogDetailClient({ post }: { post: BlogPost }) {
+export default function BlogDetailClient({
+  initialPost,
+  slug
+}: {
+  initialPost?: BlogPost;
+  slug: string;
+}) {
+  const [post, setPost] = useState<any>(initialPost || null);
+  const [loading, setLoading] = useState(!initialPost);
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
   const [inlineForm, setInlineForm] = useState({
     name: '',
@@ -23,7 +31,62 @@ export default function BlogDetailClient({ post }: { post: BlogPost }) {
   const [inlineLoading, setInlineLoading] = useState(false);
   const [inlineSubmitted, setInlineSubmitted] = useState(false);
 
-  const handleInlineSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    async function loadPost() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/public/blogs/${slug}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success && data.data) {
+            const b = data.data;
+            if ((b.status || 'Published').toLowerCase() === 'published') {
+              setPost({
+                slug: b.slug,
+                title: b.title,
+                excerpt: b.excerpt || '',
+                category: b.category || 'Buying Guide',
+                readTime: b.read_time || b.readTime || '5 min read',
+                date: b.created_at
+                  ? new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+                  : b.date || 'Oct 2026',
+                author: b.author || 'Sree Hari Realty Editorial',
+                image: b.image_url || b.banner_image || b.image || '/hero_blog.jpg',
+                content: b.content || ''
+              });
+            }
+          }
+        }
+      } catch (err) {
+        // Fallback to initialPost
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPost();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="max-w-2xl mx-auto py-20 px-4 text-center space-y-4">
+        <h2 className="text-2xl font-bold text-gray-900">Article Not Found</h2>
+        <p className="text-sm text-gray-600">The article you are looking for is either in draft or no longer available.</p>
+        <Link href="/blog" className="inline-block px-5 py-2.5 bg-[#075E43] text-white rounded-xl text-xs font-bold uppercase">
+          Back to All Articles
+        </Link>
+      </div>
+    );
+  }
+
+  const handleInlineSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setInlineLoading(true);
 

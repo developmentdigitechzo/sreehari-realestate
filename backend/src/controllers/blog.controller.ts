@@ -16,13 +16,20 @@ export async function getAllBlogs(req: Request, res: Response): Promise<void> {
       }
     }
 
-    const mappedBlogs = blogs.map((b: any) => ({
+    let mappedBlogs = blogs.map((b: any) => ({
       ...b,
       image_url: b.image_url || b.banner_image || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
       banner_image: b.banner_image || b.image_url || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
       seo_title: b.seo_title || b.meta_title || b.title,
       seo_description: b.seo_description || b.meta_description || b.excerpt || ''
     }));
+
+    const isPublic = req.baseUrl.includes('public') || req.originalUrl.includes('/public');
+    if (isPublic) {
+      mappedBlogs = mappedBlogs.filter((b: any) => (b.status || 'Published').toLowerCase() === 'published');
+    } else if (req.query.status && typeof req.query.status === 'string' && req.query.status !== 'All Statuses') {
+      mappedBlogs = mappedBlogs.filter((b: any) => (b.status || '').toLowerCase() === (req.query.status as string).toLowerCase());
+    }
 
     res.json({
       success: true,
@@ -35,7 +42,7 @@ export async function getAllBlogs(req: Request, res: Response): Promise<void> {
 }
 
 export async function getBlogById(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
+  const id = req.params.id || req.params.slug;
   try {
     const store = db.getFallbackData();
     let blog = (store.blogs || []).find((b: any) => b.id === id || b.slug === id);
@@ -49,6 +56,12 @@ export async function getBlogById(req: Request, res: Response): Promise<void> {
 
     if (!blog) {
       res.status(404).json({ success: false, message: 'Blog post not found' });
+      return;
+    }
+
+    const isPublic = req.baseUrl.includes('public') || req.originalUrl.includes('/public');
+    if (isPublic && (blog.status || '').toLowerCase() === 'draft') {
+      res.status(404).json({ success: false, message: 'Blog post is in draft state' });
       return;
     }
 
@@ -191,8 +204,8 @@ export async function updateBlog(req: Request, res: Response): Promise<void> {
       try {
         await db.query(
           `UPDATE blogs SET
-            title=$1, slug=$2, category=$3, author=$4, status=$5, read_time=$6, banner_image=$7, excerpt=$8, content=$9, meta_title=$10, meta_description=$11, updated_at=CURRENT_TIMESTAMP
-          WHERE id=$12;`,
+            title=$1, slug=$2, category=$3, author=$4, status=$5, read_time=$6, banner_image=$7, excerpt=$8, content=$9, meta_title=$10, meta_description=$11, image_url=$12, seo_title=$13, seo_description=$14, updated_at=CURRENT_TIMESTAMP
+          WHERE id=$15;`,
           [
             updated.title || '',
             updated.slug || '',
@@ -205,6 +218,9 @@ export async function updateBlog(req: Request, res: Response): Promise<void> {
             updated.content || '',
             updated.meta_title || '',
             updated.meta_description || '',
+            updated.image_url || updated.banner_image || '',
+            updated.seo_title || updated.meta_title || updated.title || '',
+            updated.seo_description || updated.meta_description || updated.excerpt || '',
             id
           ]
         );

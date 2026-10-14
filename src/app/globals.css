@@ -203,4 +203,92 @@ p {
   will-change: background-position;
 }
 
+/* ======================================================== */
+/* Dynamic CRM Theme Color Overrides                         */
+/* Ensures all buttons, badges, borders, icons, and focus    */
+/* rings adapt 100% to the chosen Brand Primary Color        */
+/* ======================================================== */
+:root {
+  --brand-primary: #10b981;
+  --brand-primary-light: #34d399;
+  --brand-primary-dark: #059669;
+  --brand-primary-darker: #047857;
+  --brand-contrast: #ffffff;
+  --brand-primary-glow: rgba(16, 185, 129, 0.15);
+  --brand-primary-glow-border: rgba(16, 185, 129, 0.35);
+}
+
+[data-admin-theme] {
+  --color-emerald-400: var(--brand-primary-light);
+  --color-emerald-500: var(--brand-primary);
+  --color-emerald-600: var(--brand-primary);
+  --color-emerald-700: var(--brand-primary-dark);
+}
+
+[data-admin-theme] .bg-emerald-600,
+[data-admin-theme] .bg-emerald-500 {
+  background-color: var(--brand-primary) !important;
+  color: var(--brand-contrast, #ffffff) !important;
+}
+
+[data-admin-theme] button.bg-emerald-600,
+[data-admin-theme] button.bg-emerald-500,
+[data-admin-theme] a.bg-emerald-600,
+[data-admin-theme] a.bg-emerald-500 {
+  background-color: var(--brand-primary) !important;
+  color: var(--brand-contrast, #ffffff) !important;
+}
+
+[data-admin-theme] .hover\:bg-emerald-500:hover,
+[data-admin-theme] .hover\:bg-emerald-600:hover {
+  background-color: var(--brand-primary-dark) !important;
+}
+
+[data-admin-theme] .text-emerald-400,
+[data-admin-theme] .text-emerald-500,
+[data-admin-theme] .text-emerald-300 {
+  color: var(--brand-primary-light) !important;
+}
+
+[data-admin-theme] .border-emerald-500,
+[data-admin-theme] .border-emerald-600,
+[data-admin-theme] .border-emerald-400 {
+  border-color: var(--brand-primary) !important;
+}
+
+[data-admin-theme] .focus\:border-emerald-500:focus,
+[data-admin-theme] .focus\:border-emerald-500\/50:focus {
+  border-color: var(--brand-primary) !important;
+}
+
+[data-admin-theme] .focus\:ring-emerald-500:focus {
+  --tw-ring-color: var(--brand-primary) !important;
+}
+
+[data-admin-theme] .bg-emerald-500\/10,
+[data-admin-theme] .bg-emerald-500\/20,
+[data-admin-theme] .bg-emerald-600\/10,
+[data-admin-theme] .bg-emerald-950\/50 {
+  background-color: var(--brand-primary-glow) !important;
+}
+
+[data-admin-theme] .border-emerald-500\/20,
+[data-admin-theme] .border-emerald-500\/30,
+[data-admin-theme] .border-emerald-500\/40,
+[data-admin-theme] .border-emerald-700\/60 {
+  border-color: var(--brand-primary-glow-border) !important;
+}
+
+[data-admin-theme] .from-emerald-600,
+[data-admin-theme] .from-emerald-500 {
+  --tw-gradient-from: var(--brand-primary) var(--tw-gradient-from-position) !important;
+}
+
+[data-admin-theme] .to-teal-600,
+[data-admin-theme] .to-emerald-700,
+[data-admin-theme] .to-emerald-600 {
+  --tw-gradient-to: var(--brand-primary-dark) var(--tw-gradient-to-position) !important;
+}
+
+
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
 import { Settings as SettingsIcon, Save, Upload, Trash2, Palette, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
+import { applyCrmTheme } from '@/lib/theme';
 
 const COLOR_PRESETS = [
   { name: 'Emerald Green', hex: '#10b981' },
@@ -82,6 +83,7 @@ export default function AdminSettingsPage() {
     setSettings((prev) => ({ ...prev, primary_color: newColor }));
     if (typeof window !== 'undefined' && newColor) {
       localStorage.setItem('crm_primary_color', newColor);
+      applyCrmTheme(newColor);
       window.dispatchEvent(new CustomEvent('colorPreview', { detail: { color: newColor } }));
     }
   };
@@ -187,20 +189,24 @@ export default function AdminSettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1.5">Primary Call Phone</label>
+                <label className="block text-slate-300 font-semibold mb-1.5">Primary Call Phone (10 Digits)</label>
                 <input
-                  type="text"
-                  value={settings.phone_primary || ''}
-                  onChange={(e) => setSettings({ ...settings, phone_primary: e.target.value })}
+                  type="tel"
+                  maxLength={10}
+                  placeholder="10-digit phone"
+                  value={settings.phone_primary ? settings.phone_primary.replace(/\D/g, '').slice(0, 10) : ''}
+                  onChange={(e) => setSettings({ ...settings, phone_primary: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 font-semibold mb-1.5">WhatsApp Number</label>
+                <label className="block text-slate-300 font-semibold mb-1.5">WhatsApp Number (10 Digits)</label>
                 <input
-                  type="text"
-                  value={settings.phone_whatsapp || ''}
-                  onChange={(e) => setSettings({ ...settings, phone_whatsapp: e.target.value })}
+                  type="tel"
+                  maxLength={10}
+                  placeholder="10-digit phone"
+                  value={settings.phone_whatsapp ? settings.phone_whatsapp.replace(/\D/g, '').slice(0, 10) : ''}
+                  onChange={(e) => setSettings({ ...settings, phone_whatsapp: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
                 />
               </div>

@@ -15,16 +15,33 @@ export function removeAuthToken(): void {
   localStorage.removeItem('crm_auth_token');
 }
 
+let isRedirectingToLogin = false;
+
+function handleAuthFailure() {
+  removeAuthToken();
+  if (
+    typeof window !== 'undefined' &&
+    window.location.pathname.startsWith('/admin') &&
+    window.location.pathname !== '/admin/login' &&
+    !isRedirectingToLogin
+  ) {
+    isRedirectingToLogin = true;
+    window.location.replace('/admin/login');
+  }
+}
+
 async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken() || 'admin_session_token_2026';
+  const token = getAuthToken();
+  if (!token) {
+    handleAuthFailure();
+    return { success: false, message: 'Authentication required', data: null };
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
+    'Authorization': `Bearer ${token}`,
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   try {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -34,9 +51,8 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
 
     const data = await res.json();
     if (!res.ok) {
-      if (res.status === 401 && typeof window !== 'undefined' && window.location.pathname !== '/admin/login') {
-        removeAuthToken();
-        window.location.href = '/admin/login';
+      if (res.status === 401) {
+        handleAuthFailure();
       }
       return { success: false, message: data.message || 'Request failed', data: null };
     }

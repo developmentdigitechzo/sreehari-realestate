@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Phone,
@@ -29,6 +29,7 @@ import {
 import { api } from '@/lib/api';
 
 export default function ContactPage() {
+  const [workingHours, setWorkingHours] = useState('Mon - Sat: 9:00 AM - 7:00 PM');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -38,6 +39,14 @@ export default function ContactPage() {
     visitTime: '',
     message: '',
   });
+
+  useEffect(() => {
+    api.getPublicSettings().then((res) => {
+      if (res?.data?.working_hours) {
+        setWorkingHours(res.data.working_hours);
+      }
+    }).catch(() => null);
+  }, []);
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -251,7 +260,7 @@ export default function ContactPage() {
                       Working Hours
                     </span>
                     <p className="text-[15px] text-white mt-1 leading-snug">
-                      Monday – Sunday: 9:00 AM – 7:30 PM <br />
+                      {workingHours} <br />
                       <span className="text-xs text-emerald-200">(Site visits available all 7 days)</span>
                     </p>
                   </div>
@@ -336,14 +345,15 @@ export default function ContactPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Phone Number <span className="text-red-500">*</span>
+                      Phone Number <span className="text-red-500">* (10 Digits)</span>
                     </label>
                     <input
                       type="tel"
                       required
-                      placeholder="+91 73737 13559"
+                      maxLength={10}
+                      placeholder="10-digit mobile number"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                       className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
                     />
                   </div>

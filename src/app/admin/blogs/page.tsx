@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
 import { BlogPost } from '@/lib/types';
 import RichTextEditor from '@/components/admin/RichTextEditor';
@@ -23,7 +23,10 @@ import {
   FileText,
   Calendar,
   Grid,
-  List as ListIcon
+  List as ListIcon,
+  Upload,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 
 const DEFAULT_BLOG_IMAGE =
@@ -62,6 +65,11 @@ export default function AdminBlogsPage() {
 
   // Notification Banner State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Image Upload State & Form Ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState<Partial<BlogPost>>({
@@ -114,8 +122,8 @@ export default function AdminBlogsPage() {
     setFormData((prev) => ({
       ...prev,
       title: val,
-      slug: editingBlog ? prev.slug || generatedSlug : generatedSlug,
-      seo_title: prev.seo_title || val
+      slug: generatedSlug,
+      seo_title: (!prev.seo_title || prev.seo_title === prev.title) ? val : prev.seo_title
     }));
   }
 
@@ -145,7 +153,7 @@ export default function AdminBlogsPage() {
       category: blog.category || 'Buying Guide',
       author: blog.author || 'Sree Hari Realty Editorial',
       read_time: blog.read_time || '5 min read',
-      image_url: blog.image_url || '',
+      image_url: blog.image_url || blog.banner_image || '',
       excerpt: blog.excerpt || '',
       content: blog.content || '',
       seo_title: blog.seo_title || '',
@@ -160,31 +168,93 @@ export default function AdminBlogsPage() {
     setIsViewModalOpen(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!formData.title || !formData.title.trim()) {
-      alert('Please enter article title');
+  async function handleImageFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (.png, .jpg, .jpeg, .webp)');
       return;
     }
 
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image file size must be less than 10MB');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64Data = reader.result as string;
+      try {
+        const uploadRes = await api.uploadMedia({
+          imageBase64: base64Data,
+          filename: file.name
+        });
+        if (uploadRes && uploadRes.success && uploadRes.fileUrl) {
+          setFormData((prev) => ({ ...prev, image_url: uploadRes.fileUrl }));
+          showToast('Image uploaded successfully');
+        } else {
+          setFormData((prev) => ({ ...prev, image_url: base64Data }));
+          showToast('Image loaded successfully');
+        }
+      } catch (err) {
+        setFormData((prev) => ({ ...prev, image_url: base64Data }));
+        showToast('Image loaded successfully');
+      } finally {
+        setIsUploadingImage(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSave(targetStatus?: 'Published' | 'Draft') {
+    if (!formData.title || !formData.title.trim()) {
+      alert('Please enter article title / heading');
+      return;
+    }
+
+    const currentStatus = targetStatus || formData.status || 'Published';
+    const computedSlug = formData.slug && formData.slug.trim()
+      ? formData.slug.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')
+      : formData.title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+
+    const finalImage = formData.image_url && formData.image_url.trim() !== ''
+      ? formData.image_url.trim()
+      : DEFAULT_BLOG_IMAGE;
+
     const payload = {
       ...formData,
-      image_url: formData.image_url && formData.image_url.trim() !== '' ? formData.image_url.trim() : DEFAULT_BLOG_IMAGE,
-      slug: formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')
+      status: currentStatus,
+      slug: computedSlug,
+      image_url: finalImage,
+      banner_image: finalImage,
+      seo_title: formData.seo_title || formData.title,
+      seo_description: formData.seo_description || formData.excerpt
     };
 
+    setIsSaving(true);
     try {
       if (editingBlog && editingBlog.id) {
         const res = await api.updateBlog(editingBlog.id, payload);
         if (res && res.success) {
-          showToast('Blog article updated successfully');
+          showToast(
+            currentStatus === 'Draft'
+              ? 'Blog article saved as Draft (Hidden from website)'
+              : 'Blog article updated and live on website'
+          );
         } else {
           showToast(res.message || 'Failed to update article');
         }
       } else {
         const res = await api.createBlog(payload);
         if (res && res.success) {
-          showToast('New blog article published successfully');
+          showToast(
+            currentStatus === 'Draft'
+              ? 'New blog article saved as Draft (Hidden from website)'
+              : 'New blog article published and live on website'
+          );
         } else {
           showToast(res.message || 'Failed to create article');
         }
@@ -193,6 +263,8 @@ export default function AdminBlogsPage() {
       setViewMode('grid');
     } catch (err: any) {
       showToast('Error saving article: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -313,7 +385,7 @@ export default function AdminBlogsPage() {
             </h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(formData.status || 'Published'); }} className="space-y-6">
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
               <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
                 <FileText className="w-4 h-4 text-amber-400" /> Article Metadata & Header Content
@@ -335,11 +407,24 @@ export default function AdminBlogsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">URL Slug</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-slate-300">URL Slug</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const s = (formData.title || '').toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+                        setFormData((prev) => ({ ...prev, slug: s }));
+                      }}
+                      className="text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors cursor-pointer"
+                      title="Sync slug with current title"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Sync with Title
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={formData.slug || ''}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-') })}
                     placeholder="dtcp-approved-plots-trichy-guide"
                     className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs font-mono text-amber-400 placeholder-slate-600 focus:outline-none transition-colors"
                   />
@@ -394,36 +479,90 @@ export default function AdminBlogsPage() {
                   </select>
                 </div>
 
-                <div className="md:col-span-2 space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Cover / Header Image URL</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={formData.image_url || ''}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      placeholder="https://images.unsplash.com/photo-..."
-                      className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none transition-colors"
-                    />
+                <div className="md:col-span-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-amber-400" /> Cover / Header Image
+                    </label>
+                    {formData.image_url && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, image_url: '' })}
+                        className="text-[11px] text-rose-400 hover:text-rose-300 hover:underline cursor-pointer"
+                      >
+                        Reset to Default Image
+                      </button>
+                    )}
                   </div>
-                  <p className="text-[11px] text-slate-500">Leave blank to use default real estate plot landscape image.</p>
+
+                  {/* Hidden File Input */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleImageFileUpload}
+                    className="hidden"
+                  />
+
+                  {/* Upload button and URL input */}
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <div className="sm:col-span-4">
+                      <button
+                        type="button"
+                        disabled={isUploadingImage}
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full h-full min-h-[42px] py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs rounded-xl border border-amber-500/30 flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+                      >
+                        {isUploadingImage ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                            <span>Uploading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 text-amber-400" />
+                            <span>Upload Image from Device</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="sm:col-span-8">
+                      <input
+                        type="url"
+                        value={formData.image_url || ''}
+                        onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                        placeholder="Or paste image URL (https://images.unsplash.com/...)"
+                        className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Upload an image file from your computer or paste an external image link. Leave blank to use default real estate layout image.
+                  </p>
                 </div>
 
                 {/* Cover Image Preview */}
                 <div className="md:col-span-2">
-                  <div className="relative h-44 rounded-xl overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
+                  <div className="relative h-48 rounded-xl overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={formData.image_url && formData.image_url.trim() !== '' ? formData.image_url : DEFAULT_BLOG_IMAGE}
                       alt="Blog Cover Preview"
-                      className="w-full h-full object-cover opacity-80"
+                      className="w-full h-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = DEFAULT_BLOG_IMAGE;
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-4">
-                      <span className="text-[11px] text-slate-300 font-medium bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-700">
-                        Image Preview
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end justify-between p-4">
+                      <span className="text-[11px] text-slate-300 font-medium bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-700 backdrop-blur-md">
+                        {formData.image_url ? 'Custom Upload / URL' : 'Default Real Estate Cover'}
                       </span>
+                      {formData.image_url && (
+                        <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/80 border border-emerald-500/30 px-2 py-0.5 rounded">
+                          Active Image
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -508,19 +647,35 @@ export default function AdminBlogsPage() {
             </div>
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-slate-800">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium rounded-xl transition-colors"
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
+
+              {/* Save as Draft Button */}
               <button
-                type="submit"
-                className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/10 transition-all border border-amber-400/30 flex items-center gap-2"
+                type="button"
+                disabled={isSaving}
+                onClick={() => handleSave('Draft')}
+                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs rounded-xl border border-amber-500/40 flex items-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
               >
-                <CheckCircle2 className="w-4 h-4" /> Save & Publish Article
+                <FileText className="w-4 h-4 text-amber-400" />
+                <span>Save as Draft</span>
+              </button>
+
+              {/* Save & Publish Button */}
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => handleSave('Published')}
+                className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all border border-emerald-400/30 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                <span>{editingBlog ? 'Update & Publish Article' : 'Save & Publish Article'}</span>
               </button>
             </div>
           </form>
@@ -801,13 +956,22 @@ export default function AdminBlogsPage() {
 
       {/* ARTICLE VIEW MODAL */}
       {isViewModalOpen && viewingBlog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl relative">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in"
+          onClick={() => setIsViewModalOpen(false)}
+        >
+          <div
+            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Prominent High-Z Close 'X' Button */}
             <button
+              type="button"
               onClick={() => setIsViewModalOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-slate-950 text-slate-400 hover:text-white border border-slate-800"
+              className="absolute top-4 right-4 z-50 p-2.5 rounded-full bg-slate-950/95 text-slate-300 hover:text-white hover:bg-rose-600 border border-slate-700 shadow-2xl transition-all cursor-pointer"
+              title="Close preview"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5 stroke-[2.5]" />
             </button>
 
             {/* Modal Image Header */}
@@ -863,6 +1027,25 @@ export default function AdminBlogsPage() {
               </span>
               <p className="text-xs font-semibold text-blue-400">{viewingBlog.seo_title || viewingBlog.title}</p>
               <p className="text-[11px] text-slate-400">{viewingBlog.seo_description || viewingBlog.excerpt}</p>
+            </div>
+
+            {/* Bottom Actions Bar */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <span className={`text-[11px] font-semibold px-3 py-1 rounded-full border ${
+                viewingBlog.status === 'Published'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+              }`}>
+                Status: {viewingBlog.status || 'Published'}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl border border-slate-700 transition-colors cursor-pointer"
+              >
+                Close Preview
+              </button>
             </div>
           </div>
         </div>

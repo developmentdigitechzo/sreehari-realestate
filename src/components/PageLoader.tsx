@@ -4,18 +4,35 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 export default function PageLoader() {
-  const [isVisible, setIsVisible] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
-    // Fast dismissal: display briefly for visual feedback on refresh, then dismiss ASAP
+    setMounted(true);
+    // Check if user has already seen splash loader in this session
+    try {
+      if (typeof window !== 'undefined') {
+        const alreadyLoaded = sessionStorage.getItem('sreehari_page_loaded');
+        if (alreadyLoaded) {
+          setIsVisible(false);
+          return;
+        }
+        sessionStorage.setItem('sreehari_page_loaded', '1');
+        setIsVisible(true);
+      }
+    } catch {
+      setIsVisible(false);
+      return;
+    }
+
     const fadeTimer = setTimeout(() => {
       setIsFading(true);
-    }, 450);
+    }, 280);
 
     const removeTimer = setTimeout(() => {
       setIsVisible(false);
-    }, 750);
+    }, 500);
 
     return () => {
       clearTimeout(fadeTimer);
@@ -23,12 +40,12 @@ export default function PageLoader() {
     };
   }, []);
 
-  if (!isVisible) return null;
+  if (!mounted || !isVisible) return null;
 
   return (
     <div
       aria-hidden="true"
-      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#fef9e6] transition-opacity duration-300 ease-out select-none ${
+      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-[#fef9e6] transition-opacity duration-200 ease-out select-none ${
         isFading ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >

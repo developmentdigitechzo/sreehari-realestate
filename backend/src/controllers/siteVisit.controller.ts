@@ -233,9 +233,16 @@ export async function updateSiteVisit(req: Request, res: Response): Promise<void
       try {
         await db.query(
           `UPDATE site_visits SET
-            visit_date=$1, visit_time=$2, pickup_needed=$3, pickup_location=$4, status=$5, assigned_staff=$6, notes=$7, updated_at=CURRENT_TIMESTAMP
-          WHERE id=$8;`,
+            customer_name=$1, customer_phone=$2, customer_email=$3, project_id=$4, project_name=$5, preferred_plot_size=$6,
+            visit_date=$7, visit_time=$8, pickup_needed=$9, pickup_location=$10, status=$11, assigned_staff=$12, notes=$13, updated_at=CURRENT_TIMESTAMP
+          WHERE id=$14;`,
           [
+            updated.customer_name || current.customer_name || '',
+            updated.customer_phone || current.customer_phone || '',
+            updated.customer_email ?? current.customer_email ?? '',
+            updated.project_id ?? current.project_id ?? null,
+            updated.project_name ?? current.project_name ?? '',
+            updated.preferred_plot_size ?? current.preferred_plot_size ?? '',
             updated.visit_date || current.visit_date || '',
             updated.visit_time || current.visit_time || '10:00 AM',
             Boolean(updated.pickup_needed),
