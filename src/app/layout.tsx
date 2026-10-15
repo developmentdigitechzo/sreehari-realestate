@@ -3,8 +3,10 @@ import React from 'react';
 import './globals.css';
 import LayoutWrapper from '@/components/LayoutWrapper';
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://giving-amethyst-anteater.172-235-18-108.cpanel.site';
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://sreeharirealty.com'),
+  metadataBase: new URL(siteUrl),
   title: 'Sree Hari Realty Promoters | Premium Gated Community Plots',
   description:
     'Sree Hari Realty Promoters offers premium DTCP and RERA approved gated community villa plots and land in prime growth corridors.',
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
     title: 'Sree Hari Realty Promoters | Premium Gated Community Plots',
     description:
       'Buy 100% DTCP & RERA approved gated community land and villa plots with clear titles and bank loan approvals.',
-    url: 'https://sreeharirealty.com',
+    url: siteUrl,
     siteName: 'Sree Hari Realty Promoters',
     images: [
       {

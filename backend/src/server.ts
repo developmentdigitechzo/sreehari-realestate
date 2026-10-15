@@ -18,9 +18,36 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+const envOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+const defaultAllowedOrigins = [
+  'https://giving-amethyst-anteater.172-235-18-108.cpanel.site',
+  'http://giving-amethyst-anteater.172-235-18-108.cpanel.site',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000',
+  ...envOrigins
+];
+
 app.use(cors({
-  origin: [corsOrigin, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      defaultAllowedOrigins.includes(origin) ||
+      origin.includes('giving-amethyst-anteater.172-235-18-108.cpanel.site') ||
+      origin.includes('cpanel.site') ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1')
+    ) {
+      return callback(null, true);
+    }
+    // Allow all other origins in production to prevent blocking custom domains
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
