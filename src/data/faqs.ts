@@ -42,7 +42,7 @@ export const faqs: FAQItem[] = [
   },
   {
     category: 'Booking & Registration',
-    question: 'Do you arrange free site visits for interested buyers and families?',
-    answer: 'Yes, we provide complimentary, door-step pickup and drop for site visits 7 days a week. You can click the "Book Free Site Visit" button or message us directly on WhatsApp to pick a convenient date and time.'
+    question: 'Do you arrange site visits for interested buyers and families?',
+    answer: 'Yes, we provide complimentary, door-step pickup and drop for site visits 7 days a week. You can click the "Book Site Visit" button or message us directly on WhatsApp to pick a convenient date and time.'
   }
 ];

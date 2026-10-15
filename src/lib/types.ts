@@ -55,20 +55,56 @@ export interface CrmLead {
   updated_at: string;
 }
 
+export interface LandmarkItem {
+  landmark: string;
+  category?: 'Worship' | 'Education' | 'Transit' | 'Healthcare' | 'Shopping' | 'Workplace' | string;
+  distance: string;
+  time: string;
+  map_url?: string;
+}
+
+export interface AmenityItem {
+  icon: string;
+  title: string;
+  desc: string;
+}
+
 export interface Project {
   id: string;
   slug: string;
   name: string;
   tagline: string;
-  status: 'Upcoming' | 'Ongoing' | 'Completed' | 'Sold Out' | 'Draft';
+  status: 'Upcoming' | 'Ongoing' | 'Completed' | 'Sold Out' | 'Draft' | string;
   location_city: string;
   location_area: string;
-  total_acres: number;
-  total_plots: number;
-  available_plots: number;
-  price_starting_lakhs: number;
-  hero_image: string;
-  created_at: string;
+  map_url?: string;
+  google_maps_embed_url?: string;
+  total_acres?: number;
+  total_extent_acres?: number;
+  total_plots?: number;
+  total_plots_count?: number;
+  available_plots?: number;
+  available_plots_count?: number;
+  price_starting_lakhs?: number;
+  plot_size_range?: string;
+  price_range?: string;
+  is_featured?: boolean;
+  hero_image?: string;
+  banner_image?: string;
+  video_url?: string;
+  brochure_url?: string;
+  dtcp_number?: string;
+  rera_number?: string;
+  description?: string;
+  highlights?: string[];
+  amenities?: AmenityItem[];
+  nearby_landmarks?: LandmarkItem[];
+  gallery_images?: string[];
+  latitude?: string;
+  longitude?: string;
+  plots?: Plot[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Plot {
@@ -86,6 +122,8 @@ export interface Plot {
   plot_number: string;
   length_ft?: number;
   width_ft?: number;
+  dimension?: string;
+  dimension_str?: string;
   area_sqft: number;
   facing: 'North' | 'East' | 'West' | 'South' | 'North-East' | 'North-West' | 'South-East' | 'South-West' | string;
   approval_status?: string;
@@ -99,11 +137,12 @@ export interface Plot {
   description?: string;
   meta_title?: string;
   meta_description?: string;
-  video_url?: string;
   latitude?: string;
   longitude?: string;
   primary_image_url?: string;
   gallery_images?: string[];
+  video_url?: string;
+  video_urls?: string[];
   created_at?: string;
 }
 
@@ -123,6 +162,9 @@ export interface Settings {
   email_primary: string;
   office_address: string;
   working_hours: string;
+  logo_url?: string;
+  primary_color?: string;
+  theme_mode?: 'light' | 'dark';
 }
 
 export interface BlogPost {

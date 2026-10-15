@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { blogPosts as fallbackPosts } from '@/data/blogs';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export default function BlogListClient() {
   const [blogPosts, setBlogPosts] = useState<any[]>(fallbackPosts);
@@ -12,10 +13,8 @@ export default function BlogListClient() {
   useEffect(() => {
     async function fetchBlogs() {
       try {
-        const res = await fetch('http://localhost:5000/api/public/blogs');
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+        const data = await api.getPublicBlogs();
+        if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
             const mapped = data.data.map((post: any) => ({
               slug: post.slug,
               title: post.title,
@@ -30,7 +29,6 @@ export default function BlogListClient() {
               content: post.content || ''
             }));
             setBlogPosts(mapped);
-          }
         }
       } catch (err) {
         // Fallback silently remains active
@@ -82,16 +80,19 @@ export default function BlogListClient() {
           {blogPosts.map((post: any) => (
             <article
               key={post.slug}
-              className="bg-white rounded-2xl overflow-hidden border border-gray-200/80 shadow-sm hover:shadow-lg transition flex flex-col h-full group"
+              className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl overflow-hidden border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out flex flex-col h-full group"
             >
               <div className="relative h-52 w-full overflow-hidden bg-gray-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={post.image}
                   alt={post.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
                 />
-                <div className="absolute top-3 left-3 bg-[#075E43] text-white px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                {/* Subtle Sheen Sweep */}
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform ease-in-out pointer-events-none z-10" />
+
+                <div className="absolute top-3 left-3 bg-[#006452] text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider z-10">
                   {post.category}
                 </div>
               </div>
@@ -100,17 +101,17 @@ export default function BlogListClient() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 text-[11px] text-gray-500">
                     <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
+                      <Calendar className="w-3.5 h-3.5 text-[#D61F69]" />
                       {post.date}
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
+                      <Clock className="w-3.5 h-3.5 text-[#006452]" />
                       {post.readTime}
                     </span>
                   </div>
 
-                  <h2 className="font-heading-sc text-lg font-bold text-gray-900 group-hover:text-[#075E43] transition-colors line-clamp-2">
+                  <h2 className="font-heading-sc text-lg font-bold text-[#006452] group-hover:text-[#D61F69] transition-colors line-clamp-2">
                     {post.title}
                   </h2>
 
@@ -119,13 +120,14 @@ export default function BlogListClient() {
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="pt-3 border-t border-amber-100/80 flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-gray-700">{post.author}</span>
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="text-xs font-bold text-[#075E43] group-hover:text-[#04432F] flex items-center gap-1"
+                    className="group/btn inline-flex items-center gap-1.5 text-xs font-extrabold text-[#006452] bg-[#f7db49] hover:bg-[#f6d73c] px-4 py-1.5 rounded-full shadow-xs hover:shadow-sm transition-all duration-300"
                   >
-                    Read Article <ArrowRight className="w-3.5 h-3.5 text-[#C5A869]" />
+                    <span>Read Article</span>
+                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
                   </Link>
                 </div>
               </div>

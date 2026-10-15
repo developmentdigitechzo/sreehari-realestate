@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
-import { Settings as SettingsIcon, Save, Upload, Trash2, Palette, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
-import { applyCrmTheme } from '@/lib/theme';
+import { Settings as SettingsIcon, Save, Upload, Trash2, Palette, Image as ImageIcon, CheckCircle2, Sun, Moon } from 'lucide-react';
+import { applyCrmTheme, applyCrmThemeMode, getCrmThemeMode, setCrmThemeMode, CrmThemeMode } from '@/lib/theme';
 
 const COLOR_PRESETS = [
   { name: 'Emerald Green', hex: '#10b981' },
@@ -38,9 +38,11 @@ export default function AdminSettingsPage() {
     office_address: 'No. 12, Main Road, Thiruverumbur, Trichy - 620013',
     working_hours: 'Mon - Sat: 9:00 AM - 7:00 PM',
     logo_url: '',
-    primary_color: '#10b981'
+    primary_color: '#10b981',
+    theme_mode: 'light' as CrmThemeMode
   });
 
+  const [themeMode, setThemeMode] = useState<CrmThemeMode>('light'); // Light Theme default!
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -49,7 +51,20 @@ export default function AdminSettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // 1. Initialize active CRM theme mode (Default: Light)
+    const activeMode = getCrmThemeMode();
+    setThemeMode(activeMode);
+    applyCrmThemeMode(activeMode);
+
     loadSettings();
+
+    const handleThemeChange = (e: any) => {
+      if (e.detail?.mode) {
+        setThemeMode(e.detail.mode);
+      }
+    };
+    window.addEventListener('crmThemeModeChanged', handleThemeChange);
+    return () => window.removeEventListener('crmThemeModeChanged', handleThemeChange);
   }, []);
 
   async function loadSettings() {
@@ -58,6 +73,10 @@ export default function AdminSettingsPage() {
       const res = await api.getSettings().catch(() => null);
       if (res?.data) {
         const loadedColor = res.data.primary_color || '#10b981';
+        const loadedThemeMode = (res.data.theme_mode === 'dark' || res.data.theme_mode === 'light')
+          ? res.data.theme_mode
+          : getCrmThemeMode();
+
         setSettings({
           company_name: res.data.company_name || 'Sree Hari Realty Promoters',
           phone_primary: res.data.phone_primary || '+91 98424 01991',
@@ -66,11 +85,14 @@ export default function AdminSettingsPage() {
           office_address: res.data.office_address || 'No. 12, Main Road, Thiruverumbur, Trichy - 620013',
           working_hours: res.data.working_hours || 'Mon - Sat: 9:00 AM - 7:00 PM',
           logo_url: res.data.logo_url || '',
-          primary_color: loadedColor
+          primary_color: loadedColor,
+          theme_mode: loadedThemeMode
         });
 
         // Sync with real-time preview
         handleColorChange(loadedColor);
+        setThemeMode(loadedThemeMode);
+        applyCrmThemeMode(loadedThemeMode);
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
@@ -78,6 +100,13 @@ export default function AdminSettingsPage() {
       setLoading(false);
     }
   }
+
+  const handleThemeModeChange = (newMode: CrmThemeMode) => {
+    setThemeMode(newMode);
+    setCrmThemeMode(newMode);
+    setSettings((prev) => ({ ...prev, theme_mode: newMode }));
+    setMessage(`Switched to ${newMode === 'light' ? 'Light Theme (Default)' : 'Dark Theme'} mode. Remember to save settings.`);
+  };
 
   const handleColorChange = (newColor: string) => {
     setSettings((prev) => ({ ...prev, primary_color: newColor }));
@@ -127,8 +156,13 @@ export default function AdminSettingsPage() {
     setSaving(true);
     setMessage('');
     try {
-      await api.updateSettings(settings);
-      setMessage('Settings updated successfully! Theme color applied across CRM.');
+      const payload = {
+        ...settings,
+        theme_mode: themeMode
+      };
+      await api.updateSettings(payload);
+      setCrmThemeMode(themeMode);
+      setMessage(`Settings and ${themeMode === 'light' ? 'Light Theme (Default)' : 'Dark Theme'} saved successfully across CRM.`);
 
       // Dispatch custom event to update sidebar logo & theme color in real-time
       if (typeof window !== 'undefined') {
@@ -244,7 +278,133 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        {/* SECOND SECTION: BRAND LOGO & THEME COLOR CUSTOMIZATION CARD */}
+        {/* SECTION 2: APPEARANCE & CRM THEME MODE CARD */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+          <div className="border-b border-slate-800 pb-4">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
+              <Sun className="w-5 h-5 text-amber-500" />
+              <span>Appearance & CRM Theme Mode</span>
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Choose your CRM workspace visual theme. Light Theme is the default for daylight productivity; Dark Theme provides high-contrast nighttime comfort.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Light Theme Card (Default) */}
+            <div
+              onClick={() => handleThemeModeChange('light')}
+              className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
+                themeMode === 'light'
+                  ? 'border-emerald-500 bg-emerald-500/10 shadow-lg ring-2 ring-emerald-500/20'
+                  : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+              }`}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500">
+                      <Sun className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                        <span>Light Theme</span>
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          Default
+                        </span>
+                      </h3>
+                      <p className="text-[11px] text-slate-400">High-clarity daylight theme</p>
+                    </div>
+                  </div>
+                  {themeMode === 'light' ? (
+                    <div className="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border border-slate-700" />
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Clean crisp light background, pure white cards, subtle gray dividers, and high-contrast text. Ideal for office work and daylight conditions.
+                </p>
+
+                {/* Mini Visual Preview Mockup */}
+                <div className="rounded-xl border border-slate-300 bg-white p-3 space-y-1.5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="h-2 w-16 bg-slate-800 rounded" />
+                    <div className="h-2 w-6 bg-emerald-500 rounded" />
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-200 rounded" />
+                  <div className="h-1.5 w-3/4 bg-slate-200 rounded" />
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">Default workspace theme</span>
+                <span className={`font-bold ${themeMode === 'light' ? 'text-emerald-400' : 'text-slate-500'}`}>
+                  {themeMode === 'light' ? '● Active Theme' : 'Click to activate'}
+                </span>
+              </div>
+            </div>
+
+            {/* Dark Theme Card */}
+            <div
+              onClick={() => handleThemeModeChange('dark')}
+              className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
+                themeMode === 'dark'
+                  ? 'border-emerald-500 bg-emerald-500/10 shadow-lg ring-2 ring-emerald-500/20'
+                  : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+              }`}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                      <Moon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                        <span>Dark Theme</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-400">Deep slate low-light theme</p>
+                    </div>
+                  </div>
+                  {themeMode === 'dark' ? (
+                    <div className="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border border-slate-700" />
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Deep dark slate background, glowing borders, and luminous metrics. Reduces eye strain during late-night or low-light work sessions.
+                </p>
+
+                {/* Mini Visual Preview Mockup */}
+                <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 space-y-1.5 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="h-2 w-16 bg-slate-200 rounded" />
+                    <div className="h-2 w-6 bg-emerald-500 rounded" />
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-800 rounded" />
+                  <div className="h-1.5 w-3/4 bg-slate-800 rounded" />
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">Dark aesthetic mode</span>
+                <span className={`font-bold ${themeMode === 'dark' ? 'text-emerald-400' : 'text-slate-500'}`}>
+                  {themeMode === 'dark' ? '● Active Theme' : 'Click to activate'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* THIRD SECTION: BRAND LOGO & THEME COLOR CUSTOMIZATION CARD */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
           <div className="border-b border-slate-800 pb-4">
             <h2 className="text-lg font-bold text-white flex items-center gap-2.5">

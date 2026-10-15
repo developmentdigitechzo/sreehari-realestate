@@ -169,7 +169,21 @@ export async function initDatabase() {
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50) DEFAULT '+91 98424 01991';`,
         `UPDATE users SET password_plain = 'AdminPassword@2026' WHERE password_plain IS NULL;`,
         `UPDATE users SET phone = '+91 98424 01991' WHERE phone IS NULL;`,
-        `UPDATE users SET permissions = '["ALL"]'::jsonb, role = 'super_admin', password_plain = 'AdminPassword@2026', phone = '+91 98424 01991' WHERE email = 'admin@sreeharirealty.com';`
+        `UPDATE users SET permissions = '["ALL"]'::jsonb, role = 'super_admin', password_plain = 'AdminPassword@2026', phone = '+91 98424 01991' WHERE email = 'admin@sreeharirealty.com';`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS video_url TEXT;`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS gallery_images JSONB DEFAULT '[]'::jsonb;`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS highlights JSONB DEFAULT '[]'::jsonb;`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS amenities JSONB DEFAULT '[]'::jsonb;`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS dtcp_number VARCHAR(255);`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS rera_number VARCHAR(255);`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS available_plots_count INT DEFAULT 0;`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS latitude VARCHAR(50);`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS longitude VARCHAR(50);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS dimension VARCHAR(100);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS gallery_images JSONB DEFAULT '[]'::jsonb;`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS video_urls JSONB DEFAULT '[]'::jsonb;`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS latitude VARCHAR(50);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS longitude VARCHAR(50);`
       ];
 
       for (const q of alterQueries) {

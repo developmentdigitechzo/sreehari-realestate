@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, ShieldCheck, Send, Phone, User, Mail, Calendar, Clock, MapPin } from 'lucide-react';
+import { X, CheckCircle, ShieldCheck, Send, Phone, User, Mail, Calendar, Clock, MapPin, Building2, IndianRupee } from 'lucide-react';
 import { COMPANY_WHATSAPP } from '@/data/properties';
 
 import { api } from '@/lib/api';
@@ -10,6 +10,7 @@ interface EnquiryModalProps {
   isOpen: boolean;
   onClose: () => void;
   propertyName?: string;
+  plotName?: string;
   source?: string;
   title?: string;
   subtitle?: string;
@@ -19,44 +20,49 @@ export default function EnquiryModal({
   isOpen,
   onClose,
   propertyName,
+  plotName,
   source,
-  title = 'Enquire for Gated Community Plots',
-  subtitle = 'Get instant layout blueprints, plot pricing breakdown & free site visit pickup.'
+  title = 'Book a Site Visit & Plot Consultation',
+  subtitle = 'Get layout blueprints, DTCP approvals, pickup assistance & price details.'
 }: EnquiryModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     email: '',
+    location: '',
+    propertyName: propertyName || '',
+    budget: '',
     preferredDate: '',
     preferredTime: '',
-    budget: '',
-    message: '',
+    message: plotName ? `Enquiring specifically for: ${plotName}` : '',
   });
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Reset all fields to blank whenever modal is opened
+  // Reset all fields whenever modal is opened
   useEffect(() => {
     if (isOpen) {
       setFormData({
         name: '',
         phone: '',
         email: '',
+        location: '',
+        propertyName: propertyName || '',
+        budget: '',
         preferredDate: '',
         preferredTime: '',
-        budget: '',
-        message: '',
+        message: plotName ? `Enquiring specifically for: ${plotName}` : '',
       });
       setSubmitted(false);
       setErrorMessage('');
     }
-  }, [isOpen, propertyName]);
+  }, [isOpen, propertyName, plotName]);
 
   if (!isOpen) return null;
 
-  const resolvedSource = source || (propertyName ? 'Property Form' : 'Website Form');
+  const resolvedSource = source || (propertyName ? 'Property Form' : 'Site Visit Modal');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,16 +70,24 @@ export default function EnquiryModal({
     setErrorMessage('');
 
     try {
+      const resolvedProject = formData.propertyName || propertyName || 'General Enquiry';
+      const notesContent = [
+        formData.location ? `Location: ${formData.location}` : null,
+        formData.budget ? `Budget: ${formData.budget}` : null,
+        formData.message || null
+      ].filter(Boolean).join(' | ');
+
       if (formData.preferredDate) {
         await api.submitPublicSiteVisit({
           customer_name: formData.name,
           customer_phone: formData.phone,
           customer_email: formData.email,
-          project_name: propertyName || 'General Enquiry',
+          project_name: resolvedProject,
+          pickup_location: formData.location || undefined,
           visit_date: formData.preferredDate,
           visit_time: formData.preferredTime,
           preferred_plot_size: formData.budget,
-          notes: formData.message,
+          notes: notesContent,
           source: resolvedSource,
         });
       } else {
@@ -82,7 +96,7 @@ export default function EnquiryModal({
           phone: formData.phone,
           email: formData.email,
           preferred_plot_size: formData.budget,
-          message: `${propertyName ? `[${propertyName}] ` : ''}${formData.message}`.trim(),
+          message: `[${resolvedProject}] ${notesContent}`.trim(),
           source: resolvedSource,
           visit_date: formData.preferredDate,
           visit_time: formData.preferredTime,
@@ -94,7 +108,7 @@ export default function EnquiryModal({
         const existingLeads = JSON.parse(localStorage.getItem('sree_hari_leads') || '[]');
         existingLeads.unshift({
           ...formData,
-          propertyName: propertyName || 'General Enquiry',
+          propertyName: resolvedProject,
           source: resolvedSource,
           timestamp: new Date().toISOString(),
           id: 'LEAD-' + Date.now(),
@@ -115,7 +129,7 @@ export default function EnquiryModal({
 
   const handleWhatsAppRedirect = () => {
     const text = encodeURIComponent(
-      `Hello Sree Hari Realty,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nProject: ${propertyName || 'All Layouts'}\nBudget: ${formData.budget || 'Not specified'}\nPreferred Visit Date: ${formData.preferredDate || 'Flexible'}${formData.preferredTime ? ` at ${formData.preferredTime}` : ''}\nMessage: ${formData.message || 'General Enquiry'}`
+      `Hello Sree Hari Realty,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nLocation: ${formData.location || 'Any'}\nProject: ${formData.propertyName || propertyName || 'All Layouts'}\nPreferred Budget: ${formData.budget || 'Flexible'}\nPreferred Visit Date: ${formData.preferredDate || 'Flexible'}${formData.preferredTime ? ` at ${formData.preferredTime}` : ''}\nMessage: ${formData.message || 'Booking Site Visit'}`
     );
     window.open(`https://wa.me/${COMPANY_WHATSAPP}?text=${text}`, '_blank');
   };
@@ -229,21 +243,68 @@ export default function EnquiryModal({
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Preferred Location
+                  </label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                    <select
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      className="w-full pl-9 pr-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#075E43] focus:bg-white text-gray-800"
+                    >
+                      <option value="">Select Preferred Location</option>
+                      <option value="Trichy">Trichy</option>
+                      <option value="Pudukkottai">Pudukkottai</option>
+                      <option value="Thirumayam">Thirumayam</option>
+                      <option value="Thanjavur Highway">Thanjavur Highway</option>
+                      <option value="Flexible / Other">Flexible / Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Preferred Property
+                  </label>
+                  <div className="relative">
+                    <Building2 className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                    <select
+                      value={formData.propertyName}
+                      onChange={(e) => setFormData({ ...formData, propertyName: e.target.value })}
+                      className="w-full pl-9 pr-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#075E43] focus:bg-white text-gray-800"
+                    >
+                      <option value="">Select Preferred Property</option>
+                      <option value="Park Avenue">Park Avenue (Trichy-Pudukkottai Highway)</option>
+                      <option value="Sri Amman Nagar">Sri Amman Nagar (Trichy-Thanjavur Highway)</option>
+                      <option value="Aishwarya Nagar">Aishwarya Nagar (Thirumayam)</option>
+                      <option value="All Projects / Flexible">All Projects / Flexible</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Budget Range
+                  Preferred Budget
                 </label>
-                <select
-                  value={formData.budget}
-                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                  className="w-full px-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#075E43] focus:bg-white text-gray-800"
-                >
-                  <option value="">Select Budget Range</option>
-                  <option value="Under 15L">Under ₹15 Lakhs</option>
-                  <option value="15-25L">₹15 Lakhs - ₹25 Lakhs</option>
-                  <option value="25-40L">₹25 Lakhs - ₹40 Lakhs</option>
-                  <option value="Above 40L">₹40 Lakhs & Above</option>
-                </select>
+                <div className="relative">
+                  <IndianRupee className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                  <select
+                    value={formData.budget}
+                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#075E43] focus:bg-white text-gray-800"
+                  >
+                    <option value="">Select Preferred Budget</option>
+                    <option value="Under 15 Lakhs">Under ₹15 Lakhs</option>
+                    <option value="15 - 25 Lakhs">₹15 Lakhs - ₹25 Lakhs</option>
+                    <option value="25 - 40 Lakhs">₹25 Lakhs - ₹40 Lakhs</option>
+                    <option value="Above 40 Lakhs">₹40 Lakhs & Above</option>
+                    <option value="Flexible">Flexible / Open to Discussion</option>
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

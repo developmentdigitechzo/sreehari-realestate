@@ -67,7 +67,7 @@ export const api = {
   // Public APIs for website
   async getPublicProjects() {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/projects`);
+      const res = await fetch(`${API_BASE_URL}/public/projects`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -76,16 +76,34 @@ export const api = {
 
   async getPublicProjectBySlug(slug: string) {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/projects/${slug}`);
+      const res = await fetch(`${API_BASE_URL}/public/projects/${slug}`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: null };
     }
   },
 
+  async getPublicPlotsByProjectSlug(slug: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/public/projects/${slug}/plots`, { cache: 'no-store' });
+      return res.json();
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Network error', data: [] };
+    }
+  },
+
+  async getPublicPlotsByProjectId(projectId: string) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/public/plots/by-project/${projectId}`, { cache: 'no-store' });
+      return res.json();
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Network error', data: [] };
+    }
+  },
+
   async getPublicBlogs() {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/blogs`);
+      const res = await fetch(`${API_BASE_URL}/public/blogs`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -94,7 +112,7 @@ export const api = {
 
   async getPublicBlogBySlug(slug: string) {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/blogs/${slug}`);
+      const res = await fetch(`${API_BASE_URL}/public/blogs/${slug}`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: null };
@@ -103,7 +121,7 @@ export const api = {
 
   async getPublicGallery() {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/gallery`);
+      const res = await fetch(`${API_BASE_URL}/public/gallery`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -112,7 +130,7 @@ export const api = {
 
   async getPublicSettings() {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/settings`);
+      const res = await fetch(`${API_BASE_URL}/public/settings`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: null };
@@ -246,6 +264,10 @@ export const api = {
     return fetchWithAuth('/admin/projects');
   },
 
+  async getProjectById(id: string) {
+    return fetchWithAuth(`/admin/projects/${id}`);
+  },
+
   async createProject(projectData: any) {
     return fetchWithAuth('/admin/projects', {
       method: 'POST',
@@ -351,6 +373,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(uploadData),
     });
+  },
+
+  async getUploadedMedia() {
+    return fetchWithAuth('/admin/upload/list');
   },
 
   // Site Visits

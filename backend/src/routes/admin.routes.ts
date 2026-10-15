@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { login, getMe } from '../controllers/auth.controller';
-import { getAllProjectsAdmin, createProject, updateProject, deleteProject } from '../controllers/project.controller';
+import { getAllProjectsAdmin, getProjectByIdAdmin, createProject, updateProject, deleteProject } from '../controllers/project.controller';
 import { getAllPlotsAdmin, createPlot, updatePlot, deletePlot } from '../controllers/plot.controller';
 import { getAllLeadsAdmin, updateLeadStatus, deleteLead } from '../controllers/lead.controller';
 import {
@@ -17,7 +17,7 @@ import { addGalleryItem, deleteGalleryItem } from '../controllers/gallery.contro
 import { getSettings, updateSettings } from '../controllers/settings.controller';
 import { getDashboardStats } from '../controllers/stats.controller';
 import { getAllBlogs, getBlogById, createBlog, updateBlog, deleteBlog } from '../controllers/blog.controller';
-import { uploadMedia } from '../controllers/upload.controller';
+import { uploadMedia, listUploadedMedia } from '../controllers/upload.controller';
 import {
   getAllSiteVisits,
   createSiteVisit,
@@ -77,6 +77,7 @@ router.delete('/leads/:id', deleteLead);
 
 // Projects Management
 router.get('/projects', getAllProjectsAdmin);
+router.get('/projects/:id', getProjectByIdAdmin);
 router.post('/projects', createProject);
 router.put('/projects/:id', updateProject);
 router.delete('/projects/:id', deleteProject);
@@ -104,6 +105,7 @@ router.delete('/popups/:id', deletePopup);
 router.post('/gallery', addGalleryItem);
 router.delete('/gallery/:id', deleteGalleryItem);
 router.post('/upload', uploadMedia);
+router.get('/upload/list', listUploadedMedia);
 
 // Settings & SEO
 router.get('/settings', getSettings);

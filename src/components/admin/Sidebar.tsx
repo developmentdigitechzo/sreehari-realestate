@@ -15,25 +15,60 @@ import {
   LogOut,
   Newspaper,
   Megaphone,
-  ShieldCheck
+  ShieldCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
 
-import { applyCrmTheme, getContrastTextColor } from '@/lib/theme';
+import { applyCrmTheme, getContrastTextColor, CrmThemeMode, getCrmThemeMode, setCrmThemeMode } from '@/lib/theme';
 
 interface SidebarProps {
   userEmail?: string;
   username?: string;
   role?: string;
   permissions?: string[];
+  currentThemeMode?: CrmThemeMode;
+  onToggleThemeMode?: (mode: CrmThemeMode) => void;
 }
 
-export default function Sidebar({ userEmail, username, role, permissions = ['ALL'] }: SidebarProps) {
+export default function Sidebar({
+  userEmail,
+  username,
+  role,
+  permissions = ['ALL'],
+  currentThemeMode,
+  onToggleThemeMode
+}: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
   const [brandLogo, setBrandLogo] = useState<string | null>(null);
   const [brandName, setBrandName] = useState<string>('Sree Hari Realty');
   const [primaryColor, setPrimaryColor] = useState<string>('#10b981');
+  const [themeMode, setThemeMode] = useState<CrmThemeMode>(currentThemeMode || getCrmThemeMode());
+
+  useEffect(() => {
+    if (currentThemeMode) setThemeMode(currentThemeMode);
+  }, [currentThemeMode]);
+
+  useEffect(() => {
+    const handleThemeChange = (e: any) => {
+      if (e.detail?.mode) setThemeMode(e.detail.mode);
+    };
+    window.addEventListener('crmThemeModeChanged', handleThemeChange);
+    return () => window.removeEventListener('crmThemeModeChanged', handleThemeChange);
+  }, []);
+
+  const handleToggleTheme = () => {
+    const nextMode: CrmThemeMode = themeMode === 'light' ? 'dark' : 'light';
+    setThemeMode(nextMode);
+    if (onToggleThemeMode) {
+      onToggleThemeMode(nextMode);
+    } else {
+      setCrmThemeMode(nextMode);
+      api.updateSettings({ theme_mode: nextMode }).catch(() => null);
+    }
+  };
 
   useEffect(() => {
     loadBrandSettings();
@@ -98,6 +133,7 @@ export default function Sidebar({ userEmail, username, role, permissions = ['ALL
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'CRM Leads & Pipeline', href: '/admin/leads', icon: Users },
     { name: 'Site Visit Manager', href: '/admin/site-visits', icon: CalendarCheck },
+    { name: 'Projects', href: '/admin/projects', icon: FolderKanban },
     { name: 'Plots Inventory', href: '/admin/plots', icon: Grid },
     { name: 'Blog Manager', href: '/admin/blogs', icon: Newspaper },
     { name: 'Ad & Seasonal Popups', href: '/admin/popups', icon: Megaphone },
@@ -174,9 +210,31 @@ export default function Sidebar({ userEmail, username, role, permissions = ['ALL
         </nav>
       </div>
 
-      {/* Footer Profile & Logout */}
-      <div className="p-4 border-t border-slate-800/80 bg-slate-950/40">
-        <div className="flex items-center justify-between gap-2 px-2 py-1 mb-2">
+      {/* Footer Theme Toggle, Profile & Logout */}
+      <div className="p-4 border-t border-slate-800/80 bg-slate-950/40 space-y-2.5">
+        {/* Quick Theme Mode Toggle Button */}
+        <button
+          type="button"
+          onClick={handleToggleTheme}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 hover:bg-slate-800/80 transition-all text-slate-300 group cursor-pointer"
+          title={`Currently ${themeMode === 'light' ? 'Light Theme (Default)' : 'Dark Theme'}. Click to toggle.`}
+        >
+          <div className="flex items-center gap-2">
+            {themeMode === 'light' ? (
+              <Sun className="w-4 h-4 text-amber-500 shrink-0" />
+            ) : (
+              <Moon className="w-4 h-4 text-indigo-400 shrink-0" />
+            )}
+            <span className="font-semibold text-xs">
+              {themeMode === 'light' ? 'Light Theme' : 'Dark Theme'}
+            </span>
+          </div>
+          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 group-hover:text-slate-200 transition-colors">
+            {themeMode === 'light' ? 'Dark' : 'Light'}
+          </span>
+        </button>
+
+        <div className="flex items-center justify-between gap-2 px-1">
           <div className="truncate">
             <p className="text-xs font-semibold text-slate-200 truncate">
               {username || userEmail || 'Staff Member'}

@@ -5,6 +5,7 @@ export interface Property {
   tagline: string;
   location: string;
   city: string;
+  mapUrl?: string;
   pricePerSqFt: number;
   totalPriceRange: string;
   plotSizes: string;
@@ -47,6 +48,7 @@ export const properties: Property[] = [
     tagline: 'Premier Gated Plotted Community with Grand Entrance on Trichy-Pudukkottai Highway Corridor.',
     location: 'Trichy-Pudukkottai Highway Corridor (Near Airport & Universities)',
     city: 'Trichy',
+    mapUrl: 'https://maps.google.com/?q=Park+Avenue+Trichy+Pudukkottai+Highway+Corridor',
     pricePerSqFt: 2930,
     totalPriceRange: 'Plots from ₹22.65 Lakhs to ₹81 Lakhs',
     plotSizes: '750 - 2,687 Sq.Ft',
@@ -65,8 +67,8 @@ export const properties: Property[] = [
     highlights: [
       '5.37 Acres Gated Community with 101 DTCP & TNRERA Approved Plots',
       'Plot Sizes Ranging from 750 Sq.Ft up to 2,687 Sq.Ft',
-      'Attractive Pricing: ₹2,930, ₹3,020 & ₹3,120 / Sq.Ft (From ₹22.65 Lakhs)',
-      'Booking Advance Only ₹1,00,000/- with Flexible 1-Month Payment Schedule',
+      'Transparent Payment Milestones & 100% Clear Title Guarantee',
+      'Booking Advance with Flexible Payment Schedule',
       'Pre-Approved Bank Loans from HDFC, PNB, SIB, SBI & All Leading Banks',
       'Grand Monumental Entrance Arch & Secured Boundary Fencing',
       'Strategic Location just 5.5 km from Trichy International Airport',
@@ -135,6 +137,7 @@ export const properties: Property[] = [
     tagline: 'High-Growth Landmark Township in Thiruverumbur — 100% Sold Out in 60 Days.',
     location: 'Trichy - Thanjavur National Highway, Thiruverumbur, Trichy',
     city: 'Trichy',
+    mapUrl: 'https://maps.google.com/?q=Sri+Amman+Nagar+Thiruverumbur+Trichy',
     pricePerSqFt: 2400,
     totalPriceRange: 'Plots from ₹24 Lakhs to ₹48 Lakhs (Sold Out)',
     plotSizes: '1000 - 2400 Sq.Ft',
@@ -207,7 +210,7 @@ export const properties: Property[] = [
     ],
     locationAdvantages: [
       { landmark: 'Thiruverumbur Bus Stand', distance: '0.5 km', time: '2 mins' },
-      { landmark: 'Vegetable Market & Sri Sweets', distance: '0.5 km', time: '2 mins' },
+      { landmark: 'Vegetable Market & Sree Hari Sweets', distance: '0.5 km', time: '2 mins' },
       { landmark: 'Thiruverumbur Railway Station', distance: '1.0 km', time: '3 mins' },
       { landmark: 'Montfort School', distance: '2.0 km', time: '5 mins' },
       { landmark: 'Arulmigu Erumbeeswarar Temple', distance: '2.0 km', time: '5 mins' },
@@ -224,6 +227,7 @@ export const properties: Property[] = [
     tagline: 'Maiden Township near BHEL Thirumayam — 100% Completed & Delivered.',
     location: 'Near BHEL Thirumayam (Behind Ilanjavur 1.5 km), Kadiyapatti, Thirumayam',
     city: 'Thirumayam',
+    mapUrl: 'https://maps.google.com/?q=BHEL+Thirumayam+Kadiyapatti+Thirumayam',
     pricePerSqFt: 950,
     totalPriceRange: 'Plots from ₹9.5 Lakhs to ₹22.8 Lakhs (Completed)',
     plotSizes: '1000 - 2400 Sq.Ft',
