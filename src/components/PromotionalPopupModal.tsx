@@ -436,7 +436,7 @@ export default function PromotionalPopupModal() {
         isOpen={isLeadFormOpen}
         onClose={() => setIsLeadFormOpen(false)}
         title={leadFormTitle || 'Special Offer Site Visit Booking'}
-        subtitle="Fill in your details below to lock in the special promotional offer and book a free guided plot tour."
+        subtitle="Fill in your details below to lock in the special promotional offer and book a guided plot tour."
       />
     </>
   );

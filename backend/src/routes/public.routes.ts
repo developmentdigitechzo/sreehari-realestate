@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getPublicProjects, getPublicProjectBySlug } from '../controllers/project.controller';
+import { getPublicPlotsByProjectSlug, getPublicPlotsByProjectId } from '../controllers/plot.controller';
 import { submitPublicLead } from '../controllers/lead.controller';
 import { getPublicGallery } from '../controllers/gallery.controller';
 import { getSettings } from '../controllers/settings.controller';
@@ -10,9 +11,11 @@ import { db } from '../config/db';
 
 const router = Router();
 
-// Projects
+// Projects & Plots
 router.get('/projects', getPublicProjects);
 router.get('/projects/:slug', getPublicProjectBySlug);
+router.get('/projects/:slug/plots', getPublicPlotsByProjectSlug);
+router.get('/plots/by-project/:projectId', getPublicPlotsByProjectId);
 
 // Blogs
 router.get('/blogs', getAllBlogs);

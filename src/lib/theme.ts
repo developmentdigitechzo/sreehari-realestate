@@ -55,3 +55,43 @@ export function applyCrmTheme(colorHex?: string): void {
   root.style.setProperty('--color-emerald-600', dark);
   root.style.setProperty('--color-emerald-700', darker);
 }
+
+export type CrmThemeMode = 'light' | 'dark';
+
+export const CRM_THEME_STORAGE_KEY = 'crm_theme_mode';
+
+/**
+ * Returns active CRM theme mode. Defaults to 'light' per requirement.
+ */
+export function getCrmThemeMode(): CrmThemeMode {
+  if (typeof window === 'undefined') return 'light';
+  const saved = localStorage.getItem(CRM_THEME_STORAGE_KEY);
+  if (saved === 'dark' || saved === 'light') return saved;
+  return 'light'; // Default Light Theme
+}
+
+/**
+ * Persists theme mode to localStorage, applies DOM attributes, and notifies listeners.
+ */
+export function setCrmThemeMode(mode: CrmThemeMode): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(CRM_THEME_STORAGE_KEY, mode);
+  applyCrmThemeMode(mode);
+  window.dispatchEvent(new CustomEvent('crmThemeModeChanged', { detail: { mode } }));
+}
+
+/**
+ * Applies data-admin-theme attribute to DOM elements without altering public website styles.
+ */
+export function applyCrmThemeMode(mode?: CrmThemeMode): void {
+  if (typeof document === 'undefined') return;
+  const currentMode = mode || getCrmThemeMode();
+  const root = document.documentElement;
+  
+  root.setAttribute('data-admin-theme-mode', currentMode);
+
+  const adminElements = document.querySelectorAll('[data-admin-theme]');
+  adminElements.forEach((el) => {
+    el.setAttribute('data-admin-theme', currentMode);
+  });
+}

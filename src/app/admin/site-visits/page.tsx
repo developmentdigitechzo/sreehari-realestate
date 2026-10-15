@@ -411,7 +411,7 @@ export default function AdminSiteVisitsPage() {
           </div>
           <h3 className="text-base font-semibold text-slate-200">No site visits found</h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            When customers book a free site visit on your website, their booking request will appear here automatically.
+            When customers book a site visit on your website, their booking request will appear here automatically.
           </p>
           <button
             onClick={handleOpenCreate}
@@ -820,7 +820,7 @@ export default function AdminSiteVisitsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <label className="text-xs font-semibold text-white flex items-center gap-1.5">
-                      <Car className="w-4 h-4 text-purple-400" /> Free Cab Pickup Service
+                      <Car className="w-4 h-4 text-purple-400" /> Cab Pickup Service
                     </label>
                     <p className="text-[11px] text-slate-400">Provide complimentary pickup & drop for customer</p>
                   </div>

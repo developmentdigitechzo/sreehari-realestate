@@ -23,6 +23,7 @@ export default function BlogDetailClient({
     name: '',
     phone: '',
     email: '',
+    budget: '',
     preferredProject: '',
     visitDate: '',
     visitTime: '',
@@ -34,11 +35,9 @@ export default function BlogDetailClient({
   useEffect(() => {
     async function loadPost() {
       try {
-        const res = await fetch(`http://localhost:5000/api/public/blogs/${slug}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.success && data.data) {
-            const b = data.data;
+        const data = await api.getPublicBlogBySlug(slug);
+        if (data && data.success && data.data) {
+          const b = data.data;
             if ((b.status || 'Published').toLowerCase() === 'published') {
               setPost({
                 slug: b.slug,
@@ -55,7 +54,6 @@ export default function BlogDetailClient({
               });
             }
           }
-        }
       } catch (err) {
         // Fallback to initialPost
       } finally {
@@ -91,6 +89,11 @@ export default function BlogDetailClient({
     setInlineLoading(true);
 
     try {
+      const notesContent = [
+        inlineForm.budget ? `Budget: ${inlineForm.budget}` : null,
+        inlineForm.message ? `[Blog: ${post.title}] ${inlineForm.message}` : `Enquiry from Blog: ${post.title}`
+      ].filter(Boolean).join(' | ');
+
       if (inlineForm.visitDate) {
         await api.submitPublicSiteVisit({
           customer_name: inlineForm.name,
@@ -99,7 +102,8 @@ export default function BlogDetailClient({
           project_name: inlineForm.preferredProject || 'General Enquiry',
           visit_date: inlineForm.visitDate,
           visit_time: inlineForm.visitTime,
-          notes: inlineForm.message ? `[Blog: ${post.title}] ${inlineForm.message}` : `Enquiry from Blog: ${post.title}`,
+          preferred_plot_size: inlineForm.budget,
+          notes: notesContent,
           source: 'Blog Form',
         });
       } else {
@@ -107,7 +111,8 @@ export default function BlogDetailClient({
           name: inlineForm.name,
           phone: inlineForm.phone,
           email: inlineForm.email,
-          message: `[Blog: ${post.title}] Project: ${inlineForm.preferredProject || 'General Enquiry'}. ${inlineForm.message || ''}`.trim(),
+          preferred_plot_size: inlineForm.budget,
+          message: `[Blog: ${post.title}] Project: ${inlineForm.preferredProject || 'General Enquiry'}. ${inlineForm.budget ? `[Budget: ${inlineForm.budget}] ` : ''}${inlineForm.message || ''}`.trim(),
           source: 'Blog Form',
           visit_date: inlineForm.visitDate,
           visit_time: inlineForm.visitTime,
@@ -138,39 +143,39 @@ export default function BlogDetailClient({
   };
 
   return (
-    <div className="space-y-12 pb-16">
+    <div className="min-h-screen bg-[#fef9e6] font-sans space-y-12 pb-16">
       {/* 1. Header & Article Title */}
-      <section className="bg-[#fef9e6] border-b border-gray-200/70 py-10 lg:py-14">
+      <section className="bg-[#fef9e6] border-b border-amber-200/70 py-10 lg:py-14">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
           <Link
             href="/blog"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#075E43] hover:underline uppercase tracking-wider"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#006452] hover:text-[#D61F69] hover:underline uppercase tracking-wider transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to All Articles
           </Link>
 
           <div className="space-y-3">
-            <span className="bg-[#075E43] text-white px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+            <span className="bg-[#006452] text-white px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
               {post.category}
             </span>
 
-            <h1 className="bold-text text-2xl sm:text-4xl lg:text-5xl text-[#04432F] leading-tight">
+            <h1 className="bold-text text-2xl sm:text-4xl lg:text-5xl text-[#006452] leading-tight font-black tracking-tight">
               {post.title}
             </h1>
 
             <div className="flex items-center gap-4 text-xs text-gray-500 pt-1">
               <span className="flex items-center gap-1">
-                <User className="w-3.5 h-3.5 text-[#075E43]" />
+                <User className="w-3.5 h-3.5 text-[#006452]" />
                 {post.author}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-[#075E43]" />
+                <Calendar className="w-3.5 h-3.5 text-[#006452]" />
                 {post.date}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-[#075E43]" />
+                <Clock className="w-3.5 h-3.5 text-[#006452]" />
                 {post.readTime}
               </span>
             </div>
@@ -183,22 +188,22 @@ export default function BlogDetailClient({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Main Article Body */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="relative h-[320px] sm:h-[400px] rounded-2xl overflow-hidden shadow-md">
+            <div className="relative h-[320px] sm:h-[400px] rounded-3xl overflow-hidden shadow-md">
               <Image src={post.image} alt={post.title} fill priority className="object-cover" />
             </div>
 
             <div
-              className="prose max-w-none text-gray-700 text-xs sm:text-sm leading-relaxed space-y-4 [&>h2]:font-heading-sc [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-[#04432F] [&>h3]:font-heading-sc [&>h3]:text-base [&>h3]:font-bold [&>h3]:text-gray-900 [&>p]:leading-relaxed"
+              className="prose max-w-none text-gray-700 text-xs sm:text-sm leading-relaxed space-y-4 [&>h2]:font-heading-sc [&>h2]:text-2xl [&>h2]:font-extrabold [&>h2]:text-[#006452] [&>h3]:font-heading-sc [&>h3]:text-lg [&>h3]:font-bold [&>h3]:text-[#006452] [&>p]:leading-relaxed"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
             {/* Author Box */}
-            <div className="p-6 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-[#075E43] text-[#C5A869] flex items-center justify-center font-bold text-base flex-shrink-0">
+            <div className="p-6 rounded-3xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 shadow-xs flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-[#006452] text-[#f7db49] flex items-center justify-center font-bold text-base flex-shrink-0">
                 SH
               </div>
               <div>
-                <h4 className="font-heading-sc text-sm font-bold text-gray-900">
+                <h4 className="font-heading-sc text-sm font-extrabold text-[#006452]">
                   {post.author}
                 </h4>
                 <p className="text-[11px] text-gray-600 mt-0.5">
@@ -211,14 +216,14 @@ export default function BlogDetailClient({
           {/* Right Sidebar */}
           <div className="lg:col-span-4 space-y-6">
             {/* Direct Property Enquiry Form Card (Matching Projects Detail Form) */}
-            <div className="bg-white p-6 rounded-2xl shadow-xl border border-pink-100 space-y-5">
-              <div className="space-y-1 pb-3 border-b border-gray-100 text-center">
+            <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] p-6 rounded-3xl shadow-xs border border-pink-200/80 space-y-5">
+              <div className="space-y-1 pb-3 border-b border-pink-100 text-center">
                 <span className="accent-text text-lg text-[#D61F69]">Quick Property Enquiry</span>
-                <h3 className="font-heading-sc text-xl font-bold text-gray-900">
+                <h3 className="font-heading-sc text-xl font-extrabold text-[#006452]">
                   Enquire for Plots
                 </h3>
                 <p className="text-[11px] text-gray-500">
-                  Fill in your details below to receive layout map, price break-up & direct assistance.
+                  Fill in your details below to receive layout map, plot dimensions & direct assistance.
                 </p>
               </div>
 
@@ -239,6 +244,7 @@ export default function BlogDetailClient({
                         name: '',
                         phone: '',
                         email: '',
+                        budget: '',
                         preferredProject: '',
                         visitDate: '',
                         visitTime: '',
@@ -280,22 +286,42 @@ export default function BlogDetailClient({
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
-                      Preferred Project
-                    </label>
-                    <select
-                      value={inlineForm.preferredProject}
-                      onChange={(e) => setInlineForm({ ...inlineForm, preferredProject: e.target.value })}
-                      className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
-                    >
-                      <option value="">Select Project</option>
-                      {properties.map((p) => (
-                        <option key={p.id} value={p.title}>
-                          {p.title}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Preferred Budget
+                      </label>
+                      <select
+                        value={inlineForm.budget}
+                        onChange={(e) => setInlineForm({ ...inlineForm, budget: e.target.value })}
+                        className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
+                      >
+                        <option value="">Select Budget</option>
+                        <option value="Under 15 Lakhs">Under ₹15 Lakhs</option>
+                        <option value="15 - 25 Lakhs">₹15L - ₹25 Lakhs</option>
+                        <option value="25 - 40 Lakhs">₹25L - ₹40 Lakhs</option>
+                        <option value="Above 40 Lakhs">₹40 Lakhs & Above</option>
+                        <option value="Flexible">Flexible</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Preferred Project
+                      </label>
+                      <select
+                        value={inlineForm.preferredProject}
+                        onChange={(e) => setInlineForm({ ...inlineForm, preferredProject: e.target.value })}
+                        className="w-full px-2.5 py-2.5 text-xs rounded-xl border border-gray-200 focus:border-[#D61F69] focus:ring-1 focus:ring-[#D61F69] outline-none transition bg-gray-50 focus:bg-white text-gray-700"
+                      >
+                        <option value="">Select Project</option>
+                        {properties.map((p) => (
+                          <option key={p.id} value={p.title}>
+                            {p.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -360,8 +386,8 @@ export default function BlogDetailClient({
             </div>
 
             {/* Top Projects List */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-200/80 space-y-4">
-              <h4 className="font-heading-sc text-xs font-bold uppercase tracking-wider text-gray-800">
+            <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] p-6 rounded-3xl border border-amber-100/90 shadow-xs space-y-4">
+              <h4 className="font-heading-sc text-xs font-black uppercase tracking-wider text-[#006452]">
                 Featured Plotted Projects
               </h4>
               <div className="space-y-3">
@@ -369,18 +395,18 @@ export default function BlogDetailClient({
                   <Link
                     key={p.id}
                     href={`/properties/${p.slug}`}
-                    className="flex items-center gap-3 group p-1.5 rounded-lg hover:bg-gray-50 transition"
+                    className="flex items-center gap-3 group p-2 rounded-2xl hover:bg-amber-50/50 border border-transparent hover:border-amber-100 transition duration-200"
                   >
-                    <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                    <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 border border-amber-100">
                       <Image src={p.heroImage} alt="" fill className="object-cover" />
                     </div>
                     <div className="space-y-0.5">
-                      <h5 className="font-bold text-xs text-gray-900 group-hover:text-[#075E43] line-clamp-1">
+                      <h5 className="font-bold text-xs text-[#006452] group-hover:text-[#D61F69] line-clamp-1 transition-colors">
                         {p.title}
                       </h5>
                       <span className="text-[10px] text-gray-500 block">{p.location}</span>
-                      <span className="text-[11px] font-bold text-[#075E43] block">
-                        ₹{p.pricePerSqFt} / sq.ft
+                      <span className="text-[11px] font-bold text-[#006452] block">
+                        Price on Request
                       </span>
                     </div>
                   </Link>

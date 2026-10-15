@@ -75,7 +75,7 @@ export default function AboutPage() {
             </h1>
 
             <p className="text-white/90 text-sm sm:text-base font-medium leading-relaxed max-w-xl drop-shadow-sm">
-              From our humble beginnings with <strong className="text-amber-300 font-bold">Sri Sweets in 1991</strong> to developing over <strong className="text-amber-300 font-bold">300+ acres</strong> of living gated communities, our journey has always been about people, trust, and lasting value.
+              From our humble beginnings with <strong className="text-amber-300 font-bold">Sree Hari Sweets in 1991</strong> to developing over <strong className="text-amber-300 font-bold">300+ acres</strong> of living gated communities, our journey has always been about people, trust, and lasting value.
             </p>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default function AboutPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-12">
         <div className="relative">
           {/* Main Card Container with Signature Warm Light Yellow / Cream Background matching Project Cards */}
-          <div className="bg-[#fffdf5] rounded-[2.5rem] sm:rounded-[3rem] border-2 border-amber-200/90 shadow-xl overflow-visible grid grid-cols-1 lg:grid-cols-12 items-center relative">
+          <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-[2.5rem] sm:rounded-[3rem] border-2 border-amber-200/90 shadow-xl overflow-visible grid grid-cols-1 lg:grid-cols-12 items-center relative">
             
             {/* Left Column: Leadership Narrative & Philosophy */}
             <div className="lg:col-span-7 p-6 sm:p-10 md:p-14 space-y-6 z-10 relative order-2 lg:order-1">
@@ -93,7 +93,7 @@ export default function AboutPage() {
                 <span className="text-xs font-black uppercase tracking-widest text-[#006452] bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 inline-block shadow-2xs">
                   ABOUT SREE HARI REALTY PROMOTERS
                 </span>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-950 tracking-tight leading-tight font-serif-title">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#006452] tracking-tight leading-tight font-serif-title">
                   Creating Spaces. Building Communities. <br />
                   <span className="text-[#D61F69]">Earning Trust Since 1991.</span>
                 </h2>
@@ -101,7 +101,7 @@ export default function AboutPage() {
 
               <div className="space-y-4 text-[15px] text-gray-700 leading-relaxed font-normal">
                 <p>
-                  At <strong>Sri Hari Realty Promoters</strong>, our philosophy is anchored in an unshakeable commitment to people and community. What began with <strong>Sri Sweets in 1991</strong> has flourished across three decades into a cherished household name in Trichy and Tamil Nadu, built on authentic quality, transparency, and personal relationships.
+                  At <strong>Sree Hari Realty Promoters</strong>, our philosophy is anchored in an unshakeable commitment to people and community. What began with <strong>Sree Hari Sweets in 1991</strong> has flourished across three decades into a cherished household name in Trichy and Tamil Nadu, built on authentic quality, transparency, and personal relationships.
                 </p>
 
                 <p>
@@ -112,25 +112,25 @@ export default function AboutPage() {
               {/* Founder / Leadership Sign-Off Block */}
               <div className="pt-6 border-t border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
                 <div className="min-w-0">
-                  <h4 className="text-lg sm:text-xl font-black text-gray-950 tracking-tight">
+                  <h4 className="text-lg sm:text-xl font-black text-[#006452] tracking-tight">
                     Promoters & Executive Leadership
                   </h4>
                   <p className="text-xs text-gray-500 font-semibold tracking-wide">
-                    Sri Hari Realty Promoters • Tiruchirappalli, Tamil Nadu
+                    Sree Hari Realty Promoters • Tiruchirappalli, Tamil Nadu
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
                   <button
                     onClick={() => handleOpenEnquiry('Leadership Spotlight')}
-                    className="inline-flex items-center justify-center gap-2 bg-[#D61F69] hover:bg-[#BE185D] text-white px-5 py-3 rounded-full text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer hover:-translate-y-0.5 whitespace-nowrap flex-shrink-0"
+                    className="group inline-flex items-center justify-center gap-2 bg-[#f7db49] hover:bg-[#f6d73c] text-[#006452] px-6 py-3 rounded-full text-xs font-extrabold transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer hover:-translate-y-0.5 whitespace-nowrap flex-shrink-0"
                   >
                     <span className="whitespace-nowrap">Connect With Us</span>
-                    <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" />
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1 flex-shrink-0" />
                   </button>
                   <a
                     href={`tel:${COMPANY_PHONE_RAW}`}
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-pink-50 border border-pink-200 text-[#D61F69] hover:bg-[#D61F69] hover:text-white transition flex items-center justify-center shadow-xs flex-shrink-0"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-amber-100/70 border border-amber-200 text-[#006452] hover:bg-[#f7db49] transition-all flex items-center justify-center shadow-xs flex-shrink-0"
                     title="Call Leadership Team"
                   >
                     <Phone className="w-4 h-4 flex-shrink-0" />
@@ -164,7 +164,7 @@ export default function AboutPage() {
               <div className="relative z-20 w-80 sm:w-96 lg:w-[440px] h-[400px] sm:h-[480px] lg:h-[550px] -mt-12 sm:-mt-18 lg:-mt-22 pointer-events-none flex items-end justify-center">
                 <Image
                   src="/executive_founder_cutout.png"
-                  alt="Executive Promoter - Sri Hari Realty Promoters"
+                  alt="Executive Promoter - Sree Hari Realty Promoters"
                   fill
                   priority
                   sizes="(max-width: 1024px) 100vw, 45vw"
@@ -187,7 +187,7 @@ export default function AboutPage() {
           <span className="text-xs font-bold text-[#D61F69] uppercase tracking-widest bg-pink-50 px-3.5 py-1.5 rounded-full border border-pink-200 inline-block">
             OUR GUIDING PURPOSE
           </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-950 tracking-tight font-serif-title">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#006452] tracking-tight font-serif-title">
             Our Vision & Mission
           </h2>
           <p className="text-[15px] text-gray-600">
@@ -287,7 +287,7 @@ export default function AboutPage() {
           <span className="text-xs font-bold text-[#D61F69] uppercase tracking-widest bg-pink-50 px-4 py-1.5 rounded-full border border-pink-200 inline-block shadow-2xs">
             THE SREE HARI JOURNEY STORY
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-950 tracking-tight font-serif-title">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#006452] tracking-tight font-serif-title">
             The Sree Hari Milestone Story
           </h2>
           <p className="text-[15px] sm:text-base text-gray-600 leading-relaxed">
@@ -326,16 +326,16 @@ export default function AboutPage() {
                   <span className="text-xs font-bold text-[#D61F69] uppercase tracking-widest block">
                     1991 • ESTABLISHED
                   </span>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-950 tracking-tight font-serif-title mt-1">
-                    From Humble Beginnings: Sri Sweets
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight font-serif-title mt-1">
+                    From Humble Beginnings: Sree Hari Sweets
                   </h3>
                 </div>
                 <p className="text-[15px] text-gray-700 leading-relaxed">
-                  Our story began in 1990–1991 with <strong>Sri Sweets</strong>, driven by a deep passion for uncompromised quality, authentic taste, and genuine customer care. What started as a modest local enterprise quickly blossomed into a beloved household institution in Trichy, earning generations of family faith.
+                  Our story began in 1990–1991 with <strong>Sree Hari Sweets</strong>, driven by a deep passion for uncompromised quality, authentic taste, and genuine customer care. What started as a modest local enterprise quickly blossomed into a beloved household institution in Trichy, earning generations of family faith.
                 </p>
                 <div className="pt-2 flex items-center gap-2 text-xs font-bold text-[#006452]">
                   <CheckCircle2 className="w-4 h-4 text-[#D61F69] flex-shrink-0" />
-                  <span>35+ Years of Community Goodwill & Trust</span>
+                  <span>36 Years of Community Goodwill & Trust</span>
                 </div>
               </div>
             </div>
@@ -356,7 +356,7 @@ export default function AboutPage() {
                   <span className="text-xs font-bold text-[#006452] uppercase tracking-widest block">
                     2007 • SECTOR EXPANSION
                   </span>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-950 tracking-tight font-serif-title mt-1">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight font-serif-title mt-1">
                     Real Estate Expansion: 300+ Acres
                   </h3>
                 </div>
@@ -412,12 +412,12 @@ export default function AboutPage() {
                   <span className="text-xs font-bold text-[#D61F69] uppercase tracking-widest block">
                     2016 • REGIONAL EXPANSION
                   </span>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-950 tracking-tight font-serif-title mt-1">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight font-serif-title mt-1">
                     Innovation & Growth: House of Sweets
                   </h3>
                 </div>
                 <p className="text-[15px] text-gray-700 leading-relaxed">
-                  In 2016, we expanded our presence through <strong>Sri Haris Sweets – House of Sweets</strong> in Melapudur, Trichy. This iconic flagship strengthened our deep connection with tens of thousands of families, creating the trusted corporate anchor where our real estate operations thrive today.
+                  In 2016, we expanded our presence through <strong>Sree Hari Sweets – House of Sweets</strong> in Melapudur, Trichy. This iconic flagship strengthened our deep connection with tens of thousands of families, creating the trusted corporate anchor where our real estate operations thrive today.
                 </p>
                 <div className="pt-2 flex items-center gap-2 text-xs font-bold text-[#006452]">
                   <CheckCircle2 className="w-4 h-4 text-[#D61F69] flex-shrink-0" />
@@ -442,7 +442,7 @@ export default function AboutPage() {
                   <span className="text-xs font-bold text-[#006452] uppercase tracking-widest block">
                     2022 – 2025 • PROVEN RECORD
                   </span>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-950 tracking-tight font-serif-title mt-1">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight font-serif-title mt-1">
                     Aishwarya Nagar & Sri Amman Nagar
                   </h3>
                 </div>
@@ -499,7 +499,7 @@ export default function AboutPage() {
                   <span className="text-xs font-bold text-[#D61F69] uppercase tracking-widest block">
                     2026 & BEYOND • THE FUTURE
                   </span>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-950 tracking-tight font-serif-title mt-1">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight font-serif-title mt-1">
                     Looking Ahead: Park Avenue Flagship
                   </h3>
                 </div>
@@ -509,16 +509,16 @@ export default function AboutPage() {
                 <div className="pt-3 flex flex-wrap items-center gap-4">
                   <Link
                     href="/properties"
-                    className="inline-flex items-center gap-2 bg-[#006452] hover:bg-[#004d3f] text-white px-6 py-3 rounded-full text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer hover:-translate-y-0.5"
+                    className="group inline-flex items-center gap-2 bg-[#f7db49] hover:bg-[#f6d73c] text-[#006452] px-6 py-3 rounded-full text-xs font-extrabold transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer hover:-translate-y-0.5"
                   >
                     <span>Explore Park Avenue Plots</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </Link>
                   <button
                     onClick={() => handleOpenEnquiry('Park Avenue Milestone')}
-                    className="inline-flex items-center gap-2 bg-white hover:bg-pink-50 text-[#D61F69] border border-pink-200 px-5 py-3 rounded-full text-xs font-bold transition shadow-xs cursor-pointer"
+                    className="inline-flex items-center gap-2 bg-white/95 hover:bg-white text-[#006452] border border-amber-200 px-5 py-3 rounded-full text-xs font-bold transition shadow-xs cursor-pointer hover:-translate-y-0.5"
                   >
-                    <span>Schedule Free Visit</span>
+                    <span>Schedule Site Visit</span>
                   </button>
                 </div>
               </div>
@@ -534,7 +534,7 @@ export default function AboutPage() {
           <span className="text-xs font-bold text-[#006452] uppercase tracking-widest bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200">
             PROVEN TRACK RECORD
           </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-950 tracking-tight font-serif-title">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#006452] tracking-tight font-serif-title">
             Our Landmark Real Estate Projects
           </h2>
           <p className="text-[15px] text-gray-600">
@@ -544,7 +544,7 @@ export default function AboutPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Project 1: Aishwarya Nagar */}
-          <div className="bg-white rounded-3xl border border-amber-200/90 shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
+          <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out overflow-hidden flex flex-col justify-between group">
             <div className="relative h-52 w-full overflow-hidden bg-stone-100">
               <Image
                 src="/project_aishwarya_nagar.jpg"
@@ -559,7 +559,7 @@ export default function AboutPage() {
             </div>
             <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
               <div className="space-y-2">
-                <h3 className="text-xl font-extrabold text-gray-950 tracking-tight">
+                <h3 className="text-xl font-extrabold text-[#006452] tracking-tight">
                   Aishwarya Nagar
                 </h3>
                 <div className="flex items-center gap-1.5 text-xs text-[#006452] font-semibold">
@@ -578,7 +578,7 @@ export default function AboutPage() {
           </div>
 
           {/* Project 2: Sri Amman Nagar */}
-          <div className="bg-white rounded-3xl border border-amber-200/90 shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
+          <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out overflow-hidden flex flex-col justify-between group">
             <div className="relative h-52 w-full overflow-hidden bg-stone-100">
               <Image
                 src="/project_sri_amman_nagar_new.jpg"
@@ -593,7 +593,7 @@ export default function AboutPage() {
             </div>
             <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
               <div className="space-y-2">
-                <h3 className="text-xl font-extrabold text-gray-950 tracking-tight">
+                <h3 className="text-xl font-extrabold text-[#006452] tracking-tight">
                   Sri Amman Nagar
                 </h3>
                 <div className="flex items-center gap-1.5 text-xs text-[#006452] font-semibold">
@@ -612,7 +612,7 @@ export default function AboutPage() {
           </div>
 
           {/* Project 3: Park Avenue */}
-          <div className="bg-white rounded-3xl border-2 border-pink-200 shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
+          <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl border-2 border-amber-200/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out overflow-hidden flex flex-col justify-between group">
             <div className="relative h-52 w-full overflow-hidden bg-stone-100">
               <Image
                 src="/project_park_avenue_new.jpg"
@@ -627,7 +627,7 @@ export default function AboutPage() {
             </div>
             <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
               <div className="space-y-2">
-                <h3 className="text-xl font-extrabold text-gray-950 tracking-tight">
+                <h3 className="text-xl font-extrabold text-[#006452] tracking-tight">
                   Park Avenue
                 </h3>
                 <div className="flex items-center gap-1.5 text-xs text-[#006452] font-semibold">
@@ -644,10 +644,10 @@ export default function AboutPage() {
                 </span>
                 <button
                   onClick={() => handleOpenEnquiry('Park Avenue - About Us')}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-white bg-[#D61F69] hover:bg-[#BE185D] px-3 py-1.5 rounded-full transition shadow-xs cursor-pointer"
+                  className="group inline-flex items-center gap-1.5 text-xs font-extrabold text-[#006452] bg-[#f7db49] hover:bg-[#f6d73c] px-4 py-1.5 rounded-full shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer"
                 >
                   <span>Enquire</span>
-                  <ArrowRight className="w-3 h-3" />
+                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                 </button>
               </div>
             </div>
@@ -662,7 +662,7 @@ export default function AboutPage() {
           <span className="text-xs font-bold text-[#D61F69] uppercase tracking-widest bg-pink-50 px-4 py-1.5 rounded-full border border-pink-200 inline-block shadow-2xs">
             BEYOND EXPECTATIONS • FOUNDATIONAL VALUES
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-950 tracking-tight font-serif-title">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#006452] tracking-tight font-serif-title">
             Our Living Values & Communities
           </h2>
           <p className="text-[15px] sm:text-base text-gray-600 leading-relaxed">
@@ -676,7 +676,7 @@ export default function AboutPage() {
           {/* Left Column: 2 Stacked Rounded Cards */}
           <div className="lg:col-span-4 flex flex-col justify-between gap-6">
             {/* Value Card 1: Unwavering Integrity */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-amber-200/90 shadow-sm hover:shadow-xl hover:border-[#006452]/40 transition-all duration-300 flex-1 flex flex-col justify-between space-y-3 group">
+            <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl p-6 sm:p-8 border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-1.5 transition-all duration-500 ease-out flex-1 flex flex-col justify-between space-y-3 group">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#006452] shadow-2xs group-hover:scale-105 transition-transform">
@@ -687,7 +687,7 @@ export default function AboutPage() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-gray-950 tracking-tight font-serif-title">
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-[#006452] tracking-tight font-serif-title">
                     Unwavering Integrity
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-normal pt-2">
@@ -702,7 +702,7 @@ export default function AboutPage() {
             </div>
 
             {/* Value Card 2: Strategic Growth Locations */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-amber-200/90 shadow-sm hover:shadow-xl hover:border-[#006452]/40 transition-all duration-300 flex-1 flex flex-col justify-between space-y-3 group">
+            <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl p-6 sm:p-8 border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-1.5 transition-all duration-500 ease-out flex-1 flex flex-col justify-between space-y-3 group">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#006452] shadow-2xs group-hover:scale-105 transition-transform">
@@ -713,7 +713,7 @@ export default function AboutPage() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-gray-950 tracking-tight font-serif-title">
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-[#006452] tracking-tight font-serif-title">
                     Strategic Growth Locations
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-normal pt-2">
@@ -747,7 +747,7 @@ export default function AboutPage() {
           {/* Right Column: 2 Stacked Rounded Cards */}
           <div className="lg:col-span-4 flex flex-col justify-between gap-6">
             {/* Value Card 3: Immediate Construction Ready */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-amber-200/90 shadow-sm hover:shadow-xl hover:border-[#006452]/40 transition-all duration-300 flex-1 flex flex-col justify-between space-y-3 group">
+            <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl p-6 sm:p-8 border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-1.5 transition-all duration-500 ease-out flex-1 flex flex-col justify-between space-y-3 group">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#006452] shadow-2xs group-hover:scale-105 transition-transform">
@@ -758,7 +758,7 @@ export default function AboutPage() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-gray-950 tracking-tight font-serif-title">
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-[#006452] tracking-tight font-serif-title">
                     Immediate Construction Ready
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-normal pt-2">
@@ -773,7 +773,7 @@ export default function AboutPage() {
             </div>
 
             {/* Value Card 4: Family-Centric Neighborhoods */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-amber-200/90 shadow-sm hover:shadow-xl hover:border-[#006452]/40 transition-all duration-300 flex-1 flex flex-col justify-between space-y-3 group">
+            <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl p-6 sm:p-8 border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-1.5 transition-all duration-500 ease-out flex-1 flex flex-col justify-between space-y-3 group">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#006452] shadow-2xs group-hover:scale-105 transition-transform">
@@ -784,7 +784,7 @@ export default function AboutPage() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-gray-950 tracking-tight font-serif-title">
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-[#006452] tracking-tight font-serif-title">
                     Family-Centric Neighborhoods
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-normal pt-2">
@@ -808,17 +808,17 @@ export default function AboutPage() {
           <span className="text-xs font-bold text-[#D61F69] uppercase tracking-widest bg-pink-50 px-3.5 py-1.5 rounded-full border border-pink-200">
             THE SREE HARI ADVANTAGE
           </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-950 tracking-tight font-serif-title">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#006452] tracking-tight font-serif-title">
             What Makes Us Different
           </h2>
           <p className="text-[15px] text-gray-600">
-            Why hundreds of families and investors place their lifelong trust in Sri Hari Realty Promoters.
+            Why hundreds of families and investors place their lifelong trust in Sree Hari Realty Promoters.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
           {/* Pillar 01: Location First */}
-          <div className="bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
+          <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl p-6 border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out flex flex-col justify-between relative overflow-hidden group">
             {/* Top Hover Gradient Stripe */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006452] to-[#D61F69] opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -834,7 +834,7 @@ export default function AboutPage() {
               </div>
 
               {/* Title & Badge */}
-              <h3 className="text-base font-extrabold text-gray-950 tracking-tight mt-4">
+              <h3 className="text-base font-extrabold text-[#006452] tracking-tight mt-4">
                 Location First
               </h3>
               <div className="mt-1 mb-2.5">
@@ -850,14 +850,14 @@ export default function AboutPage() {
             </div>
 
             {/* Sub-feature Highlight */}
-            <div className="pt-3 mt-4 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+            <div className="pt-3 mt-4 border-t border-amber-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#006452] flex-shrink-0" />
               <span>Sweet Groundwater Access</span>
             </div>
           </div>
 
           {/* Pillar 02: Customer Centric */}
-          <div className="bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
+          <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl p-6 border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out flex flex-col justify-between relative overflow-hidden group">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006452] to-[#D61F69] opacity-0 group-hover:opacity-100 transition-opacity" />
 
             <div>
@@ -870,7 +870,7 @@ export default function AboutPage() {
                 </div>
               </div>
 
-              <h3 className="text-base font-extrabold text-gray-950 tracking-tight mt-4">
+              <h3 className="text-base font-extrabold text-[#006452] tracking-tight mt-4">
                 Customer-Centric
               </h3>
               <div className="mt-1 mb-2.5">
@@ -884,14 +884,14 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="pt-3 mt-4 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+            <div className="pt-3 mt-4 border-t border-amber-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#D61F69] flex-shrink-0" />
               <span>₹1 Lakh Booking Advance</span>
             </div>
           </div>
 
           {/* Pillar 03: Community Focused */}
-          <div className="bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
+          <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl p-6 border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out flex flex-col justify-between relative overflow-hidden group">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006452] to-[#D61F69] opacity-0 group-hover:opacity-100 transition-opacity" />
 
             <div>
@@ -904,7 +904,7 @@ export default function AboutPage() {
                 </div>
               </div>
 
-              <h3 className="text-base font-extrabold text-gray-950 tracking-tight mt-4">
+              <h3 className="text-base font-extrabold text-[#006452] tracking-tight mt-4">
                 Community-Focused
               </h3>
               <div className="mt-1 mb-2.5">
@@ -918,14 +918,14 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="pt-3 mt-4 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+            <div className="pt-3 mt-4 border-t border-amber-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#006452] flex-shrink-0" />
               <span>Children&apos;s Park & Streetlights</span>
             </div>
           </div>
 
           {/* Pillar 04: Experience & Trust */}
-          <div className="bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
+          <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl p-6 border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out flex flex-col justify-between relative overflow-hidden group">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006452] to-[#D61F69] opacity-0 group-hover:opacity-100 transition-opacity" />
 
             <div>
@@ -938,12 +938,12 @@ export default function AboutPage() {
                 </div>
               </div>
 
-              <h3 className="text-base font-extrabold text-gray-950 tracking-tight mt-4">
+              <h3 className="text-base font-extrabold text-[#006452] tracking-tight mt-4">
                 Experience & Trust
               </h3>
               <div className="mt-1 mb-2.5">
                 <span className="inline-flex items-center text-[10px] font-extrabold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/60 uppercase tracking-wide">
-                  34+ Years Legacy
+                  36 Years Legacy
                 </span>
               </div>
 
@@ -952,14 +952,14 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="pt-3 mt-4 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+            <div className="pt-3 mt-4 border-t border-amber-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
               <CheckCircle2 className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
               <span>300+ Acres Handed Over</span>
             </div>
           </div>
 
           {/* Pillar 05: Quality & Transparency */}
-          <div className="bg-white rounded-3xl p-6 border border-amber-200/80 shadow-xs hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group sm:col-span-2 lg:col-span-1 sm:max-w-md sm:mx-auto lg:max-w-none w-full">
+          <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] rounded-3xl p-6 border border-amber-100/90 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out flex flex-col justify-between relative overflow-hidden group sm:col-span-2 lg:col-span-1 sm:max-w-md sm:mx-auto lg:max-w-none w-full">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006452] to-[#D61F69] opacity-0 group-hover:opacity-100 transition-opacity" />
 
             <div>
@@ -972,7 +972,7 @@ export default function AboutPage() {
                 </div>
               </div>
 
-              <h3 className="text-base font-extrabold text-gray-950 tracking-tight mt-4">
+              <h3 className="text-base font-extrabold text-[#006452] tracking-tight mt-4">
                 100% Transparency
               </h3>
               <div className="mt-1 mb-2.5">
@@ -986,15 +986,13 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="pt-3 mt-4 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
+            <div className="pt-3 mt-4 border-t border-amber-100 flex items-center gap-1.5 text-[11px] font-bold text-gray-700">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#006452] flex-shrink-0" />
               <span>Pre-Approved Bank Loans</span>
             </div>
           </div>
         </div>
       </section>
-
-
 
       {/* 8. CTA BANNER (Matching Home Page Floral Banner) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1013,7 +1011,7 @@ export default function AboutPage() {
           </div>
 
           <div className="space-y-2 text-center md:text-left relative z-10 max-w-md lg:max-w-lg">
-            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-950 tracking-tight leading-tight">
+            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#006452] tracking-tight leading-tight">
               Ready to Build <span className="text-[#D61F69]">Your Future?</span>
             </h3>
             <p className="text-xs sm:text-sm text-gray-800 font-medium leading-relaxed">
@@ -1024,17 +1022,17 @@ export default function AboutPage() {
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 sm:gap-4 relative z-10 flex-shrink-0">
             <button
               onClick={() => handleOpenEnquiry('About Us CTA')}
-              className="bg-[#D61F69] hover:bg-[#BE185D] text-white px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer hover:-translate-y-0.5"
+              className="group bg-[#f7db49] hover:bg-[#f6d73c] text-[#006452] px-6 sm:px-7 py-3 sm:py-3.5 rounded-full text-xs sm:text-sm font-extrabold transition-all duration-300 shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer hover:-translate-y-0.5"
             >
               <span>Enquire Now</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </button>
 
             <a
               href={`tel:${COMPANY_PHONE_RAW}`}
-              className="bg-white/95 hover:bg-white text-[#D61F69] border border-[#D61F69]/40 hover:border-[#D61F69] px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-sm hover:shadow-md cursor-pointer hover:-translate-y-0.5 backdrop-blur-sm"
+              className="group bg-white/95 hover:bg-white text-[#006452] hover:text-[#D61F69] border border-amber-200/90 hover:border-pink-300 px-6 sm:px-7 py-3 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-sm hover:shadow-md cursor-pointer hover:-translate-y-0.5 backdrop-blur-sm"
             >
-              <Phone className="w-4 h-4 text-[#D61F69]" />
+              <Phone className="w-4 h-4 text-[#D61F69] transition-transform group-hover:scale-110" />
               <span>{COMPANY_PHONE}</span>
             </a>
           </div>

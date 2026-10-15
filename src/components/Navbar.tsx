@@ -36,11 +36,11 @@ export default function Navbar() {
   return (
     <>
       <div className="fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 shadow-sm">
-        {/* Top Animated Free Site Visit Cab Bar with Clean White Background & Logo Green Text */}
+        {/* Top Animated Site Visit Cab Bar with Clean White Background & Logo Green Text */}
         <div
           onClick={() => setIsEnquiryOpen(true)}
           className="bg-white text-xs py-1.5 px-3 sm:px-4 relative overflow-hidden border-b border-gray-200 select-none cursor-pointer group shadow-2xs"
-          title="Click to Book Your Free Site Visit Cab"
+          title="Click to Book Your Site Visit Cab"
         >
         <div className="w-full overflow-hidden flex items-center">
           <div className="animate-car-text-drive-rtl flex items-center gap-2 sm:gap-3">
@@ -48,7 +48,7 @@ export default function Navbar() {
             <div className="w-[125px] sm:w-[145px] h-[30px] sm:h-[34px] relative flex-shrink-0 flex items-center">
               <Image
                 src="/red_car_left.svg"
-                alt="Free Site Visit Red SUV with Forward Headlights"
+                alt="Site Visit Red SUV with Forward Headlights"
                 fill
                 priority
                 className="object-contain"
@@ -56,7 +56,7 @@ export default function Navbar() {
             </div>
             {/* Trailing Wording Following the Lead Red SUV */}
             <span className="font-extrabold text-[#006452] text-xs sm:text-[14px] tracking-wide flex items-center gap-2 whitespace-nowrap">
-              Click Here to Book Your Free Site Visit -- <span className="underline underline-offset-2 font-bold text-[#D61F69]">{COMPANY_PHONE}</span>
+              Click Here to Book Your Site Visit -- <span className="underline underline-offset-2 font-bold text-[#D61F69]">{COMPANY_PHONE}</span>
             </span>
           </div>
         </div>
@@ -82,10 +82,10 @@ export default function Navbar() {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`text-[15px] font-semibold tracking-normal transition-colors py-1 relative ${
+                  className={`text-[15px] font-bold tracking-normal transition-all duration-200 py-1 relative ${
                     isActive
-                      ? 'text-[#D61F69] font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#D61F69] after:rounded-full'
-                      : 'text-gray-800 hover:text-[#D61F69]'
+                      ? 'text-[#D61F69] font-black after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#D61F69] after:rounded-full'
+                      : 'text-[#006452] hover:text-[#D61F69] hover:-translate-y-0.5'
                   }`}
                 >
                   {link.name}
@@ -98,7 +98,7 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-4 xl:gap-5">
             <a
               href={`tel:${COMPANY_PHONE_RAW}`}
-              className="flex items-center gap-2 text-[15px] font-bold text-gray-800 hover:text-[#D61F69] transition"
+              className="flex items-center gap-2 text-[15px] font-bold text-[#006452] hover:text-[#D61F69] transition duration-200"
             >
               <Phone className="w-4 h-4 text-[#D61F69]" />
               <span>{COMPANY_PHONE}</span>
@@ -151,7 +151,7 @@ export default function Navbar() {
                     className={`px-3 py-2 rounded-lg text-xs font-bold transition ${
                       isActive
                         ? 'text-[#D61F69] bg-pink-50 font-extrabold'
-                        : 'text-gray-700 hover:text-[#D61F69] hover:bg-gray-50'
+                        : 'text-[#006452] hover:text-[#D61F69] hover:bg-emerald-50/50'
                     }`}
                   >
                     {link.name}
@@ -163,7 +163,7 @@ export default function Navbar() {
             <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
               <a
                 href={`tel:${COMPANY_PHONE_RAW}`}
-                className="flex items-center justify-center gap-2 bg-gray-50 text-gray-800 py-2.5 rounded-lg text-xs font-bold border border-gray-200"
+                className="flex items-center justify-center gap-2 bg-[#fef9e6] text-[#006452] py-2.5 rounded-lg text-xs font-bold border border-amber-200 hover:text-[#D61F69] transition"
               >
                 <Phone className="w-3.5 h-3.5 text-[#D61F69]" />
                 {COMPANY_PHONE}

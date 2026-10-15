@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, getAuthToken, removeAuthToken } from '@/lib/api';
 import { Lock, Mail, ShieldAlert, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { getCrmThemeMode } from '@/lib/theme';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -12,6 +13,11 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    setThemeMode(getCrmThemeMode());
+  }, []);
 
   useEffect(() => {
     const token = getAuthToken();
@@ -52,7 +58,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
+    <div data-admin-theme={themeMode} className="flex min-h-screen items-center justify-center bg-slate-950 p-6 transition-colors duration-200">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-xl shadow-emerald-950/60 mb-4">

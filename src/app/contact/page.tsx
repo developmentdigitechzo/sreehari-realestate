@@ -13,7 +13,10 @@ import {
   CheckCircle2,
   Navigation,
   Building2,
-  ExternalLink
+  ExternalLink,
+  X,
+  IndianRupee,
+  Sparkles
 } from 'lucide-react';
 import {
   COMPANY_PHONE,
@@ -35,10 +38,37 @@ export default function ContactPage() {
     phone: '',
     email: '',
     interestedProject: '',
+    budget: '',
     visitDate: '',
     visitTime: '',
     message: '',
   });
+
+  const [submittedData, setSubmittedData] = useState<{
+    name: string;
+    phone: string;
+    email: string;
+    interestedProject: string;
+    budget: string;
+    visitDate: string;
+    visitTime: string;
+    message: string;
+  } | null>(null);
+
+  const [showGreeting, setShowGreeting] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (showGreeting && countdown > 0) {
+      timer = setTimeout(() => {
+        setCountdown((c) => c - 1);
+      }, 1000);
+    } else if (showGreeting && countdown === 0) {
+      setShowGreeting(false);
+    }
+    return () => clearTimeout(timer);
+  }, [showGreeting, countdown]);
 
   useEffect(() => {
     api.getPublicSettings().then((res) => {
@@ -48,7 +78,6 @@ export default function ContactPage() {
     }).catch(() => null);
   }, []);
 
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -58,6 +87,12 @@ export default function ContactPage() {
     setErrorMessage('');
 
     try {
+      const notesContent = [
+        formData.budget ? `Budget: ${formData.budget}` : null,
+        formData.interestedProject ? `Project: ${formData.interestedProject}` : null,
+        formData.message || null
+      ].filter(Boolean).join(' | ');
+
       if (formData.visitDate) {
         await api.submitPublicSiteVisit({
           customer_name: formData.name,
@@ -66,7 +101,8 @@ export default function ContactPage() {
           project_name: formData.interestedProject || 'General Enquiry',
           visit_date: formData.visitDate,
           visit_time: formData.visitTime,
-          notes: formData.message,
+          preferred_plot_size: formData.budget,
+          notes: notesContent,
           source: 'Contact Form',
         });
       } else {
@@ -74,9 +110,8 @@ export default function ContactPage() {
           name: formData.name,
           phone: formData.phone,
           email: formData.email,
-          message: formData.interestedProject
-            ? `Interested Project: ${formData.interestedProject}. ${formData.message || ''}`.trim()
-            : formData.message || '',
+          preferred_plot_size: formData.budget,
+          message: notesContent,
           source: 'Contact Form',
           visit_date: formData.visitDate,
           visit_time: formData.visitTime,
@@ -97,7 +132,22 @@ export default function ContactPage() {
         // ignore
       }
 
-      setSubmitted(true);
+      // Store submitted data for greeting modal and WhatsApp
+      setSubmittedData({ ...formData });
+      setShowGreeting(true);
+      setCountdown(5);
+
+      // Reset form fields immediately so after modal closes, form is fresh
+      setFormData({
+        name: '',
+        phone: '',
+        email: '',
+        interestedProject: '',
+        budget: '',
+        visitDate: '',
+        visitTime: '',
+        message: '',
+      });
     } catch (err: any) {
       console.error('Submission error:', err);
       setErrorMessage(err.message || 'Something went wrong. Please try again.');
@@ -107,8 +157,9 @@ export default function ContactPage() {
   };
 
   const handleWhatsAppChat = () => {
+    const data = submittedData || formData;
     const text = encodeURIComponent(
-      `Hi Sree Hari Realty Promoters,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nInterested Project: ${formData.interestedProject || 'All Projects'}\nVisit Date: ${formData.visitDate || 'Flexible'}${formData.visitTime ? ` at ${formData.visitTime}` : ''}\nMessage: ${formData.message || 'Looking for DTCP/RERA plot details in Trichy.'}`
+      `Hi Sree Hari Realty Promoters,\n\nName: ${data.name}\nPhone: ${data.phone}\nInterested Project: ${data.interestedProject || 'All Projects'}\nPreferred Budget: ${data.budget || 'Flexible'}\nVisit Date: ${data.visitDate || 'Flexible'}${data.visitTime ? ` at ${data.visitTime}` : ''}\nMessage: ${data.message || 'Looking for DTCP/RERA plot details in Trichy.'}`
     );
     window.open(`https://wa.me/${COMPANY_WHATSAPP}?text=${text}`, '_blank');
   };
@@ -275,9 +326,9 @@ export default function ContactPage() {
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full bg-[#D61F69] hover:bg-[#BE185D] text-white font-bold py-3 px-5 rounded-2xl text-[14px] transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full bg-[#f7db49] hover:bg-[#f6d73c] text-[#006452] font-extrabold py-3.5 px-5 rounded-full text-[14px] transition-all duration-300 shadow-md flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-0.5"
                 >
-                  <Navigation className="w-4 h-4" />
+                  <Navigation className="w-4 h-4 text-[#006452]" />
                   <span>Get Directions to Office</span>
                 </a>
               </div>
@@ -285,49 +336,20 @@ export default function ContactPage() {
           </div>
 
           {/* Right: Lead & Site Visit Form */}
-          <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-amber-200/80 space-y-6">
+          <div className="lg:col-span-7 bg-gradient-to-b from-white via-white to-[#fffdf5] p-6 sm:p-8 rounded-3xl shadow-sm border border-amber-100/90 space-y-6">
             <div className="space-y-1.5">
               <span className="text-xs font-bold text-[#D61F69] uppercase tracking-wider bg-pink-50 px-3 py-1 rounded-md border border-pink-100">
                 QUICK RESPONSE FORM
               </span>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-950 tracking-tight">
-                Send an Enquiry or Book a Free Site Visit
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight">
+                Send an Enquiry or Book a Site Visit
               </h3>
-              <p className="text-[15px] text-gray-600">
+              <p className="text-[15px] text-gray-700">
                 Fill in your details below and our plot specialists will reach out promptly with pricing and blueprint layouts.
               </p>
             </div>
 
-            {submitted ? (
-              <div className="py-10 text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 text-[#006452] flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-10 h-10" />
-                </div>
-                <h4 className="text-2xl font-extrabold text-gray-950">
-                  Enquiry Submitted Successfully!
-                </h4>
-                <p className="text-[15px] text-gray-600 max-w-md mx-auto leading-relaxed">
-                  Thank you, <strong>{formData.name}</strong>. Our senior property executive will call you at <strong>{formData.phone}</strong> to confirm your site visit and share layout approval documents.
-                </p>
-
-                <div className="pt-3 max-w-xs mx-auto space-y-2.5">
-                  <button
-                    onClick={handleWhatsAppChat}
-                    className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow cursor-pointer"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    Open WhatsApp Chat
-                  </button>
-                  <button
-                    onClick={() => setSubmitted(false)}
-                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 rounded-xl text-xs transition cursor-pointer"
-                  >
-                    Send Another Enquiry
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
@@ -339,7 +361,7 @@ export default function ContactPage() {
                       placeholder="Your name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
+                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006452] text-gray-900"
                     />
                   </div>
 
@@ -354,7 +376,7 @@ export default function ContactPage() {
                       placeholder="10-digit mobile number"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
+                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006452] text-gray-900"
                     />
                   </div>
                 </div>
@@ -369,29 +391,49 @@ export default function ContactPage() {
                       placeholder="your.email@example.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
+                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006452] text-gray-900"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Select Project
+                      Preferred Budget
                     </label>
-                    <select
-                      value={formData.interestedProject}
-                      onChange={(e) =>
-                        setFormData({ ...formData, interestedProject: e.target.value })
-                      }
-                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
-                    >
-                      <option value="">Select Project</option>
-                      {properties.map((p) => (
-                        <option key={p.id} value={p.title}>
-                          {p.title} ({p.location})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={formData.budget}
+                        onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                        className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006452] text-gray-900"
+                      >
+                        <option value="">Select Preferred Budget</option>
+                        <option value="Under 15 Lakhs">Under ₹15 Lakhs</option>
+                        <option value="15 - 25 Lakhs">₹15 Lakhs - ₹25 Lakhs</option>
+                        <option value="25 - 40 Lakhs">₹25 Lakhs - ₹40 Lakhs</option>
+                        <option value="Above 40 Lakhs">₹40 Lakhs & Above</option>
+                        <option value="Flexible">Flexible / Open to Discussion</option>
+                      </select>
+                    </div>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Select Project
+                  </label>
+                  <select
+                    value={formData.interestedProject}
+                    onChange={(e) =>
+                      setFormData({ ...formData, interestedProject: e.target.value })
+                    }
+                    className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006452] text-gray-900"
+                  >
+                    <option value="">Select Project</option>
+                    {properties.map((p) => (
+                      <option key={p.id} value={p.title}>
+                        {p.title} ({p.location})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -403,7 +445,7 @@ export default function ContactPage() {
                       type="date"
                       value={formData.visitDate}
                       onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })}
-                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
+                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006452] text-gray-900"
                     />
                   </div>
 
@@ -415,7 +457,7 @@ export default function ContactPage() {
                       type="time"
                       value={formData.visitTime}
                       onChange={(e) => setFormData({ ...formData, visitTime: e.target.value })}
-                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900"
+                      className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006452] text-gray-900"
                     />
                   </div>
                 </div>
@@ -429,7 +471,7 @@ export default function ContactPage() {
                     placeholder="E.g., Looking for a 1200 or 1500 sq.ft DTCP/RERA plot in Trichy with immediate registration..."
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D61F69] text-gray-900 resize-none"
+                    className="w-full p-3 text-[15px] bg-[#fffdf5] border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006452] text-gray-900 resize-none"
                   />
                 </div>
 
@@ -437,32 +479,31 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 bg-[#D61F69] hover:bg-[#BE185D] text-white font-bold py-3.5 px-6 rounded-xl text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-0.5"
+                    className="flex-1 bg-[#f7db49] hover:bg-[#f6d73c] text-[#006452] font-extrabold py-3.5 px-6 rounded-full text-sm transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-0.5"
                   >
-                    <Send className="w-4 h-4" />
-                    {loading ? 'Submitting...' : 'Submit Enquiry & Book Site Visit'}
+                    <Send className="w-4 h-4 text-[#006452]" />
+                    <span>{loading ? 'Submitting...' : 'Submit Enquiry & Book Site Visit'}</span>
                   </button>
                 </div>
 
                 <div className="flex items-center justify-center gap-1.5 text-xs text-gray-500 pt-1">
                   <ShieldCheck className="w-4 h-4 text-[#006452]" />
-                  <span>100% DTCP & RERA Approved Plots • Free Doorstep Cab Site Pickup</span>
+                  <span>100% DTCP & RERA Approved Plots • Doorstep Cab Site Pickup</span>
                 </div>
               </form>
-            )}
           </div>
         </div>
       </section>
 
       {/* 3. Embedded Location Map Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-amber-200/90 shadow-sm space-y-4">
+        <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] p-6 sm:p-8 rounded-3xl border border-amber-100/90 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-xs font-bold text-[#D61F69] uppercase tracking-wider block">
                 LOCATION ON MAP
               </span>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-gray-950">
+              <h3 className="text-xl sm:text-2xl font-extrabold text-[#006452]">
                 Sree Hari Realty Promoters Head Office
               </h3>
               <p className="text-[15px] text-gray-600 mt-0.5">
@@ -476,9 +517,9 @@ export default function ContactPage() {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-[#006452] hover:bg-[#004f41] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition shadow-sm self-start sm:self-auto cursor-pointer"
+              className="inline-flex items-center gap-2 bg-[#f7db49] hover:bg-[#f6d73c] text-[#006452] px-6 py-2.5 rounded-full text-sm font-extrabold transition shadow-xs hover:shadow-md self-start sm:self-auto cursor-pointer hover:-translate-y-0.5"
             >
-              <Navigation className="w-4 h-4" />
+              <Navigation className="w-4 h-4 text-[#006452]" />
               <span>Open in Google Maps</span>
             </a>
           </div>
@@ -497,6 +538,94 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+
+      {/* 4. Automated Greeting & Submission Confirmation Popup Modal */}
+      {showGreeting && submittedData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-emerald-100 p-6 sm:p-8 space-y-5 animate-scaleUp">
+            {/* Top Close Button */}
+            <button
+              onClick={() => setShowGreeting(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition cursor-pointer"
+              aria-label="Close Greeting"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Header Icon & Greeting */}
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 text-[#006452] flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle2 className="w-10 h-10 text-[#006452]" />
+              </div>
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-pink-50 text-[#D61F69] border border-pink-100">
+                🎉 Enquiry Received Successfully
+              </span>
+              <h3 className="text-2xl font-extrabold text-[#006452] tracking-tight">
+                Thank You, {submittedData.name}!
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-md mx-auto">
+                Your enquiry and site visit appointment request have been registered with our senior property advisory team.
+              </p>
+            </div>
+
+            {/* Submission Details Summary Box */}
+            <div className="bg-gradient-to-b from-[#fffdf5] to-amber-50/50 rounded-2xl p-4 border border-amber-200/80 text-xs space-y-2 text-gray-700">
+              <div className="flex justify-between items-center py-1 border-b border-amber-100">
+                <span className="text-gray-500 font-medium">Interested Project:</span>
+                <span className="font-bold text-[#006452]">{submittedData.interestedProject || 'All Projects / Flexible'}</span>
+              </div>
+              {submittedData.budget && (
+                <div className="flex justify-between items-center py-1 border-b border-amber-100">
+                  <span className="text-gray-500 font-medium">Preferred Budget:</span>
+                  <span className="font-bold text-[#006452]">{submittedData.budget}</span>
+                </div>
+              )}
+              {submittedData.visitDate && (
+                <div className="flex justify-between items-center py-1 border-b border-amber-100">
+                  <span className="text-gray-500 font-medium">Scheduled Visit:</span>
+                  <span className="font-bold text-[#006452]">
+                    {submittedData.visitDate} {submittedData.visitTime ? `(${submittedData.visitTime})` : ''}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center py-1">
+                <span className="text-gray-500 font-medium">Callback Mobile:</span>
+                <span className="font-bold text-gray-900">{submittedData.phone}</span>
+              </div>
+            </div>
+
+            {/* Auto-close Progress & Countdown */}
+            <div className="space-y-1.5 text-center">
+              <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-[#006452] h-full transition-all duration-1000 ease-linear rounded-full"
+                  style={{ width: `${(countdown / 5) * 100}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-gray-500">
+                Closing automatically in <strong className="text-[#006452] font-bold">{countdown}s</strong>...
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+              <button
+                onClick={handleWhatsAppChat}
+                className="flex-1 bg-[#25D366] hover:bg-[#20bd5a] text-white font-extrabold py-3 px-4 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow cursor-pointer"
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Open WhatsApp</span>
+              </button>
+              <button
+                onClick={() => setShowGreeting(false)}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer"
+              >
+                Close Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

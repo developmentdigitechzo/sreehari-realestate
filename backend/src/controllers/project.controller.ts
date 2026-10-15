@@ -12,22 +12,56 @@ function slugify(text: string): string {
     .replace(/\-\-+/g, '-');
 }
 
+function parseJsonField(val: any, fallback: any = []) {
+  if (!val) return fallback;
+  if (typeof val === 'object') return val;
+  try {
+    return JSON.parse(val);
+  } catch {
+    return fallback;
+  }
+}
+
 export async function getPublicProjects(req: Request, res: Response): Promise<void> {
   try {
-    const store = db.getFallbackData();
-    let projects = store.projects;
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    let projects: any[] = [];
 
     if (db.isPostgres()) {
       try {
-        const pgRes = await db.query('SELECT * FROM projects WHERE status != $1 ORDER BY created_at DESC;', ['Draft']);
-        if (pgRes.rows.length > 0) projects = pgRes.rows;
-      } catch {}
+        const pgRes = await db.query(
+          `SELECT id, name, slug, tagline, description, location_area, location_city,
+                  total_extent_acres, total_plots_count, available_plots_count, plot_size_range,
+                  status, is_featured, banner_image, video_url, brochure_url,
+                  google_maps_embed_url, dtcp_number, rera_number, gallery_images,
+                  highlights, amenities, nearby_landmarks, latitude, longitude, created_at, updated_at
+           FROM projects
+           WHERE status NOT IN ('Draft', 'Unpublished', 'Deleted')
+           ORDER BY created_at DESC;`
+        );
+        projects = pgRes.rows || [];
+      } catch (err: any) {
+        console.error('getPublicProjects PG Error:', err.message);
+      }
+    } else {
+      const store = db.getFallbackData();
+      projects = (store.projects || []).filter(
+        (p: any) => p.status !== 'Draft' && p.status !== 'Unpublished' && p.status !== 'Deleted'
+      ).sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
     }
+
+    const sanitized = projects.map((p: any) => ({
+      ...p,
+      gallery_images: parseJsonField(p.gallery_images, []),
+      highlights: parseJsonField(p.highlights, []),
+      amenities: parseJsonField(p.amenities, []),
+      nearby_landmarks: parseJsonField(p.nearby_landmarks, [])
+    }));
 
     res.json({
       success: true,
-      count: projects.length,
-      data: projects
+      count: sanitized.length,
+      data: sanitized
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: 'Failed to fetch projects', error: err.message });
@@ -38,14 +72,29 @@ export async function getPublicProjectBySlug(req: Request, res: Response): Promi
   const { slug } = req.params;
 
   try {
-    const store = db.getFallbackData();
-    let project = store.projects.find((p: any) => p.slug === slug);
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    let project: any = null;
 
     if (db.isPostgres()) {
       try {
-        const pgRes = await db.query('SELECT * FROM projects WHERE slug = $1;', [slug]);
+        const pgRes = await db.query(
+          `SELECT id, name, slug, tagline, description, location_area, location_city,
+                  total_extent_acres, total_plots_count, available_plots_count, plot_size_range,
+                  status, is_featured, banner_image, video_url, brochure_url,
+                  google_maps_embed_url, dtcp_number, rera_number, gallery_images,
+                  highlights, amenities, nearby_landmarks, latitude, longitude, created_at, updated_at
+           FROM projects WHERE slug = $1 AND status NOT IN ('Draft', 'Unpublished', 'Deleted');`,
+          [slug]
+        );
         if (pgRes.rows.length > 0) project = pgRes.rows[0];
-      } catch {}
+      } catch (err: any) {
+        console.error('getPublicProjectBySlug PG Error:', err.message);
+      }
+    } else {
+      const store = db.getFallbackData();
+      project = (store.projects || []).find(
+        (p: any) => p.slug === slug && p.status !== 'Draft' && p.status !== 'Unpublished' && p.status !== 'Deleted'
+      );
     }
 
     if (!project) {
@@ -53,9 +102,61 @@ export async function getPublicProjectBySlug(req: Request, res: Response): Promi
       return;
     }
 
+    // Fetch associated plots with PRICES STRIPPED OUT for public security
+    let plots: any[] = [];
+    if (db.isPostgres()) {
+      try {
+        const plotsRes = await db.query(
+          `SELECT id, project_id, plot_number, dimension_str, dimension, area_sqft,
+                  facing, status, approval_status, description, primary_image_url,
+                  gallery_images, video_url, video_urls, latitude, longitude, created_at
+           FROM plots
+           WHERE project_id = $1 AND (listing_visibility IS NULL OR listing_visibility != 'Private CRM Only')
+           ORDER BY plot_number ASC;`,
+          [project.id]
+        );
+        plots = plotsRes.rows || [];
+      } catch (err: any) {
+        console.error('getPublicProjectBySlug Plots PG Error:', err.message);
+      }
+    } else {
+      const store = db.getFallbackData();
+      plots = (store.plots || [])
+        .filter((p: any) => p.project_id === project.id && p.listing_visibility !== 'Private CRM Only');
+    }
+
+    const sanitizedPlots = plots.map((p: any) => ({
+      id: p.id,
+      project_id: p.project_id,
+      plot_number: p.plot_number,
+      dimension_str: p.dimension_str || p.dimension,
+      dimension: p.dimension || p.dimension_str,
+      area_sqft: p.area_sqft,
+      facing: p.facing,
+      status: p.status,
+      approval_status: p.approval_status || 'DTCP Approved',
+      description: p.description || '',
+      primary_image_url: p.primary_image_url || null,
+      gallery_images: parseJsonField(p.gallery_images, []),
+      video_url: p.video_url || '',
+      video_urls: parseJsonField(p.video_urls, p.video_url ? [p.video_url] : []),
+      latitude: p.latitude || '',
+      longitude: p.longitude || ''
+      // STRICT RULE: No confidential CRM plot price or staff notes are exposed!
+    }));
+
+    const formattedProject = {
+      ...project,
+      gallery_images: parseJsonField(project.gallery_images, []),
+      highlights: parseJsonField(project.highlights, []),
+      amenities: parseJsonField(project.amenities, []),
+      nearby_landmarks: parseJsonField(project.nearby_landmarks, []),
+      plots: sanitizedPlots
+    };
+
     res.json({
       success: true,
-      data: project
+      data: formattedProject
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: 'Failed to fetch project details', error: err.message });
@@ -65,22 +166,97 @@ export async function getPublicProjectBySlug(req: Request, res: Response): Promi
 export async function getAllProjectsAdmin(req: Request, res: Response): Promise<void> {
   try {
     const store = db.getFallbackData();
-    let projects = store.projects;
+    let projects = store.projects || [];
 
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM projects ORDER BY created_at DESC;');
         if (pgRes.rows.length > 0) projects = pgRes.rows;
-      } catch {}
+      } catch (err: any) {
+        console.error('getAllProjectsAdmin PG Error:', err.message);
+      }
     }
+
+    const parsed = projects.map((p: any) => ({
+      ...p,
+      gallery_images: parseJsonField(p.gallery_images, []),
+      highlights: parseJsonField(p.highlights, []),
+      amenities: parseJsonField(p.amenities, []),
+      nearby_landmarks: parseJsonField(p.nearby_landmarks, [])
+    }));
 
     res.json({
       success: true,
-      count: projects.length,
-      data: projects
+      count: parsed.length,
+      data: parsed
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: 'Failed to fetch admin projects', error: err.message });
+  }
+}
+
+export async function getProjectByIdAdmin(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+  try {
+    const store = db.getFallbackData();
+    let project: any = null;
+
+    if (db.isPostgres()) {
+      try {
+        const pgRes = await db.query('SELECT * FROM projects WHERE id = $1 OR slug = $1;', [id]);
+        if (pgRes.rows.length > 0) project = pgRes.rows[0];
+      } catch (err: any) {
+        console.error('getProjectByIdAdmin PG Error:', err.message);
+      }
+    }
+
+    if (!project) {
+      project = (store.projects || []).find((p: any) => p.id === id || p.slug === id);
+    }
+
+    if (!project) {
+      res.status(404).json({ success: false, message: 'Project not found' });
+      return;
+    }
+
+    // Fetch all plots associated with this project (including price for CRM Admin)
+    let plots: any[] = [];
+    if (db.isPostgres()) {
+      try {
+        const plotsRes = await db.query(
+          'SELECT * FROM plots WHERE project_id = $1 ORDER BY plot_number ASC;',
+          [project.id]
+        );
+        plots = plotsRes.rows;
+      } catch (err: any) {
+        console.error('getProjectByIdAdmin plots PG Error:', err.message);
+      }
+    }
+
+    if (plots.length === 0) {
+      plots = (store.plots || []).filter((pl: any) => pl.project_id === project.id);
+    }
+
+    const formatted = {
+      ...project,
+      gallery_images: parseJsonField(project.gallery_images, []),
+      highlights: parseJsonField(project.highlights, []),
+      amenities: parseJsonField(project.amenities, []),
+      nearby_landmarks: parseJsonField(project.nearby_landmarks, []),
+      plots: plots.map((pl: any) => ({
+        ...pl,
+        dimension: pl.dimension || pl.dimension_str,
+        dimension_str: pl.dimension_str || pl.dimension,
+        gallery_images: parseJsonField(pl.gallery_images, [])
+      }))
+    };
+
+    res.json({
+      success: true,
+      data: formatted
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: 'Failed to fetch project details', error: err.message });
   }
 }
 
@@ -93,12 +269,29 @@ export async function createProject(req: Request, res: Response): Promise<void> 
       location_area,
       location_city,
       total_extent_acres,
+      total_acres,
       total_plots_count,
+      total_plots,
+      available_plots_count,
+      available_plots,
       plot_size_range,
       price_range,
       status,
       is_featured,
-      banner_image
+      banner_image,
+      hero_image,
+      video_url,
+      brochure_url,
+      google_maps_embed_url,
+      map_url,
+      dtcp_number,
+      rera_number,
+      gallery_images,
+      highlights,
+      amenities,
+      nearby_landmarks,
+      latitude,
+      longitude
     } = req.body;
 
     if (!name || !location_area) {
@@ -109,9 +302,15 @@ export async function createProject(req: Request, res: Response): Promise<void> 
     const store = db.getFallbackData();
     let slug = slugify(name);
     let counter = 1;
-    while (store.projects.some((p: any) => p.slug === slug)) {
+    while ((store.projects || []).some((p: any) => p.slug === slug)) {
       slug = `${slugify(name)}-${counter++}`;
     }
+
+    const resolvedAcres = Number(total_extent_acres !== undefined ? total_extent_acres : total_acres) || 0;
+    const resolvedPlotsCount = Number(total_plots_count !== undefined ? total_plots_count : total_plots) || 0;
+    const resolvedAvailablePlots = Number(available_plots_count !== undefined ? available_plots_count : available_plots) || 0;
+    const resolvedBanner = banner_image || hero_image || '/images/hero-bg.jpg';
+    const resolvedMap = google_maps_embed_url || map_url || '';
 
     const newProject = {
       id: uuidv4(),
@@ -121,13 +320,25 @@ export async function createProject(req: Request, res: Response): Promise<void> 
       description: description || '',
       location_area,
       location_city: location_city || 'Trichy',
-      total_extent_acres: Number(total_extent_acres) || 0,
-      total_plots_count: Number(total_plots_count) || 0,
+      total_extent_acres: resolvedAcres,
+      total_plots_count: resolvedPlotsCount,
+      available_plots_count: resolvedAvailablePlots,
       plot_size_range: plot_size_range || '1200 - 2400 Sq.Ft',
       price_range: price_range || 'Contact for Price',
-      status: status || 'Upcoming',
+      status: status || 'Ongoing',
       is_featured: Boolean(is_featured),
-      banner_image: banner_image || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=80',
+      banner_image: resolvedBanner,
+      video_url: video_url || '',
+      brochure_url: brochure_url || '',
+      google_maps_embed_url: resolvedMap,
+      dtcp_number: dtcp_number || '',
+      rera_number: rera_number || '',
+      gallery_images: parseJsonField(gallery_images, []),
+      highlights: parseJsonField(highlights, []),
+      amenities: parseJsonField(amenities, []),
+      nearby_landmarks: parseJsonField(nearby_landmarks, []),
+      latitude: latitude || '',
+      longitude: longitude || '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -135,23 +346,25 @@ export async function createProject(req: Request, res: Response): Promise<void> 
     if (db.isPostgres()) {
       try {
         await db.query(
-          `INSERT INTO projects (id, name, slug, tagline, description, location_area, location_city, total_extent_acres, total_plots_count, plot_size_range, price_range, status, is_featured, banner_image)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);`,
+          `INSERT INTO projects (
+            id, name, slug, tagline, description, location_area, location_city,
+            total_extent_acres, total_plots_count, available_plots_count, plot_size_range,
+            price_range, status, is_featured, banner_image, video_url, brochure_url,
+            google_maps_embed_url, dtcp_number, rera_number, gallery_images, highlights,
+            amenities, nearby_landmarks, latitude, longitude
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26
+          );`,
           [
-            newProject.id,
-            newProject.name,
-            newProject.slug,
-            newProject.tagline,
-            newProject.description,
-            newProject.location_area,
-            newProject.location_city,
-            newProject.total_extent_acres,
-            newProject.total_plots_count,
-            newProject.plot_size_range,
-            newProject.price_range,
-            newProject.status,
-            newProject.is_featured,
-            newProject.banner_image
+            newProject.id, newProject.name, newProject.slug, newProject.tagline, newProject.description,
+            newProject.location_area, newProject.location_city, newProject.total_extent_acres,
+            newProject.total_plots_count, newProject.available_plots_count, newProject.plot_size_range,
+            newProject.price_range, newProject.status, newProject.is_featured, newProject.banner_image,
+            newProject.video_url, newProject.brochure_url, newProject.google_maps_embed_url,
+            newProject.dtcp_number, newProject.rera_number,
+            JSON.stringify(newProject.gallery_images), JSON.stringify(newProject.highlights),
+            JSON.stringify(newProject.amenities), JSON.stringify(newProject.nearby_landmarks),
+            newProject.latitude, newProject.longitude
           ]
         );
       } catch (pgErr: any) {
@@ -159,6 +372,7 @@ export async function createProject(req: Request, res: Response): Promise<void> 
       }
     }
 
+    if (!store.projects) store.projects = [];
     store.projects.push(newProject);
     db.saveFallbackData(store);
 
@@ -177,22 +391,110 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
 
   try {
     const store = db.getFallbackData();
-    const index = store.projects.findIndex((p: any) => p.id === id);
+    const index = (store.projects || []).findIndex((p: any) => p.id === id);
 
-    const current = index !== -1 ? store.projects[index] : {};
+    let current = index !== -1 ? store.projects[index] : null;
+
+    if (!current && db.isPostgres()) {
+      const pgGet = await db.query('SELECT * FROM projects WHERE id = $1;', [id]);
+      if (pgGet.rows.length > 0) current = pgGet.rows[0];
+    }
+
+    if (!current) {
+      res.status(404).json({ success: false, message: 'Project not found' });
+      return;
+    }
+
+    const {
+      name,
+      tagline,
+      description,
+      location_area,
+      location_city,
+      total_extent_acres,
+      total_acres,
+      total_plots_count,
+      total_plots,
+      available_plots_count,
+      available_plots,
+      plot_size_range,
+      price_range,
+      status,
+      is_featured,
+      banner_image,
+      hero_image,
+      video_url,
+      brochure_url,
+      google_maps_embed_url,
+      map_url,
+      dtcp_number,
+      rera_number,
+      gallery_images,
+      highlights,
+      amenities,
+      nearby_landmarks,
+      latitude,
+      longitude
+    } = req.body;
+
+    const resolvedAcres = Number(total_extent_acres !== undefined ? total_extent_acres : (total_acres !== undefined ? total_acres : current.total_extent_acres)) || 0;
+    const resolvedPlotsCount = Number(total_plots_count !== undefined ? total_plots_count : (total_plots !== undefined ? total_plots : current.total_plots_count)) || 0;
+    const resolvedAvailablePlots = Number(available_plots_count !== undefined ? available_plots_count : (available_plots !== undefined ? available_plots : current.available_plots_count)) || 0;
+    const resolvedBanner = banner_image || hero_image || current.banner_image;
+    const resolvedMap = google_maps_embed_url !== undefined ? google_maps_embed_url : (map_url !== undefined ? map_url : current.google_maps_embed_url);
+
     const updated = {
       ...current,
-      ...req.body,
-      id,
-      slug: req.body.name && req.body.name !== current.name ? slugify(req.body.name) : current.slug || slugify(req.body.name || 'project'),
+      name: name !== undefined ? name : current.name,
+      slug: name && name !== current.name ? slugify(name) : current.slug,
+      tagline: tagline !== undefined ? tagline : current.tagline,
+      description: description !== undefined ? description : current.description,
+      location_area: location_area !== undefined ? location_area : current.location_area,
+      location_city: location_city !== undefined ? location_city : current.location_city,
+      total_extent_acres: resolvedAcres,
+      total_plots_count: resolvedPlotsCount,
+      available_plots_count: resolvedAvailablePlots,
+      plot_size_range: plot_size_range !== undefined ? plot_size_range : current.plot_size_range,
+      price_range: price_range !== undefined ? price_range : current.price_range,
+      status: status !== undefined ? status : current.status,
+      is_featured: is_featured !== undefined ? Boolean(is_featured) : current.is_featured,
+      banner_image: resolvedBanner,
+      video_url: video_url !== undefined ? video_url : current.video_url,
+      brochure_url: brochure_url !== undefined ? brochure_url : current.brochure_url,
+      google_maps_embed_url: resolvedMap,
+      dtcp_number: dtcp_number !== undefined ? dtcp_number : current.dtcp_number,
+      rera_number: rera_number !== undefined ? rera_number : current.rera_number,
+      gallery_images: gallery_images !== undefined ? parseJsonField(gallery_images, []) : parseJsonField(current.gallery_images, []),
+      highlights: highlights !== undefined ? parseJsonField(highlights, []) : parseJsonField(current.highlights, []),
+      amenities: amenities !== undefined ? parseJsonField(amenities, []) : parseJsonField(current.amenities, []),
+      nearby_landmarks: nearby_landmarks !== undefined ? parseJsonField(nearby_landmarks, []) : parseJsonField(current.nearby_landmarks, []),
+      latitude: latitude !== undefined ? latitude : (current.latitude || ''),
+      longitude: longitude !== undefined ? longitude : (current.longitude || ''),
       updated_at: new Date().toISOString()
     };
 
     if (db.isPostgres()) {
       try {
         await db.query(
-          `UPDATE projects SET name=$1, slug=$2, tagline=$3, location_area=$4, location_city=$5, total_extent_acres=$6, total_plots_count=$7, status=$8, updated_at=CURRENT_TIMESTAMP WHERE id=$9;`,
-          [updated.name, updated.slug, updated.tagline, updated.location_area, updated.location_city, updated.total_extent_acres, updated.total_plots_count, updated.status, id]
+          `UPDATE projects SET
+            name = $1, slug = $2, tagline = $3, description = $4, location_area = $5,
+            location_city = $6, total_extent_acres = $7, total_plots_count = $8,
+            available_plots_count = $9, plot_size_range = $10, price_range = $11,
+            status = $12, is_featured = $13, banner_image = $14, video_url = $15,
+            brochure_url = $16, google_maps_embed_url = $17, dtcp_number = $18,
+            rera_number = $19, gallery_images = $20, highlights = $21, amenities = $22,
+            nearby_landmarks = $23, latitude = $24, longitude = $25, updated_at = CURRENT_TIMESTAMP
+           WHERE id = $26;`,
+          [
+            updated.name, updated.slug, updated.tagline, updated.description, updated.location_area,
+            updated.location_city, updated.total_extent_acres, updated.total_plots_count,
+            updated.available_plots_count, updated.plot_size_range, updated.price_range,
+            updated.status, updated.is_featured, updated.banner_image, updated.video_url,
+            updated.brochure_url, updated.google_maps_embed_url, updated.dtcp_number,
+            updated.rera_number, JSON.stringify(updated.gallery_images),
+            JSON.stringify(updated.highlights), JSON.stringify(updated.amenities),
+            JSON.stringify(updated.nearby_landmarks), updated.latitude, updated.longitude, id
+          ]
         );
       } catch (pgErr: any) {
         console.error('PostgreSQL Project UPDATE error:', pgErr.message);
@@ -202,6 +504,7 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
     if (index !== -1) {
       store.projects[index] = updated;
     } else {
+      if (!store.projects) store.projects = [];
       store.projects.push(updated);
     }
     db.saveFallbackData(store);
@@ -230,8 +533,8 @@ export async function deleteProject(req: Request, res: Response): Promise<void> 
       }
     }
 
-    store.projects = store.projects.filter((p: any) => p.id !== id);
-    store.plots = store.plots.filter((p: any) => p.project_id !== id);
+    store.projects = (store.projects || []).filter((p: any) => p.id !== id);
+    store.plots = (store.plots || []).filter((p: any) => p.project_id !== id);
     db.saveFallbackData(store);
 
     res.json({

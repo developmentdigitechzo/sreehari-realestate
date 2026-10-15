@@ -547,7 +547,7 @@ export default function AdminPopupsPage() {
                       className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none"
                     >
                       <option value="whatsapp">Open WhatsApp Direct Chat</option>
-                      <option value="lead_form">Open Free Site Visit Lead Form</option>
+                      <option value="lead_form">Open Site Visit Lead Form</option>
                       <option value="call">Phone Call (+91 98424 01991)</option>
                     </select>
                   </div>
