@@ -128,9 +128,12 @@ export async function initDatabase() {
 
       // Auto-migrate additional columns & tables independently
       const alterQueries = [
+        // Blogs extra fields
         `ALTER TABLE blogs ADD COLUMN IF NOT EXISTS image_url TEXT;`,
         `ALTER TABLE blogs ADD COLUMN IF NOT EXISTS seo_title VARCHAR(255);`,
         `ALTER TABLE blogs ADD COLUMN IF NOT EXISTS seo_description TEXT;`,
+
+        // Leads extra fields
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS stage VARCHAR(100) DEFAULT 'New Lead';`,
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS status VARCHAR(100) DEFAULT 'New Lead';`,
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS priority VARCHAR(50) DEFAULT 'Warm';`,
@@ -141,15 +144,19 @@ export async function initDatabase() {
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS facing_preference VARCHAR(50);`,
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS assigned_to VARCHAR(150);`,
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS site_visit_date VARCHAR(50);`,
+        `ALTER TABLE leads ADD COLUMN IF NOT EXISTS site_visit_time VARCHAR(50);`,
+        `ALTER TABLE leads ADD COLUMN IF NOT EXISTS site_visit_pickup_needed BOOLEAN DEFAULT false;`,
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_follow_up_date VARCHAR(50);`,
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS notes JSONB DEFAULT '[]'::jsonb;`,
+
+        // Site Visits Table
         `CREATE TABLE IF NOT EXISTS site_visits (
             id VARCHAR(36) PRIMARY KEY,
             lead_id VARCHAR(36),
             project_id VARCHAR(36),
             project_name VARCHAR(255),
             customer_name VARCHAR(150) NOT NULL,
-            customer_phone VARCHAR(20) NOT NULL,
+            customer_phone VARCHAR(50) NOT NULL,
             customer_email VARCHAR(255),
             visit_date VARCHAR(50) NOT NULL,
             visit_time VARCHAR(50) DEFAULT '10:00 AM',
@@ -162,6 +169,30 @@ export async function initDatabase() {
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );`,
+
+        // Popups Table
+        `CREATE TABLE IF NOT EXISTS popups (
+            id VARCHAR(36) PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            subtitle VARCHAR(255),
+            category VARCHAR(100) DEFAULT 'Festival',
+            badge_tag VARCHAR(100) DEFAULT 'FESTIVE OFFER',
+            banner_image TEXT,
+            highlights TEXT,
+            cta_text VARCHAR(150) DEFAULT 'Claim Offer on WhatsApp',
+            cta_action VARCHAR(50) DEFAULT 'whatsapp',
+            whatsapp_number VARCHAR(50) DEFAULT '+91 98424 01991',
+            start_date VARCHAR(50),
+            end_date VARCHAR(50),
+            layout_style VARCHAR(50) DEFAULT 'Auto Detect',
+            display_delay VARCHAR(50) DEFAULT '3s',
+            show_frequency VARCHAR(50) DEFAULT 'Once per Session',
+            status VARCHAR(50) DEFAULT 'Active',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );`,
+
+        // Users & Staff extra fields
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '["ALL"]'::jsonb;`,
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';`,
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS password_plain VARCHAR(255) DEFAULT 'AdminPassword@2026';`,
@@ -170,6 +201,8 @@ export async function initDatabase() {
         `UPDATE users SET password_plain = 'AdminPassword@2026' WHERE password_plain IS NULL;`,
         `UPDATE users SET phone = '+91 98424 01991' WHERE phone IS NULL;`,
         `UPDATE users SET permissions = '["ALL"]'::jsonb, role = 'super_admin', password_plain = 'AdminPassword@2026', phone = '+91 98424 01991' WHERE email = 'admin@sreeharirealty.com';`,
+
+        // Projects extra fields
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS video_url TEXT;`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS gallery_images JSONB DEFAULT '[]'::jsonb;`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS highlights JSONB DEFAULT '[]'::jsonb;`,
@@ -179,11 +212,44 @@ export async function initDatabase() {
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS available_plots_count INT DEFAULT 0;`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS latitude VARCHAR(50);`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS longitude VARCHAR(50);`,
+
+        // Plots extra fields
         `ALTER TABLE plots ADD COLUMN IF NOT EXISTS dimension VARCHAR(100);`,
         `ALTER TABLE plots ADD COLUMN IF NOT EXISTS gallery_images JSONB DEFAULT '[]'::jsonb;`,
         `ALTER TABLE plots ADD COLUMN IF NOT EXISTS video_urls JSONB DEFAULT '[]'::jsonb;`,
         `ALTER TABLE plots ADD COLUMN IF NOT EXISTS latitude VARCHAR(50);`,
-        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS longitude VARCHAR(50);`
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS longitude VARCHAR(50);`,
+
+        // High Performance Production Indexes
+        `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`,
+        `CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);`,
+        `CREATE INDEX IF NOT EXISTS idx_projects_slug ON projects(slug);`,
+        `CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);`,
+        `CREATE INDEX IF NOT EXISTS idx_projects_is_featured ON projects(is_featured);`,
+        `CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC);`,
+        `CREATE INDEX IF NOT EXISTS idx_plots_project_id ON plots(project_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_plots_status ON plots(status);`,
+        `CREATE INDEX IF NOT EXISTS idx_plots_plot_number ON plots(plot_number);`,
+        `CREATE INDEX IF NOT EXISTS idx_plots_created_at ON plots(created_at DESC);`,
+        `CREATE INDEX IF NOT EXISTS idx_leads_project_id ON leads(project_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);`,
+        `CREATE INDEX IF NOT EXISTS idx_leads_stage ON leads(stage);`,
+        `CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone);`,
+        `CREATE INDEX IF NOT EXISTS idx_leads_priority ON leads(priority);`,
+        `CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at DESC);`,
+        `CREATE INDEX IF NOT EXISTS idx_site_visits_lead_id ON site_visits(lead_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_site_visits_project_id ON site_visits(project_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_site_visits_status ON site_visits(status);`,
+        `CREATE INDEX IF NOT EXISTS idx_site_visits_phone ON site_visits(customer_phone);`,
+        `CREATE INDEX IF NOT EXISTS idx_site_visits_date ON site_visits(visit_date);`,
+        `CREATE INDEX IF NOT EXISTS idx_site_visits_created_at ON site_visits(created_at DESC);`,
+        `CREATE INDEX IF NOT EXISTS idx_popups_status ON popups(status);`,
+        `CREATE INDEX IF NOT EXISTS idx_popups_created_at ON popups(created_at DESC);`,
+        `CREATE INDEX IF NOT EXISTS idx_gallery_category ON gallery(category);`,
+        `CREATE INDEX IF NOT EXISTS idx_gallery_sort_order ON gallery(sort_order);`,
+        `CREATE INDEX IF NOT EXISTS idx_blogs_slug ON blogs(slug);`,
+        `CREATE INDEX IF NOT EXISTS idx_blogs_status ON blogs(status);`,
+        `CREATE INDEX IF NOT EXISTS idx_blogs_created_at ON blogs(created_at DESC);`
       ];
 
       for (const q of alterQueries) {
@@ -263,6 +329,37 @@ export const db = {
           rows = rows.filter(l => l.id === params[0]);
         }
         // sort descending by created_at
+        rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        return { rows, rowCount: rows.length };
+      }
+
+      if (upper.includes('FROM SITE_VISITS')) {
+        let rows = [...(store.site_visits || [])];
+        if (params.length > 0 && upper.includes('WHERE ID = $1')) {
+          rows = rows.filter(v => v.id === params[0]);
+        }
+        rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        return { rows, rowCount: rows.length };
+      }
+
+      if (upper.includes('FROM POPUPS')) {
+        let rows = [...(store.popups || [])];
+        if (upper.includes("WHERE STATUS = 'ACTIVE'")) {
+          rows = rows.filter(p => (p.status || 'Active') === 'Active');
+        } else if (params.length > 0 && upper.includes('WHERE ID = $1')) {
+          rows = rows.filter(p => p.id === params[0]);
+        }
+        rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        return { rows, rowCount: rows.length };
+      }
+
+      if (upper.includes('FROM BLOGS')) {
+        let rows = [...(store.blogs || [])];
+        if (params.length > 0 && upper.includes('WHERE SLUG = $1')) {
+          rows = rows.filter(b => b.slug === params[0]);
+        } else if (params.length > 0 && upper.includes('WHERE ID = $1')) {
+          rows = rows.filter(b => b.id === params[0]);
+        }
         rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         return { rows, rowCount: rows.length };
       }
