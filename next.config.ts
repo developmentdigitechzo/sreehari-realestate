@@ -11,6 +11,21 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "giving-amethyst-anteater.172-235-18-108.cpanel.site",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "giving-amethyst-anteater.172-235-18-108.cpanel.site",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        pathname: "/**",
+      },
     ],
   },
   cacheComponents: true,
@@ -25,13 +40,18 @@ const nextConfig: NextConfig = {
     },
   },
   async rewrites() {
-    const apiTarget = process.env.NEXT_PUBLIC_API_URL
-      ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/?$/, '')
-      : 'http://localhost:5000';
+    const backendPort = process.env.BACKEND_PORT || '5000';
+    const backendHost = process.env.BACKEND_HOST || 'http://127.0.0.1';
+    const backendTarget = process.env.BACKEND_URL || `${backendHost}:${backendPort}`;
+
     return [
       {
         source: '/uploads/:path*',
-        destination: `${apiTarget}/uploads/:path*`,
+        destination: `${backendTarget}/uploads/:path*`,
+      },
+      {
+        source: '/api/:path*',
+        destination: `${backendTarget}/api/:path*`,
       },
     ];
   },

@@ -1,0 +1,16 @@
+# cPanel Apache Reverse Proxy Configuration for Next.js & Express
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Allow Let's Encrypt / cPanel AutoSSL verification
+    RewriteCond %{REQUEST_URI} ^/\.well-known [NC]
+    RewriteRule ^ - [L]
+
+    # Proxy all traffic to Next.js running on internal port 3000
+    RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
+</IfModule>
+
+<IfModule mod_proxy.c>
+    ProxyPreserveHost On
+    ProxyPassReverse / http://127.0.0.1:3000/
+</IfModule>

@@ -1,4 +1,22 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+export function getApiBaseUrl(): string {
+  // 1. In browser environment:
+  if (typeof window !== 'undefined') {
+    // If running on cPanel domain or any domain other than raw localhost:
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return `${window.location.origin}/api`;
+    }
+  }
+
+  // 2. Explicit environment variable
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
+  }
+
+  // 3. Fallback for SSR and local development
+  return 'http://127.0.0.1:5000/api';
+}
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -44,7 +62,7 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   };
 
   try {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       ...options,
       headers,
     });
@@ -67,7 +85,7 @@ export const api = {
   // Public APIs for website
   async getPublicProjects() {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/projects`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/projects`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -76,7 +94,7 @@ export const api = {
 
   async getPublicProjectBySlug(slug: string) {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/projects/${slug}`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/projects/${slug}`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: null };
@@ -85,7 +103,7 @@ export const api = {
 
   async getPublicPlotsByProjectSlug(slug: string) {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/projects/${slug}/plots`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/projects/${slug}/plots`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -94,7 +112,7 @@ export const api = {
 
   async getPublicPlotsByProjectId(projectId: string) {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/plots/by-project/${projectId}`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/plots/by-project/${projectId}`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -103,7 +121,7 @@ export const api = {
 
   async getPublicBlogs() {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/blogs`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/blogs`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -112,7 +130,7 @@ export const api = {
 
   async getPublicBlogBySlug(slug: string) {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/blogs/${slug}`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/blogs/${slug}`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: null };
@@ -121,7 +139,7 @@ export const api = {
 
   async getPublicGallery() {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/gallery`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/gallery`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -130,7 +148,7 @@ export const api = {
 
   async getPublicSettings() {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/settings`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/settings`, { cache: 'no-store' });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: null };
@@ -148,7 +166,7 @@ export const api = {
     visit_date?: string;
     visit_time?: string;
   }) {
-    const res = await fetch(`${API_BASE_URL}/public/leads`, {
+    const res = await fetch(`${getApiBaseUrl()}/public/leads`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(leadData),
@@ -170,7 +188,7 @@ export const api = {
     notes?: string;
     source?: string;
   }) {
-    const res = await fetch(`${API_BASE_URL}/public/site-visits`, {
+    const res = await fetch(`${getApiBaseUrl()}/public/site-visits`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(visitData),
@@ -180,7 +198,7 @@ export const api = {
 
   async getPublicPopups() {
     try {
-      const res = await fetch(`${API_BASE_URL}/public/popups`);
+      const res = await fetch(`${getApiBaseUrl()}/public/popups`);
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -189,7 +207,7 @@ export const api = {
 
   // Auth
   async login(email: string, password: string) {
-    const res = await fetch(`${API_BASE_URL}/admin/auth/login`, {
+    const res = await fetch(`${getApiBaseUrl()}/admin/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
