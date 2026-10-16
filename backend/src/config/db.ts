@@ -1,11 +1,65 @@
-import { Pool, QueryResult } from 'pg';
+import { Pool, PoolConfig, QueryResult } from 'pg';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
+// Load .env from multiple standard locations (cwd, backend/, project root)
 dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config({ path: path.join(process.cwd(), '.env') });
+dotenv.config({ path: path.join(process.cwd(), 'backend/.env') });
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/sree_hari_realty';
+export const dbDiagnostics = {
+  isPostgres: false,
+  connectionError: null as string | null,
+  activeConfig: {} as any,
+  connectedAt: null as string | null,
+  tableCounts: {} as Record<string, number>
+};
+
+function getPoolConfig(): PoolConfig {
+  const hasDiscreteConfig = Boolean(process.env.DB_USER || process.env.DB_NAME || process.env.DB_PASSWORD);
+  const connectionString = process.env.DATABASE_URL;
+
+  // Discrete DB settings take precedence on cPanel production
+  if (!hasDiscreteConfig && connectionString) {
+    const fixedUrl = connectionString.replace('@localhost:', '@127.0.0.1:');
+    const config: PoolConfig = {
+      connectionString: fixedUrl,
+      connectionTimeoutMillis: 7000,
+    };
+    if (process.env.DB_SSL === 'true' || connectionString.includes('sslmode=require')) {
+      config.ssl = { rejectUnauthorized: false };
+    }
+    return config;
+  }
+
+  let host = process.env.PGHOST || process.env.DB_HOST || '127.0.0.1';
+  // On Linux/cPanel Node 18+, 'localhost' resolves to IPv6 ::1 which PostgreSQL often rejects.
+  if (host === 'localhost') {
+    host = '127.0.0.1';
+  }
+  const port = parseInt(process.env.PGPORT || process.env.DB_PORT || '5432', 10);
+  const user = process.env.PGUSER || process.env.DB_USER || 'postgres';
+  const password = process.env.PGPASSWORD || process.env.DB_PASSWORD || 'postgres';
+  const database = process.env.PGDATABASE || process.env.DB_NAME || 'sree_hari_realty';
+
+  const config: PoolConfig = {
+    host,
+    port,
+    user,
+    password,
+    database,
+    connectionTimeoutMillis: 7000,
+  };
+
+  if (process.env.DB_SSL === 'true') {
+    config.ssl = { rejectUnauthorized: false };
+  }
+
+  return config;
+}
 
 let pool: Pool | null = null;
 let isPostgresAvailable = false;
@@ -85,20 +139,23 @@ function saveFallbackDB(data: FallbackDB) {
 }
 
 export async function initDatabase() {
+  const poolConfig = getPoolConfig();
+
   try {
-    // Attempt connecting to the target database
-    pool = new Pool({
-      connectionString,
-      connectionTimeoutMillis: 3000
-    });
+    pool = new Pool(poolConfig);
 
     let client;
     try {
       client = await pool.connect();
     } catch (connErr: any) {
-      // If DB does not exist, connect to default 'postgres' db and create it
-      if (connErr.message && connErr.message.includes('does not exist')) {
-        const rootConnStr = connectionString.replace(/\/sree_hari_realty(\?.*)?$/, '/postgres$1');
+      // If DB does not exist in local development, connect to default 'postgres' db and create it
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        connErr.message &&
+        connErr.message.includes('does not exist') &&
+        poolConfig.connectionString
+      ) {
+        const rootConnStr = poolConfig.connectionString.replace(/\/sree_hari_realty(\?.*)?$/, '/postgres$1');
         const rootPool = new Pool({ connectionString: rootConnStr, connectionTimeoutMillis: 3000 });
         const rootClient = await rootPool.connect();
         await rootClient.query('CREATE DATABASE sree_hari_realty;');
@@ -114,7 +171,17 @@ export async function initDatabase() {
     }
 
     isPostgresAvailable = true;
-    console.log('✓ Successfully connected to PostgreSQL database');
+    dbDiagnostics.isPostgres = true;
+    dbDiagnostics.connectionError = null;
+    dbDiagnostics.activeConfig = {
+      host: poolConfig.host || (poolConfig.connectionString ? 'via DATABASE_URL' : '127.0.0.1'),
+      port: poolConfig.port || 5432,
+      user: poolConfig.user || 'configured',
+      database: poolConfig.database || 'configured',
+      ssl: Boolean(poolConfig.ssl)
+    };
+    dbDiagnostics.connectedAt = new Date().toISOString();
+    console.log(`✓ Successfully connected to PostgreSQL database (${poolConfig.database || 'db'} on ${poolConfig.host || 'host'})`);
 
     // Execute schema safely
     const schemaPath = path.join(__dirname, '../models/schema.sql');
@@ -123,7 +190,7 @@ export async function initDatabase() {
         const schemaSql = fs.readFileSync(schemaPath, 'utf-8');
         await client.query(schemaSql);
       } catch (schemaErr: any) {
-        console.warn('Note on schema.sql:', schemaErr.message);
+        console.warn('Note on schema.sql execution:', schemaErr.message);
       }
 
       // Auto-migrate additional columns & tables independently
@@ -200,7 +267,6 @@ export async function initDatabase() {
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50) DEFAULT '+91 98424 01991';`,
         `UPDATE users SET password_plain = 'AdminPassword@2026' WHERE password_plain IS NULL;`,
         `UPDATE users SET phone = '+91 98424 01991' WHERE phone IS NULL;`,
-        `UPDATE users SET permissions = '["ALL"]'::jsonb, role = 'super_admin', password_plain = 'AdminPassword@2026', phone = '+91 98424 01991' WHERE email = 'admin@sreeharirealty.com';`,
 
         // Projects extra fields
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS video_url TEXT;`,
@@ -226,47 +292,285 @@ export async function initDatabase() {
         `CREATE INDEX IF NOT EXISTS idx_projects_slug ON projects(slug);`,
         `CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);`,
         `CREATE INDEX IF NOT EXISTS idx_projects_is_featured ON projects(is_featured);`,
-        `CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at DESC);`,
         `CREATE INDEX IF NOT EXISTS idx_plots_project_id ON plots(project_id);`,
         `CREATE INDEX IF NOT EXISTS idx_plots_status ON plots(status);`,
-        `CREATE INDEX IF NOT EXISTS idx_plots_plot_number ON plots(plot_number);`,
-        `CREATE INDEX IF NOT EXISTS idx_plots_created_at ON plots(created_at DESC);`,
         `CREATE INDEX IF NOT EXISTS idx_leads_project_id ON leads(project_id);`,
         `CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);`,
-        `CREATE INDEX IF NOT EXISTS idx_leads_stage ON leads(stage);`,
         `CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone);`,
-        `CREATE INDEX IF NOT EXISTS idx_leads_priority ON leads(priority);`,
-        `CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at DESC);`,
-        `CREATE INDEX IF NOT EXISTS idx_site_visits_lead_id ON site_visits(lead_id);`,
-        `CREATE INDEX IF NOT EXISTS idx_site_visits_project_id ON site_visits(project_id);`,
-        `CREATE INDEX IF NOT EXISTS idx_site_visits_status ON site_visits(status);`,
         `CREATE INDEX IF NOT EXISTS idx_site_visits_phone ON site_visits(customer_phone);`,
-        `CREATE INDEX IF NOT EXISTS idx_site_visits_date ON site_visits(visit_date);`,
-        `CREATE INDEX IF NOT EXISTS idx_site_visits_created_at ON site_visits(created_at DESC);`,
-        `CREATE INDEX IF NOT EXISTS idx_popups_status ON popups(status);`,
-        `CREATE INDEX IF NOT EXISTS idx_popups_created_at ON popups(created_at DESC);`,
-        `CREATE INDEX IF NOT EXISTS idx_gallery_category ON gallery(category);`,
-        `CREATE INDEX IF NOT EXISTS idx_gallery_sort_order ON gallery(sort_order);`,
-        `CREATE INDEX IF NOT EXISTS idx_blogs_slug ON blogs(slug);`,
-        `CREATE INDEX IF NOT EXISTS idx_blogs_status ON blogs(status);`,
-        `CREATE INDEX IF NOT EXISTS idx_blogs_created_at ON blogs(created_at DESC);`
+        `CREATE INDEX IF NOT EXISTS idx_blogs_slug ON blogs(slug);`
       ];
 
       for (const q of alterQueries) {
         try {
           await client.query(q);
         } catch (alterErr: any) {
-          console.warn('Migration step warning:', alterErr.message);
+          // ignore already existing columns/indices
+        }
+      }
+    }
+
+    // AUTO-POPULATE / SEED PostgreSQL IF EMPTY
+    try {
+      const projCountRes = await client.query('SELECT count(*)::int as count FROM projects;');
+      const projCount = projCountRes.rows[0]?.count || 0;
+
+      if (projCount === 0) {
+        console.log('→ Detected empty PostgreSQL database. Migrating initial dataset into PostgreSQL tables...');
+        const store = ensureFallbackDB();
+
+        // 1. Users
+        if (store.users && store.users.length > 0) {
+          for (const u of store.users) {
+            try {
+              await client.query(
+                `INSERT INTO users (id, username, email, password_hash, password_plain, role, permissions, status, phone, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11)
+                 ON CONFLICT (email) DO NOTHING;`,
+                [
+                  u.id, u.username, u.email, u.password_hash, u.password_plain || 'AdminPassword@2026',
+                  u.role || 'super_admin', JSON.stringify(u.permissions || ['ALL']),
+                  u.status || 'Active', u.phone || '+91 98424 01991',
+                  u.created_at || new Date().toISOString(), u.updated_at || new Date().toISOString()
+                ]
+              );
+            } catch (e: any) {
+              console.warn('Sync user error:', e.message);
+            }
+          }
+        }
+
+        // 2. Amenities
+        if (store.amenities && store.amenities.length > 0) {
+          for (const a of store.amenities) {
+            try {
+              await client.query(
+                `INSERT INTO amenities (id, name, icon_key, description)
+                 VALUES ($1, $2, $3, $4)
+                 ON CONFLICT (id) DO NOTHING;`,
+                [a.id, a.name, a.icon_key, a.description || '']
+              );
+            } catch (e: any) {
+              console.warn('Sync amenity error:', e.message);
+            }
+          }
+        }
+
+        // 3. Projects
+        if (store.projects && store.projects.length > 0) {
+          for (const p of store.projects) {
+            try {
+              await client.query(
+                `INSERT INTO projects (
+                  id, name, slug, tagline, description, location_area, location_city,
+                  total_extent_acres, total_plots_count, available_plots_count, plot_size_range,
+                  price_range, status, is_featured, banner_image, video_url, brochure_url,
+                  google_maps_embed_url, dtcp_number, rera_number, gallery_images, highlights,
+                  amenities, nearby_landmarks, latitude, longitude, created_at, updated_at
+                ) VALUES (
+                  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
+                ) ON CONFLICT (slug) DO NOTHING;`,
+                [
+                  p.id, p.name, p.slug, p.tagline || '', p.description || '', p.location_area, p.location_city || 'Trichy',
+                  p.total_extent_acres || 0, p.total_plots_count || 0, p.available_plots_count || 0, p.plot_size_range || '',
+                  p.price_range || '', p.status || 'Ongoing', Boolean(p.is_featured), p.banner_image || '',
+                  p.video_url || '', p.brochure_url || '', p.google_maps_embed_url || '', p.dtcp_number || '', p.rera_number || '',
+                  JSON.stringify(p.gallery_images || []), JSON.stringify(p.highlights || []),
+                  JSON.stringify(p.amenities || []), JSON.stringify(p.nearby_landmarks || []),
+                  p.latitude || '', p.longitude || '',
+                  p.created_at || new Date().toISOString(), p.updated_at || new Date().toISOString()
+                ]
+              );
+            } catch (e: any) {
+              console.warn('Sync project error:', e.message);
+            }
+          }
+        }
+
+        // 4. Plots
+        if (store.plots && store.plots.length > 0) {
+          for (const pl of store.plots) {
+            try {
+              await client.query(
+                `INSERT INTO plots (
+                  id, project_id, title, slug, type, category, locality, road_corridor, taluk, district,
+                  plot_number, length_ft, width_ft, dimension_str, dimension, area_sqft, facing, approval_status,
+                  price_per_sqft, total_price_lakhs, price, currency, status, listing_visibility,
+                  amenities, description, meta_title, meta_description, video_url, latitude, longitude,
+                  primary_image_url, gallery_images, video_urls, created_at, updated_at
+                ) VALUES (
+                  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+                  $11, $12, $13, $14, $15, $16, $17, $18,
+                  $19, $20, $21, $22, $23, $24,
+                  $25, $26, $27, $28, $29, $30, $31,
+                  $32, $33, $34, $35, $36
+                ) ON CONFLICT (id) DO NOTHING;`,
+                [
+                  pl.id, pl.project_id, pl.title || pl.plot_number, pl.slug || `property-${pl.id}`,
+                  pl.type || 'Plot', pl.category || 'Sale', pl.locality || '', pl.road_corridor || '',
+                  pl.taluk || '', pl.district || '', pl.plot_number || '',
+                  pl.length_ft || 0, pl.width_ft || 0, pl.dimension_str || pl.dimension || '', pl.dimension || pl.dimension_str || '',
+                  pl.area_sqft || 0, pl.facing || 'North', pl.approval_status || 'DTCP Approved',
+                  pl.price_per_sqft || 0, pl.total_price_lakhs || 0, pl.price || 0, pl.currency || 'INR',
+                  pl.status || 'Available', pl.listing_visibility || 'Publish to Website & CRM',
+                  pl.amenities || '', pl.description || '', pl.meta_title || '', pl.meta_description || '',
+                  pl.video_url || '', pl.latitude || '', pl.longitude || '',
+                  pl.primary_image_url || '', JSON.stringify(pl.gallery_images || []), JSON.stringify(pl.video_urls || []),
+                  pl.created_at || new Date().toISOString(), pl.updated_at || new Date().toISOString()
+                ]
+              );
+            } catch (e: any) {
+              console.warn('Sync plot error:', e.message);
+            }
+          }
+        }
+
+        // 5. Gallery
+        if (store.gallery && store.gallery.length > 0) {
+          for (const g of store.gallery) {
+            try {
+              await client.query(
+                `INSERT INTO gallery (id, title, image_url, category, sort_order, created_at)
+                 VALUES ($1, $2, $3, $4, $5, $6)
+                 ON CONFLICT (id) DO NOTHING;`,
+                [g.id, g.title, g.image_url, g.category || 'General', g.sort_order || 1, g.created_at || new Date().toISOString()]
+              );
+            } catch (e: any) {
+              console.warn('Sync gallery error:', e.message);
+            }
+          }
+        }
+
+        // 6. Blogs
+        if (store.blogs && store.blogs.length > 0) {
+          for (const b of store.blogs) {
+            try {
+              await client.query(
+                `INSERT INTO blogs (
+                  id, title, slug, category, author, status, read_time, banner_image, excerpt, content, meta_title, meta_description, image_url, seo_title, seo_description, created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                ON CONFLICT (slug) DO NOTHING;`,
+                [
+                  b.id, b.title, b.slug, b.category || 'Market Trends', b.author || 'Editorial',
+                  b.status || 'Published', b.read_time || '5 min read', b.banner_image || b.image_url || '',
+                  b.excerpt || '', b.content || '', b.seo_title || b.title, b.seo_description || b.excerpt || '',
+                  b.image_url || b.banner_image || '', b.seo_title || b.title, b.seo_description || b.excerpt || '',
+                  b.created_at || new Date().toISOString(), b.updated_at || new Date().toISOString()
+                ]
+              );
+            } catch (e: any) {
+              console.warn('Sync blog error:', e.message);
+            }
+          }
+        }
+
+        // 7. Settings
+        if (store.settings && Object.keys(store.settings).length > 0) {
+          for (const [key, val] of Object.entries(store.settings)) {
+            try {
+              const strVal = typeof val === 'object' ? JSON.stringify(val) : String(val);
+              await client.query(
+                `INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, CURRENT_TIMESTAMP)
+                 ON CONFLICT (key) DO NOTHING;`,
+                [key, strVal]
+              );
+            } catch (e: any) {
+              console.warn('Sync settings error:', e.message);
+            }
+          }
+        }
+
+        console.log('✓ Initial dataset successfully populated into PostgreSQL!');
+      }
+
+      // Sync any user-created CRM Leads, Site Visits, or Popups from fallback storage into PostgreSQL
+      const store = ensureFallbackDB();
+      if (store.leads && store.leads.length > 0) {
+        for (const l of store.leads) {
+          try {
+            await client.query(
+              `INSERT INTO leads (id, project_id, name, phone, email, preferred_plot_size, message, source, status, stage, priority, admin_notes, notes, plot_id, plot_name, plot_description, budget, facing_preference, assigned_to, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+               ON CONFLICT (id) DO NOTHING;`,
+              [
+                l.id, l.project_id || null, l.name, l.phone, l.email || '', l.preferred_plot_size || '',
+                l.message || '', l.source || 'Manual', l.status || 'New Lead', l.stage || 'New Lead',
+                l.priority || 'Warm', l.admin_notes || '', JSON.stringify(l.notes || []),
+                l.plot_id || '', l.plot_name || '', l.plot_description || '', l.budget || '',
+                l.facing_preference || 'Any', l.assigned_to || 'Sales Team',
+                l.created_at || new Date().toISOString(), l.updated_at || new Date().toISOString()
+              ]
+            );
+          } catch {}
         }
       }
 
-      console.log('✓ Database schema verified and updated');
+      if (store.site_visits && store.site_visits.length > 0) {
+        for (const sv of store.site_visits) {
+          try {
+            await client.query(
+              `INSERT INTO site_visits (id, lead_id, project_id, project_name, customer_name, customer_phone, customer_email, visit_date, visit_time, preferred_plot_size, pickup_needed, pickup_location, status, assigned_staff, notes, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+               ON CONFLICT (id) DO NOTHING;`,
+              [
+                sv.id, sv.lead_id || null, sv.project_id || null, sv.project_name || '',
+                sv.customer_name, sv.customer_phone, sv.customer_email || '', sv.visit_date,
+                sv.visit_time || '10:00 AM', sv.preferred_plot_size || '', Boolean(sv.pickup_needed),
+                sv.pickup_location || '', sv.status || 'Requested', sv.assigned_staff || 'Sales Team',
+                sv.notes || '', sv.created_at || new Date().toISOString(), sv.updated_at || new Date().toISOString()
+              ]
+            );
+          } catch {}
+        }
+      }
+
+      if (store.popups && store.popups.length > 0) {
+        for (const pop of store.popups) {
+          try {
+            await client.query(
+              `INSERT INTO popups (id, title, subtitle, category, badge_tag, banner_image, highlights, cta_text, cta_action, whatsapp_number, start_date, end_date, layout_style, display_delay, show_frequency, status, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+               ON CONFLICT (id) DO NOTHING;`,
+              [
+                pop.id, pop.title, pop.subtitle || '', pop.category || 'Festival', pop.badge_tag || 'FESTIVE OFFER',
+                pop.banner_image || '', pop.highlights || '', pop.cta_text || '', pop.cta_action || 'whatsapp',
+                pop.whatsapp_number || '+91 98424 01991', pop.start_date || null, pop.end_date || null,
+                pop.layout_style || 'Auto Detect', pop.display_delay || '3s', pop.show_frequency || 'Once per Session',
+                pop.status || 'Active', pop.created_at || new Date().toISOString(), pop.updated_at || new Date().toISOString()
+              ]
+            );
+          } catch {}
+        }
+      }
+
+      // Record verified table counts
+      const counts: Record<string, number> = {};
+      for (const tbl of ['projects', 'plots', 'leads', 'site_visits', 'popups', 'blogs', 'gallery', 'users']) {
+        try {
+          const cRes = await client.query(`SELECT count(*)::int as c FROM ${tbl};`);
+          counts[tbl] = cRes.rows[0]?.c || 0;
+        } catch {}
+      }
+      dbDiagnostics.tableCounts = counts;
+      console.log('✓ PostgreSQL tables verified with live row counts:', counts);
+
+    } catch (popErr: any) {
+      console.warn('Note on table population:', popErr.message);
     }
+
     client.release();
   } catch (err: any) {
-    console.warn('! PostgreSQL connection not active or reachable (' + err.message + ')');
+    console.warn('! PostgreSQL connection not reachable (' + err.message + ')');
     console.log('→ Operating with resilient file-backed persistent database at data/local_db.json');
     isPostgresAvailable = false;
+    dbDiagnostics.isPostgres = false;
+    dbDiagnostics.connectionError = err.message;
+    dbDiagnostics.activeConfig = {
+      host: poolConfig.host || (poolConfig.connectionString ? 'via DATABASE_URL' : '127.0.0.1'),
+      port: poolConfig.port || 5432,
+      user: poolConfig.user,
+      database: poolConfig.database
+    };
     ensureFallbackDB();
   }
 }
@@ -275,6 +579,7 @@ export const db = {
   isPostgres: () => isPostgresAvailable,
   getFallbackData: () => ensureFallbackDB(),
   saveFallbackData: (data: FallbackDB) => saveFallbackDB(data),
+  getDiagnostics: () => ({ ...dbDiagnostics }),
 
   async query(text: string, params: any[] = []): Promise<QueryResult<any> | { rows: any[]; rowCount: number }> {
     if (isPostgresAvailable && pool) {
@@ -328,7 +633,6 @@ export const db = {
         if (params.length > 0 && upper.includes('WHERE ID = $1')) {
           rows = rows.filter(l => l.id === params[0]);
         }
-        // sort descending by created_at
         rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         return { rows, rowCount: rows.length };
       }
