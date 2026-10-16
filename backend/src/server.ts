@@ -3,12 +3,17 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import path from 'path';
-import { initDatabase } from './config/db';
+import { initDatabase, db } from './config/db';
 import publicRoutes from './routes/public.routes';
 import adminRoutes from './routes/admin.routes';
 import { errorHandler } from './middleware/errorHandler';
 
+// Load environment variables from cwd, backend/, or root directory
 dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config({ path: path.join(process.cwd(), '.env') });
+dotenv.config({ path: path.join(process.cwd(), 'backend/.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -59,11 +64,21 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static uploads serving
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Health check
+// Health check & DB Diagnostics
 app.get('/api/health', (req, res) => {
+  const diag = db.getDiagnostics();
   res.json({
-    status: 'healthy',
+    status: diag.isPostgres ? 'healthy' : 'degraded_fallback',
     service: 'Sree Hari Realty Promoters API',
+    database: {
+      connected: diag.isPostgres,
+      storage_type: diag.isPostgres ? 'PostgreSQL Production Database' : 'Local JSON Persistent Storage (data/local_db.json)',
+      host: diag.activeConfig?.host || '127.0.0.1',
+      database_name: diag.activeConfig?.database || 'configured',
+      error: diag.connectionError,
+      connected_at: diag.connectedAt,
+      table_rows: diag.tableCounts
+    },
     business_focus: 'Land & Plots Gated Communities',
     timestamp: new Date().toISOString()
   });
