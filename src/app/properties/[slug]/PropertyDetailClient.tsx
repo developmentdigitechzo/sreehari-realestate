@@ -426,28 +426,7 @@ export default function PropertyDetailClient({ property }: { property: any }) {
   );
 
   return (
-    <div className="min-h-screen bg-[#fef9e6] font-sans space-y-12 pb-16">
-      {/* 0. AUTHORIZED STAFF / ADMIN BANNER */}
-      {isAdmin && (
-        <div className="bg-slate-900 border-b border-emerald-500/40 px-4 sm:px-8 py-2.5 text-xs text-white flex flex-wrap items-center justify-between gap-3 shadow-md sticky top-0 z-40">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-bold text-emerald-400 uppercase tracking-wider text-[11px]">Staff / Admin Mode</span>
-            <span className="text-slate-400 hidden sm:inline">• Public website preview</span>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <Link
-              href={`/admin/projects/${currentProject.id || currentProject.slug}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition shadow-sm"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Manage Property in CRM</span>
-            </Link>
-          </div>
-        </div>
-      )}
-
+    <div className="min-h-screen bg-[#fef9e6] font-sans pb-16">
       {/* 1. HERO SECTION WITH RICH COVER IMAGE & ACTIONS */}
       <section className="relative min-h-[460px] sm:min-h-[520px] lg:min-h-[580px] flex items-center overflow-hidden bg-gray-950 border-b border-amber-900/30">
         <Image
@@ -561,7 +540,7 @@ export default function PropertyDetailClient({ property }: { property: any }) {
       </section>
 
       {/* 2. MAIN CONTENT GRID */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
           {/* LEFT 8 COLUMNS: Overview, Media Carousel, Plots, Location Advantages, Amenities */}
           <div className="lg:col-span-8 space-y-10">
@@ -679,40 +658,6 @@ export default function PropertyDetailClient({ property }: { property: any }) {
                   <h2 className="text-xl sm:text-2xl font-extrabold text-[#006452] tracking-tight">
                     On-Ground Infrastructure & Layout Views
                   </h2>
-                </div>
-
-                {/* Filter Tabs */}
-                <div className="flex flex-wrap items-center gap-1.5 bg-[#fef9e6] p-1 rounded-2xl border border-amber-200/80">
-                  {(['All', 'Project', 'Videos'] as const).map((tab) => {
-                    const count =
-                      tab === 'All'
-                        ? unifiedGallery.length
-                        : tab === 'Videos'
-                        ? unifiedGallery.filter((i) => i.type === 'video').length
-                        : unifiedGallery.filter((i) => i.category === tab).length;
-
-                    const isActive = galleryFilter === tab;
-                    return (
-                      <button
-                        key={tab}
-                        type="button"
-                        onClick={() => {
-                          setGalleryFilter(tab);
-                          setActiveGalleryIndex(0);
-                        }}
-                        className={`text-xs px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                          isActive
-                            ? 'bg-[#006452] text-white shadow-xs'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-white/80'
-                        }`}
-                      >
-                        <span>{tab === 'All' ? 'All Media' : tab === 'Project' ? 'Infrastructure' : 'Videos'}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? 'bg-emerald-800 text-white' : 'bg-amber-100 text-gray-700'}`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
                 </div>
               </div>
 
@@ -977,30 +922,6 @@ export default function PropertyDetailClient({ property }: { property: any }) {
                     Verified transit times, institutions, and spiritual landmarks in the immediate vicinity.
                   </p>
                 </div>
-
-                {/* Category Selector Tabs */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {[
-                    { id: 'All', label: 'All Hubs' },
-                    { id: 'Worship', label: '🏛️ Places of Worship' },
-                    { id: 'Education', label: '🎓 Education' },
-                    { id: 'Transit', label: '✈️ Transit' },
-                    { id: 'Healthcare', label: '🏥 Healthcare' },
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveLocationCategory(tab.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
-                        activeLocationCategory === tab.id
-                          ? 'bg-[#006452] text-white shadow-xs'
-                          : 'bg-amber-50 hover:bg-amber-100 text-[#006452] border border-amber-200/70'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Landmarks Card Grid */}
@@ -1016,24 +937,10 @@ export default function PropertyDetailClient({ property }: { property: any }) {
                   return (
                     <div
                       key={idx}
-                      className={`p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between gap-3 shadow-2xs hover:shadow-sm ${
-                        isWorship
-                          ? 'bg-amber-50/60 border-amber-200/90 hover:border-amber-400'
-                          : 'bg-white border-amber-100/90 hover:border-emerald-300'
-                      }`}
+                      className="p-4 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 hover:border-emerald-300/80 transition-all duration-300 flex items-center justify-between gap-3 shadow-2xs hover:shadow-sm"
                     >
                       <div className="flex items-center gap-3">
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                            isWorship
-                              ? 'bg-amber-100 text-amber-800'
-                              : cat === 'Education'
-                              ? 'bg-blue-50 text-blue-800'
-                              : cat === 'Healthcare'
-                              ? 'bg-rose-50 text-rose-800'
-                              : 'bg-emerald-50 text-emerald-800'
-                          }`}
-                        >
+                        <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#006452] flex items-center justify-center shrink-0 shadow-2xs">
                           {isWorship ? (
                             <Compass className="w-4 h-4" />
                           ) : cat === 'Education' ? (
@@ -1112,7 +1019,7 @@ export default function PropertyDetailClient({ property }: { property: any }) {
                 {(currentProject.amenities || []).map((amenity: any, idx: number) => (
                   <div
                     key={idx}
-                    className="p-4 rounded-2xl bg-white border border-amber-100/90 shadow-2xs hover:border-emerald-300 transition space-y-2"
+                    className="p-4 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 shadow-2xs hover:border-emerald-300 transition space-y-2"
                   >
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                       {iconMap[amenity.icon] || <ShieldCheck className="w-5 h-5 text-[#006452]" />}
@@ -1125,10 +1032,10 @@ export default function PropertyDetailClient({ property }: { property: any }) {
             </section>
           </div>
 
-          {/* RIGHT 4 COLUMNS: Sticky Action Sidebar & Direct Enquiry Form */}
+          {/* RIGHT 4 COLUMNS: Action Sidebar & Direct Enquiry Form */}
           <div className="lg:col-span-4 space-y-6">
-            {/* Action Card: Book Site Visit */}
-            <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] p-6 rounded-3xl shadow-sm border border-amber-100/90 space-y-5 sticky top-24">
+            {/* Card 1: Schedule Your Visit */}
+            <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] p-6 rounded-3xl shadow-sm border border-amber-100/90 space-y-5">
               <div className="space-y-1 text-center pb-4 border-b border-amber-100/80">
                 <span className="text-[11px] font-bold text-[#D61F69] uppercase tracking-wider block">
                   SCHEDULE YOUR VISIT
@@ -1137,7 +1044,7 @@ export default function PropertyDetailClient({ property }: { property: any }) {
                   Book Site Inspection
                 </h3>
                 <p className="text-[11px] text-gray-500">
-                  Complimentary car pickup & drop provided across Trichy for your family.
+                  Executive guided site visits provided across Trichy for your family.
                 </p>
               </div>
 
@@ -1184,76 +1091,84 @@ export default function PropertyDetailClient({ property }: { property: any }) {
                   Pre-approved with HDFC, PNB, SIB, SBI & all major banks with fast 7-day loan sanctions.
                 </p>
               </div>
+            </div>
 
-              {/* Direct Inline Form */}
-              <div className="pt-2 border-t border-amber-100/80 space-y-3">
-                <h4 className="font-bold text-xs text-[#006452] uppercase tracking-wider text-center">
-                  Quick Enquiry Form
+            {/* Card 2: Quick Property Enquiry Form */}
+            <div className="bg-gradient-to-b from-white via-white to-[#fffdf5] p-6 rounded-3xl shadow-sm border border-amber-100/90 space-y-4">
+              <div className="space-y-1 text-center pb-3 border-b border-amber-100/80">
+                <span className="text-[11px] font-bold text-[#D61F69] uppercase tracking-wider block">
+                  QUICK ENQUIRY
+                </span>
+                <h4 className="text-lg font-extrabold text-[#006452]">
+                  Enquire for {currentProject.title}
                 </h4>
-
-                <form onSubmit={handleInlineSubmit} className="space-y-3 text-xs">
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-1">Your Full Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Ramesh Kumar"
-                      value={inlineForm.name}
-                      onChange={(e) => setInlineForm({ ...inlineForm, name: e.target.value })}
-                      className="w-full bg-[#fffdf8] border border-amber-200/90 rounded-xl p-2.5 text-gray-800 focus:outline-none focus:border-[#006452]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-1">Phone Number *</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="+91 98401 XXXXX"
-                      value={inlineForm.phone}
-                      onChange={(e) => setInlineForm({ ...inlineForm, phone: e.target.value })}
-                      className="w-full bg-[#fffdf8] border border-amber-200/90 rounded-xl p-2.5 text-gray-800 focus:outline-none focus:border-[#006452]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-1">Preferred Budget</label>
-                    <select
-                      value={inlineForm.budget}
-                      onChange={(e) => setInlineForm({ ...inlineForm, budget: e.target.value })}
-                      className="w-full bg-[#fffdf8] border border-amber-200/90 rounded-xl p-2.5 text-gray-800 focus:outline-none focus:border-[#006452] cursor-pointer"
-                    >
-                      <option value="">Select Preferred Budget</option>
-                      <option value="₹ 15 - 25 Lakhs">₹ 15 - 25 Lakhs</option>
-                      <option value="₹ 25 - 35 Lakhs">₹ 25 - 35 Lakhs</option>
-                      <option value="₹ 35 - 50 Lakhs">₹ 35 - 50 Lakhs</option>
-                      <option value="₹ 50 Lakhs+">₹ 50 Lakhs & Above</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-1">Message (Optional)</label>
-                    <textarea
-                      rows={2}
-                      placeholder="Interested in North facing plot..."
-                      value={inlineForm.message}
-                      onChange={(e) => setInlineForm({ ...inlineForm, message: e.target.value })}
-                      className="w-full bg-[#fffdf8] border border-amber-200/90 rounded-xl p-2.5 text-gray-800 focus:outline-none focus:border-[#006452]"
-                    />
-                  </div>
-
-                  {inlineError && <p className="text-rose-600 text-[11px]">{inlineError}</p>}
-
-                  <button
-                    type="submit"
-                    disabled={inlineLoading}
-                    className="w-full bg-[#D61F69] hover:bg-[#be185d] text-white font-extrabold py-3 px-4 rounded-xl transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>{inlineLoading ? 'Submitting...' : 'Submit Enquiry'}</span>
-                  </button>
-                </form>
+                <p className="text-[11px] text-gray-500">
+                  Direct assistance, layout blueprints & price breakdown.
+                </p>
               </div>
+
+              <form onSubmit={handleInlineSubmit} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">Your Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ramesh Kumar"
+                    value={inlineForm.name}
+                    onChange={(e) => setInlineForm({ ...inlineForm, name: e.target.value })}
+                    className="w-full bg-[#fffdf8] border border-amber-200/90 rounded-xl p-2.5 text-gray-800 focus:outline-none focus:border-[#006452]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">Phone Number *</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+91 98401 XXXXX"
+                    value={inlineForm.phone}
+                    onChange={(e) => setInlineForm({ ...inlineForm, phone: e.target.value })}
+                    className="w-full bg-[#fffdf8] border border-amber-200/90 rounded-xl p-2.5 text-gray-800 focus:outline-none focus:border-[#006452]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">Preferred Budget</label>
+                  <select
+                    value={inlineForm.budget}
+                    onChange={(e) => setInlineForm({ ...inlineForm, budget: e.target.value })}
+                    className="w-full bg-[#fffdf8] border border-amber-200/90 rounded-xl p-2.5 text-gray-800 focus:outline-none focus:border-[#006452] cursor-pointer"
+                  >
+                    <option value="">Select Preferred Budget</option>
+                    <option value="₹ 15 - 25 Lakhs">₹ 15 - 25 Lakhs</option>
+                    <option value="₹ 25 - 35 Lakhs">₹ 25 - 35 Lakhs</option>
+                    <option value="₹ 35 - 50 Lakhs">₹ 35 - 50 Lakhs</option>
+                    <option value="₹ 50 Lakhs+">₹ 50 Lakhs & Above</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">Message (Optional)</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Interested in North facing plot..."
+                    value={inlineForm.message}
+                    onChange={(e) => setInlineForm({ ...inlineForm, message: e.target.value })}
+                    className="w-full bg-[#fffdf8] border border-amber-200/90 rounded-xl p-2.5 text-gray-800 focus:outline-none focus:border-[#006452]"
+                  />
+                </div>
+
+                {inlineError && <p className="text-rose-600 text-[11px]">{inlineError}</p>}
+
+                <button
+                  type="submit"
+                  disabled={inlineLoading}
+                  className="w-full bg-[#D61F69] hover:bg-[#be185d] text-white font-extrabold py-3 px-4 rounded-xl transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 hover:shadow-lg"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{inlineLoading ? 'Submitting...' : 'Submit Enquiry'}</span>
+                </button>
+              </form>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Phone, Mail, MapPin, ArrowRight, Clock, ShieldCheck } from 'lucide-react';
+import { Phone, Mail, MapPin, ArrowRight, Clock, ShieldCheck, Sprout } from 'lucide-react';
 import { COMPANY_PHONE, COMPANY_PHONE_RAW, COMPANY_EMAIL, COMPANY_ADDRESS, COMPANY_WHATSAPP } from '@/data/properties';
 import BrandLogo from './BrandLogo';
 import { api } from '@/lib/api';
@@ -22,15 +22,12 @@ export default function Footer() {
     }
     loadSettings();
   }, []);
+
   return (
-    <footer className="bg-[#fef9e6] text-gray-700 pt-14 pb-8 border-t border-amber-200/70 font-sans relative overflow-hidden text-[15px]">
-      {/* Subtle Brand Watermark in Footer background */}
-      <div className="absolute right-[-30px] bottom-[-30px] w-80 h-80 opacity-[0.06] pointer-events-none">
-        <Image src="/lotus_icon.png" alt="" fill className="object-contain" />
-      </div>
+    <footer className="bg-[#fef9e6] text-gray-700 pt-14 border-t-2 border-amber-200 shadow-[0_-12px_36px_rgba(0,100,82,0.08)] font-sans relative z-20 overflow-hidden text-[15px]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-10 border-b border-amber-200/80">
-          {/* Brand Col */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-12">
+          {/* Column 1: Brand & Bio */}
           <div className="lg:col-span-4 space-y-3.5">
             <BrandLogo variant="light" />
             <p className="text-[14px] text-gray-700 leading-relaxed max-w-sm pt-1">
@@ -44,8 +41,9 @@ export default function Footer() {
               </div>
             </div>
 
+            {/* Social Icons */}
             <div className="flex items-center gap-2.5 pt-1">
-              {/* Facebook (#1877F2) */}
+              {/* Facebook */}
               <a
                 href="https://facebook.com"
                 target="_blank"
@@ -58,7 +56,7 @@ export default function Footer() {
                 </svg>
               </a>
 
-              {/* Instagram (Sunset Gradient: #f09433 -> #dc2743 -> #bc1888) */}
+              {/* Instagram */}
               <a
                 href="https://instagram.com"
                 target="_blank"
@@ -71,7 +69,7 @@ export default function Footer() {
                 </svg>
               </a>
 
-              {/* YouTube (#FF0000) */}
+              {/* YouTube */}
               <a
                 href="https://youtube.com"
                 target="_blank"
@@ -84,7 +82,7 @@ export default function Footer() {
                 </svg>
               </a>
 
-              {/* LinkedIn (#0A66C2) */}
+              {/* LinkedIn */}
               <a
                 href="https://linkedin.com"
                 target="_blank"
@@ -97,7 +95,7 @@ export default function Footer() {
                 </svg>
               </a>
 
-              {/* WhatsApp (#25D366) */}
+              {/* WhatsApp */}
               <a
                 href={`https://wa.me/${COMPANY_WHATSAPP}`}
                 target="_blank"
@@ -112,12 +110,13 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Column 2: Quick Links */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-[15px] font-black text-[#006452] uppercase tracking-wider flex items-center gap-1.5">
+            <h4 className="text-[15px] font-black text-[#006452] uppercase tracking-wider flex items-center gap-2">
+              <Sprout className="w-4 h-4 text-[#006452]" />
               <span>Quick Links</span>
             </h4>
-            <ul className="space-y-2 text-[15px] text-gray-700">
+            <ul className="space-y-2 text-[14px] text-gray-700">
               <li>
                 <Link href="/" className="hover:text-[#D61F69] hover:translate-x-0.5 inline-block transition duration-200">
                   Home
@@ -156,45 +155,50 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Our Projects */}
+          {/* Column 3: Our Projects */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-[15px] font-black text-[#006452] uppercase tracking-wider flex items-center gap-1.5">
+            <h4 className="text-[15px] font-black text-[#006452] uppercase tracking-wider flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-[#006452]" />
               <span>Our Projects</span>
             </h4>
-            <ul className="space-y-2 text-[15px] text-gray-700">
+            <ul className="space-y-2.5 text-[14px] text-gray-700">
               <li>
-                <Link href="/properties" className="hover:text-[#D61F69] transition flex items-center justify-between group">
+                <Link href="/properties/park_avenue" className="hover:text-[#D61F69] transition flex items-center justify-between group">
                   <span className="group-hover:translate-x-0.5 transition duration-200">Park Avenue</span>
                   <span className="text-[10px] font-extrabold text-[#D61F69] bg-pink-50 px-1.5 py-0.5 rounded border border-pink-200">2026</span>
                 </Link>
               </li>
               <li>
-                <Link href="/properties" className="hover:text-[#D61F69] transition flex items-center justify-between group">
+                <Link href="/properties/sri_amman_nagar" className="hover:text-[#D61F69] transition flex items-center justify-between group">
                   <span className="group-hover:translate-x-0.5 transition duration-200">Sri Amman Nagar</span>
                   <span className="text-[10px] font-bold text-gray-500">Trichy</span>
                 </Link>
               </li>
               <li>
-                <Link href="/properties" className="hover:text-[#D61F69] transition flex items-center justify-between group">
+                <Link href="/properties/aishwarya_nagar" className="hover:text-[#D61F69] transition flex items-center justify-between group">
                   <span className="group-hover:translate-x-0.5 transition duration-200">Aishwarya Nagar</span>
                   <span className="text-[10px] font-bold text-gray-500">Thirumayam</span>
                 </Link>
               </li>
-              <li>
-                <Link href="/properties" className="hover:text-[#D61F69] font-bold transition flex items-center gap-1 text-[#D61F69] pt-1 group">
-                  <span className="group-hover:translate-x-0.5 transition duration-200">View All Projects</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              <li className="pt-1">
+                <Link
+                  href="/properties"
+                  className="inline-flex items-center gap-1.5 bg-[#D61F69] hover:bg-[#be185d] text-white text-xs font-bold py-1.5 px-3 rounded-full shadow-2xs transition-all duration-200 hover:scale-105"
+                >
+                  <span>View All Projects</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Contact Us */}
+          {/* Column 4: Contact Us */}
           <div className="lg:col-span-2 space-y-3">
-            <h4 className="text-[15px] font-black text-[#006452] uppercase tracking-wider flex items-center gap-1.5">
+            <h4 className="text-[15px] font-black text-[#006452] uppercase tracking-wider flex items-center gap-2">
+              <Phone className="w-4 h-4 text-[#006452]" />
               <span>Contact Us</span>
             </h4>
-            <ul className="space-y-2.5 text-[15px] text-gray-700">
+            <ul className="space-y-2.5 text-[14px] text-gray-700">
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[#D61F69] flex-shrink-0" />
                 <a href={`tel:${COMPANY_PHONE_RAW}`} className="hover:text-[#D61F69] font-bold text-gray-900 transition duration-200">
@@ -209,17 +213,17 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-[#D61F69] flex-shrink-0 mt-1" />
-                <span className="leading-snug text-gray-800">
+                <span className="leading-snug text-gray-800 text-xs sm:text-[13px]">
                   {COMPANY_ADDRESS}
                 </span>
               </li>
               <li className="flex items-start gap-2 pt-1 border-t border-amber-200/60">
                 <Clock className="w-4 h-4 text-[#D61F69] flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="text-[11px] text-[#006452] uppercase font-bold tracking-wider block">
+                  <span className="text-[10px] text-[#006452] uppercase font-bold tracking-wider block">
                     Working Hours
                   </span>
-                  <span className="leading-snug text-gray-900 font-semibold text-xs sm:text-sm">
+                  <span className="leading-snug text-gray-900 font-semibold text-xs sm:text-[13px]">
                     {workingHours}
                   </span>
                 </div>
@@ -227,45 +231,100 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Project Hub Card (Subtle Warm Cream Gradient matching Project Cards) */}
+          {/* Column 5: Sree Hari Projects Showcase Card with Image 4 Background */}
           <div className="lg:col-span-2">
-            <div className="bg-gradient-to-b from-white via-[#fdfbf6] to-[#faf3e2] p-4 rounded-2xl border border-amber-200/90 shadow-xs hover:shadow-md transition-all duration-300 text-center relative overflow-hidden group">
-              <div className="w-9 h-9 rounded-full bg-emerald-50 text-[#006452] flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300 border border-emerald-100">
-                <MapPin className="w-4 h-4 text-[#006452]" />
+            <div className="relative rounded-3xl overflow-hidden border border-amber-200/90 shadow-md p-4 text-center flex flex-col justify-start min-h-[280px] group">
+              {/* Background Illustration from Image 4 */}
+              <div className="absolute inset-0 z-0">
+                <Image
+                  src="/footer_projects_bg.png"
+                  alt="Sree Hari Projects Scenic Road"
+                  fill
+                  className="object-cover object-bottom group-hover:scale-105 transition-transform duration-700 ease-out"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-white/95 via-white/50 to-transparent pointer-events-none" />
               </div>
-              <span className="text-[14px] font-black text-[#006452] block">
-                Sree Hari Projects
-              </span>
-              <p className="text-[12px] text-gray-600 leading-snug mt-1 mb-3">
-                Prime growth corridors across Tamil Nadu
-              </p>
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center gap-1.5 w-full bg-[#f7db49] hover:bg-[#ebd03b] text-gray-950 text-xs font-black py-2 px-3 rounded-full shadow-2xs transition-all duration-200 transform hover:scale-[1.02]"
-              >
-                <span>Book Site Visit</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+
+              {/* Card Header Content & Button placed higher up */}
+              <div className="relative z-10 space-y-2">
+                <div className="w-9 h-9 rounded-full bg-emerald-50 text-[#006452] flex items-center justify-center mx-auto mb-1 border border-emerald-100 shadow-2xs group-hover:scale-110 transition-transform">
+                  <MapPin className="w-4 h-4 text-[#006452]" />
+                </div>
+                <h5 className="text-[15px] font-black text-[#006452] block tracking-tight">
+                  Sree Hari Projects
+                </h5>
+                <p className="text-[11px] text-gray-700 font-medium leading-snug px-1">
+                  Prime growth corridors across Tamil Nadu
+                </p>
+
+                {/* Card CTA Button placed higher so the scenic road below is visible */}
+                <div className="pt-2">
+                  <Link
+                    href="/contact"
+                    className="inline-flex items-center justify-center gap-1.5 w-full bg-[#D61F69] hover:bg-[#be185d] text-white text-xs font-bold py-2.5 px-3 rounded-full shadow-md transition-all duration-200 hover:scale-105"
+                  >
+                    <span>Book Site Visit</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-[14px] text-gray-600 font-medium">
-          <p>© 2026 Sree Hari Realty Promoters. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <Link href="#" className="hover:text-[#D61F69] transition">
+      {/* Organic Wave Transition from Cream #fef9e6 to Deep Emerald #006452 */}
+      <div className="w-full overflow-hidden leading-none -mb-[1px]">
+        <svg 
+          viewBox="0 0 1440 60" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-10 sm:h-14 lg:h-16 block"
+          preserveAspectRatio="none"
+        >
+          <path 
+            d="M0,32 C280,62 560,4 900,42 C1140,68 1320,16 1440,30 L1440,60 L0,60 Z" 
+            fill="#006452" 
+          />
+        </svg>
+      </div>
+
+      {/* Curved Bottom Emerald Wave Bar */}
+      <div className="relative bg-[#006452] text-white overflow-hidden">
+
+        {/* Content inside the Bottom Emerald Bar */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-20 sm:py-6 relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-emerald-100/90 font-medium text-center md:text-left">
+          <p className="w-full md:w-auto text-center md:text-left leading-relaxed">
+            © 2026 Sree Hari Realty Promoters. All rights reserved.
+          </p>
+
+          <div className="flex items-center justify-center gap-4 text-xs font-semibold">
+            <Link href="#" className="hover:text-white transition-colors">
               Privacy Policy
             </Link>
-            <span>|</span>
-            <Link href="#" className="hover:text-[#D61F69] transition">
+            <span className="text-emerald-400/60">|</span>
+            <Link href="#" className="hover:text-white transition-colors">
               Terms & Conditions
             </Link>
           </div>
-          <p className="text-gray-500 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-            Designed for a Brighter Tomorrow
-          </p>
+
+          <div className="flex items-center justify-center gap-2 text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
+            <span>Developed by </span>
+            <a
+              href="https://www.digitechzo.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold underline underline-offset-2 text-[#f7db49] hover:text-white transition-colors"
+            >
+              DigiTechzo
+            </a>
+          </div>
+        </div>
+
+        {/* Subtle lotus watermark on the far right of the green wave */}
+        <div className="absolute right-0 bottom-0 w-32 h-32 opacity-15 pointer-events-none select-none">
+          <Image src="/lotus_icon.png" alt="" fill className="object-contain invert" />
         </div>
       </div>
     </footer>

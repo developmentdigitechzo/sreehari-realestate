@@ -822,7 +822,7 @@ export default function AdminSiteVisitsPage() {
                     <label className="text-xs font-semibold text-white flex items-center gap-1.5">
                       <Car className="w-4 h-4 text-purple-400" /> Cab Pickup Service
                     </label>
-                    <p className="text-[11px] text-slate-400">Provide complimentary pickup & drop for customer</p>
+                    <p className="text-[11px] text-slate-400">Provide guided pickup & drop for customer</p>
                   </div>
 
                   <input

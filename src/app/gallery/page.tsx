@@ -439,7 +439,7 @@ export default function GalleryPage() {
             Want to Inspect These Plotted Developments in Person?
           </h2>
           <p className="text-xs sm:text-sm text-gray-600 max-w-xl mx-auto">
-            Experience the wide tar roads, high groundwater table, and peaceful surroundings firsthand with a complimentary chauffeur-driven site visit.
+            Experience the wide tar roads, high groundwater table, and peaceful surroundings firsthand with an executive guided site visit.
           </p>
           <div className="pt-2">
             <button

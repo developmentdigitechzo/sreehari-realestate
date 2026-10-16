@@ -211,12 +211,12 @@ export default function Sidebar({
       </div>
 
       {/* Footer Theme Toggle, Profile & Logout */}
-      <div className="p-4 border-t border-slate-800/80 bg-slate-950/40 space-y-2.5">
+      <div className="p-4 pb-8 border-t border-slate-800/80 bg-slate-950/40 space-y-3 relative z-10">
         {/* Quick Theme Mode Toggle Button */}
         <button
           type="button"
           onClick={handleToggleTheme}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 hover:bg-slate-800/80 transition-all text-slate-300 group cursor-pointer"
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 hover:bg-slate-800/80 transition-all text-slate-300 group cursor-pointer shadow-sm"
           title={`Currently ${themeMode === 'light' ? 'Light Theme (Default)' : 'Dark Theme'}. Click to toggle.`}
         >
           <div className="flex items-center gap-2">
@@ -229,24 +229,24 @@ export default function Sidebar({
               {themeMode === 'light' ? 'Light Theme' : 'Dark Theme'}
             </span>
           </div>
-          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 group-hover:text-slate-200 transition-colors">
+          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 group-hover:text-white transition-colors">
             {themeMode === 'light' ? 'Dark' : 'Light'}
           </span>
         </button>
 
         <div className="flex items-center justify-between gap-2 px-1">
           <div className="truncate">
-            <p className="text-xs font-semibold text-slate-200 truncate">
+            <p className="text-xs font-bold text-slate-200 truncate">
               {username || userEmail || 'Staff Member'}
             </p>
-            <p className="text-[10px] font-mono truncate transition-colors duration-200" style={{ color: primaryColor }}>
+            <p className="text-[10px] font-mono truncate font-semibold transition-colors duration-200" style={{ color: primaryColor }}>
               {role || 'Verified Staff Account'}
             </p>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-rose-400 bg-rose-950/30 border border-rose-900/40 hover:bg-rose-900/40 hover:text-rose-200 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-500 bg-rose-950/30 border border-rose-900/40 hover:bg-rose-900/40 hover:text-rose-100 transition-all cursor-pointer shadow-sm"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span>Logout CRM</span>

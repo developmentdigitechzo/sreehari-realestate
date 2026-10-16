@@ -459,7 +459,7 @@ export default function AboutPage() {
               <div className="lg:col-span-6 relative order-1 lg:order-2">
                 <div className="relative h-64 sm:h-76 lg:h-84 w-full rounded-3xl lg:rounded-r-full lg:rounded-l-2xl overflow-hidden border-4 border-[#006452] shadow-xl">
                   <Image
-                    src="/milestone_2022_aishwarya.jpg"
+                    src="/project_aishwarya_nagar.jpg"
                     alt="Aishwarya Nagar and Sri Amman Nagar Communities"
                     fill
                     sizes="(max-width: 1024px) 100vw, 50vw"

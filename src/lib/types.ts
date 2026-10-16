@@ -227,3 +227,25 @@ export interface PromotionalPopup {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface HeroBanner {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  badge_text?: string;
+  image_url: string;
+  mobile_image_url?: string;
+  banner_type: 'graphic' | 'overlay'; // 'graphic' = zero-crop flyer with text inside; 'overlay' = photo with HTML text
+  // Two Buttons Support
+  button1_text?: string;
+  button1_link?: string;
+  button2_text?: string;
+  button2_link?: string;
+  button2_active?: boolean;
+  // Legacy / Direct Link
+  button_text?: string;
+  button_link?: string;
+  project_name?: string;
+  active: boolean;
+  order: number;
+}
