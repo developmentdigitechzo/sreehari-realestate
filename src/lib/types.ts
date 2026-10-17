@@ -35,6 +35,7 @@ export interface CrmLead {
   plot_description?: string;
   project_name?: string;
   project_location?: string;
+  project_interest?: string;
   name: string;
   phone: string;
   email: string;
@@ -48,7 +49,10 @@ export interface CrmLead {
   priority: string;
   assigned_to?: string;
   site_visit_date?: string | null;
+  site_visit_time?: string | null;
   site_visit_pickup_needed?: boolean;
+  pickup_needed?: boolean;
+  pickup_location?: string;
   next_follow_up_date?: string | null;
   notes: CrmNote[];
   created_at: string;
@@ -73,8 +77,10 @@ export interface Project {
   id: string;
   slug: string;
   name: string;
+  title?: string;
   tagline: string;
   status: 'Upcoming' | 'Ongoing' | 'Completed' | 'Sold Out' | 'Draft' | string;
+  location?: string;
   location_city: string;
   location_area: string;
   map_url?: string;

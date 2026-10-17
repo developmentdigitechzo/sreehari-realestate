@@ -82,6 +82,12 @@ export function applyCrmThemeMode(mode?: CrmThemeMode): void {
   
   root.setAttribute('data-admin-theme-mode', currentMode);
 
+  if (currentMode === 'dark') {
+    root.classList.add('dark');
+  } else {
+    root.classList.remove('dark');
+  }
+
   const adminElements = document.querySelectorAll('[data-admin-theme]');
   adminElements.forEach((el) => {
     el.setAttribute('data-admin-theme', currentMode);

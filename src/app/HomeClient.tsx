@@ -291,7 +291,7 @@ export default function HomeClient({ initialProjects }: { initialProjects?: any[
   }, [isLifestyleHovered]);
 
   return (
-    <div className="space-y-10 sm:space-y-14 pb-10 bg-[#fef9e6] font-sans">
+    <div className="space-y-6 sm:space-y-12 pb-10 bg-[#fef9e6] font-sans">
       {/* 1. HERO SECTION CAROUSEL WITH DUAL-MODE SUPPORT (ZERO-CROP GRAPHIC FLYERS & DYNAMIC TEXT) */}
       <HeroCarousel
         banners={heroBanners}
@@ -300,7 +300,7 @@ export default function HomeClient({ initialProjects }: { initialProjects?: any[
       />
 
       {/* 2. FEATURED PROJECTS SECTION (RECENTLY CREATED 3 PROJECTS FROM DATABASE) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 sm:pt-2">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8">
           <div>
             <span className="text-[11px] font-bold text-[#D61F69] uppercase tracking-wider block mb-1">

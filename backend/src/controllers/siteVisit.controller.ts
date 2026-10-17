@@ -112,40 +112,69 @@ export async function createSiteVisit(req: Request, res: Response): Promise<void
     if (!store.site_visits) store.site_visits = [];
     if (!store.leads) store.leads = [];
 
-    // Find or create matching CRM lead
-    let lead = store.leads.find((l: any) => l.phone === customer_phone.trim());
-    const leadId = lead ? lead.id : uuidv4();
+    // Resolve project_id if only project_name was passed
+    let resolvedProjectId = project_id || null;
+    if (!resolvedProjectId && project_name) {
+      const match = (store.projects || []).find((p: any) =>
+        p.name.toLowerCase() === project_name.toLowerCase() ||
+        p.id.toLowerCase() === project_name.toLowerCase()
+      );
+      if (match) resolvedProjectId = match.id;
+    }
 
-    const proj = (store.projects || []).find((p: any) => p.id === project_id);
-    const resolvedProjName = project_name || (proj ? proj.name : 'Park Avenue Plotted Layout');
+    const proj = (store.projects || []).find((p: any) => p.id === resolvedProjectId);
+    const resolvedProjName = project_name || (proj ? proj.name : 'Park Avenue');
+
+    const digitsOnly = String(customer_phone).replace(/\D/g, '').slice(-10);
+
+    // Find or create matching CRM lead in PostgreSQL and fallback store
+    let existingLeadPg: any = null;
+    if (db.isPostgres()) {
+      try {
+        const pgCheck = await db.query(
+          `SELECT * FROM leads WHERE RIGHT(REGEXP_REPLACE(phone, '\\D', '', 'g'), 10) = $1 ORDER BY created_at DESC LIMIT 1;`,
+          [digitsOnly]
+        );
+        if (pgCheck.rows.length > 0) existingLeadPg = pgCheck.rows[0];
+      } catch (err: any) {
+        console.error('PostgreSQL lead check error in createSiteVisit:', err.message);
+      }
+    }
+
+    let lead = existingLeadPg || (store.leads || []).find((l: any) => {
+      const pDigits = String(l.phone || '').replace(/\D/g, '').slice(-10);
+      return pDigits === digitsOnly;
+    });
+
+    const leadId = lead ? lead.id : uuidv4();
 
     if (!lead) {
       lead = {
         id: leadId,
-        project_id: project_id || null,
+        project_id: resolvedProjectId,
         name: customer_name.trim(),
         phone: customer_phone.trim(),
         email: customer_email ? customer_email.trim() : '',
         preferred_plot_size: preferred_plot_size || '',
         message: `Booked Site Visit for ${visit_date} at ${visit_time || '10:00 AM'}`,
-        source: source || 'Website Form',
+        source: source || 'CRM Site Visit Booking',
         stage: 'Site Visit Scheduled',
         status: 'Site Visit Scheduled',
         priority: 'Hot',
         assigned_to: assigned_staff || 'Sales Team',
         site_visit_date: visit_date,
         site_visit_time: visit_time || '',
-        site_visit_pickup_needed: Boolean(pickup_needed),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      store.leads.unshift(lead);
+      if (store.leads) store.leads.unshift(lead);
     } else {
       lead.stage = 'Site Visit Scheduled';
       lead.status = 'Site Visit Scheduled';
       lead.site_visit_date = visit_date;
       lead.site_visit_time = visit_time || '';
       lead.priority = 'Hot';
+      if (resolvedProjectId) lead.project_id = resolvedProjectId;
       lead.updated_at = new Date().toISOString();
     }
 
@@ -153,7 +182,7 @@ export async function createSiteVisit(req: Request, res: Response): Promise<void
     const newVisit: SiteVisitRecord = {
       id: visitId,
       lead_id: leadId,
-      project_id: project_id || null,
+      project_id: resolvedProjectId,
       project_name: resolvedProjName,
       customer_name: customer_name.trim(),
       customer_phone: customer_phone.trim(),
@@ -161,8 +190,8 @@ export async function createSiteVisit(req: Request, res: Response): Promise<void
       visit_date,
       visit_time: visit_time || '10:00 AM',
       preferred_plot_size: preferred_plot_size || '',
-      pickup_needed: Boolean(pickup_needed),
-      pickup_location: pickup_location || '',
+      pickup_needed: false,
+      pickup_location: '',
       status: 'Requested',
       assigned_staff: assigned_staff || 'Sales Team',
       notes: notes || '',
@@ -172,6 +201,48 @@ export async function createSiteVisit(req: Request, res: Response): Promise<void
 
     if (db.isPostgres()) {
       try {
+        // 1. Ensure Lead exists or is updated in PostgreSQL leads table
+        if (!existingLeadPg) {
+          await db.query(
+            `INSERT INTO leads (
+              id, project_id, name, phone, email, preferred_plot_size, budget, message, source, status, stage, priority, assigned_to, site_visit_date, site_visit_time, notes, admin_notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);`,
+            [
+              leadId,
+              resolvedProjectId,
+              lead.name,
+              lead.phone,
+              lead.email,
+              lead.preferred_plot_size,
+              preferred_plot_size || '',
+              lead.message,
+              lead.source || 'CRM Site Visit Booking',
+              'Site Visit Scheduled',
+              'Site Visit Scheduled',
+              'Hot',
+              lead.assigned_to,
+              visit_date,
+              visit_time || '',
+              '[]',
+              notes || ''
+            ]
+          );
+        } else {
+          await db.query(
+            `UPDATE leads SET 
+              project_id = COALESCE($1, project_id),
+              stage = 'Site Visit Scheduled', 
+              status = 'Site Visit Scheduled', 
+              priority = 'Hot', 
+              site_visit_date = $2, 
+              site_visit_time = $3, 
+              updated_at = CURRENT_TIMESTAMP 
+            WHERE id = $4;`,
+            [resolvedProjectId, visit_date, visit_time || '', existingLeadPg.id]
+          );
+        }
+
+        // 2. Insert into PostgreSQL site_visits table
         await db.query(
           `INSERT INTO site_visits (
             id, lead_id, project_id, project_name, customer_name, customer_phone, customer_email, visit_date, visit_time, preferred_plot_size, pickup_needed, pickup_location, status, assigned_staff, notes
@@ -195,7 +266,7 @@ export async function createSiteVisit(req: Request, res: Response): Promise<void
           ]
         );
       } catch (pgErr: any) {
-        console.error('PostgreSQL site_visit INSERT error:', pgErr.message);
+        console.error('PostgreSQL site_visit / lead INSERT error:', pgErr.message);
       }
     }
 

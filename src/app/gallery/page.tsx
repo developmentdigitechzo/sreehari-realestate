@@ -11,6 +11,8 @@ import {
   Maximize2,
   Video,
   Play,
+  Pause,
+  Star,
   X,
   ChevronLeft,
   ChevronRight,
@@ -30,7 +32,7 @@ interface MediaItem {
   badge: string;
   subbadge: string;
   caption: string;
-  category: 'Project' | 'Plots' | 'Videos';
+  category: 'Project' | 'Plots' | 'Videos' | 'General';
   plotNumber?: string;
 }
 
@@ -50,22 +52,41 @@ interface ProjectGalleryCard {
   plotCount: number;
 }
 
+interface CarouselItem {
+  id: string;
+  title: string;
+  project: string;
+  category: string;
+  url: string;
+  type: 'image' | 'video';
+  badge: string;
+  subbadge: string;
+  tag: string;
+}
+
 export default function GalleryPage() {
   const [projectsGallery, setProjectsGallery] = useState<ProjectGalleryCard[]>([]);
+  const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeProject, setActiveProject] = useState<ProjectGalleryCard | null>(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState<number>(0);
-  const [lightboxFilter, setLightboxFilter] = useState<'All' | 'Project' | 'Plots' | 'Videos'>('All');
+  const [lightboxFilter, setLightboxFilter] = useState<'All' | 'Project' | 'Plots' | 'Videos' | 'General'>('All');
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
   const [enquiryProjectName, setEnquiryProjectName] = useState<string | undefined>(undefined);
+  const [isCarouselPlaying, setIsCarouselPlaying] = useState<boolean>(true);
+  const carouselContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // Load projects and their plots to assemble project-based galleries
+  // Load public projects, their plots, and standalone gallery photos
   useEffect(() => {
-    async function loadProjectsWithMedia() {
+    async function loadAllMedia() {
       try {
-        const res = await api.getPublicProjects();
-        const rawProjects = res && res.success && Array.isArray(res.data) && res.data.length > 0
-          ? res.data
+        const [projRes, galRes] = await Promise.all([
+          api.getPublicProjects().catch(() => ({ success: false, data: [] })),
+          api.getPublicGallery().catch(() => ({ success: false, data: [] }))
+        ]);
+
+        const rawProjects = projRes && projRes.success && Array.isArray(projRes.data) && projRes.data.length > 0
+          ? projRes.data
           : fallbackProperties.map((p) => ({
               id: p.id,
               name: p.title,
@@ -80,12 +101,51 @@ export default function GalleryPage() {
               status: p.status
             }));
 
+        const standaloneGallery: any[] = (galRes && galRes.success && Array.isArray(galRes.data)) ? galRes.data : [];
+
+        // Carousel feed collection
+        const carouselList: CarouselItem[] = [];
+        const seenCarouselUrls = new Set<string>();
+
+        // 1. Process Standalone General Site Photos (such as user-uploaded "hero mobile")
+        const siteMediaList: MediaItem[] = [];
+        standaloneGallery.forEach((item: any, idx: number) => {
+          if (item.image_url) {
+            const mItem: MediaItem = {
+              id: `site-gal-${item.id || idx}`,
+              type: 'image',
+              url: item.image_url,
+              badge: item.category || 'Site Photo',
+              subbadge: 'Sree Hari Infrastructure',
+              caption: item.title || 'Layout & Infrastructure Progress',
+              category: 'General'
+            };
+            siteMediaList.push(mItem);
+
+            if (!seenCarouselUrls.has(item.image_url)) {
+              seenCarouselUrls.add(item.image_url);
+              carouselList.push({
+                id: `c-site-${item.id || idx}`,
+                title: item.title || 'Site Infrastructure Photo',
+                project: 'General Infrastructure',
+                category: item.category || 'Roads & Utilities',
+                url: item.image_url,
+                type: 'image',
+                badge: 'Site Asset',
+                subbadge: 'Live Progress',
+                tag: 'DTCP Layout'
+              });
+            }
+          }
+        });
+
+        // 2. Process Projects and their plots
         const cards: ProjectGalleryCard[] = await Promise.all(
           rawProjects.map(async (proj: any) => {
             const mediaList: MediaItem[] = [];
             const seenUrls = new Set<string>();
 
-            // 1. Project Cover
+            // Project Cover
             const cover = proj.banner_image || proj.heroImage || '/project_park_avenue_new.jpg';
             if (cover && !seenUrls.has(cover)) {
               seenUrls.add(cover);
@@ -98,9 +158,24 @@ export default function GalleryPage() {
                 caption: `${proj.name} — Grand Entrance & Main Layout`,
                 category: 'Project'
               });
+
+              if (!seenCarouselUrls.has(cover)) {
+                seenCarouselUrls.add(cover);
+                carouselList.push({
+                  id: `c-proj-${proj.id}`,
+                  title: `${proj.name} — Main Community Arch`,
+                  project: proj.name,
+                  category: 'Entrance & Roads',
+                  url: cover,
+                  type: 'image',
+                  badge: 'Gated Township',
+                  subbadge: proj.location_area || 'Trichy',
+                  tag: 'DTCP & RERA'
+                });
+              }
             }
 
-            // 2. Project Gallery Images
+            // Project Gallery Images
             const projImages = Array.isArray(proj.gallery_images)
               ? proj.gallery_images
               : Array.isArray(proj.images)
@@ -119,10 +194,25 @@ export default function GalleryPage() {
                   caption: `${proj.name} — Infrastructure Development Photo #${idx + 1}`,
                   category: 'Project'
                 });
+
+                if (!seenCarouselUrls.has(img)) {
+                  seenCarouselUrls.add(img);
+                  carouselList.push({
+                    id: `c-proj-gal-${proj.id}-${idx}`,
+                    title: `${proj.name} — Infrastructure Phase #${idx + 1}`,
+                    project: proj.name,
+                    category: 'Development',
+                    url: img,
+                    type: 'image',
+                    badge: 'Project Asset',
+                    subbadge: proj.location_area || 'Trichy',
+                    tag: 'Approved Layout'
+                  });
+                }
               }
             });
 
-            // 3. Project Video
+            // Project Video
             if (proj.video_url && !seenUrls.has(proj.video_url)) {
               seenUrls.add(proj.video_url);
               mediaList.push({
@@ -136,7 +226,7 @@ export default function GalleryPage() {
               });
             }
 
-            // 4. Fetch Associated Plots for this project
+            // Fetch Associated Plots
             let plots: any[] = [];
             try {
               const plotsRes = await api.getPublicPlotsByProjectSlug(proj.slug);
@@ -147,11 +237,10 @@ export default function GalleryPage() {
               plots = [];
             }
 
-            plots.forEach((pl: any) => {
-              const plotNum = pl.plot_number || 'Plot';
+            plots.forEach((pl: any, plIdx: number) => {
+              const plotNum = pl.plot_number || `Plot #${plIdx + 1}`;
               const cleanTitle = pl.dimension_str ? `${pl.dimension_str} • ${pl.facing || 'Layout'}` : 'Villa Plot';
 
-              // Plot Primary Image
               if (pl.primary_image_url && !seenUrls.has(pl.primary_image_url)) {
                 seenUrls.add(pl.primary_image_url);
                 mediaList.push({
@@ -164,47 +253,22 @@ export default function GalleryPage() {
                   category: 'Plots',
                   plotNumber: plotNum
                 });
-              }
 
-              // Plot Gallery Images
-              if (Array.isArray(pl.gallery_images)) {
-                pl.gallery_images.forEach((img: string, gIdx: number) => {
-                  if (img && !seenUrls.has(img)) {
-                    seenUrls.add(img);
-                    mediaList.push({
-                      id: `plot-${pl.id}-gal-${gIdx}`,
-                      type: 'image',
-                      url: img,
-                      badge: `${plotNum} Photo`,
-                      subbadge: cleanTitle,
-                      caption: `${plotNum} — Layout Photo #${gIdx + 1}`,
-                      category: 'Plots',
-                      plotNumber: plotNum
-                    });
-                  }
-                });
-              }
-
-              // Plot Videos
-              const plotVids = Array.isArray(pl.video_urls) && pl.video_urls.length > 0
-                ? pl.video_urls
-                : pl.video_url ? [pl.video_url] : [];
-
-              plotVids.forEach((vUrl: string, vIdx: number) => {
-                if (vUrl && !seenUrls.has(vUrl)) {
-                  seenUrls.add(vUrl);
-                  mediaList.push({
-                    id: `plot-${pl.id}-vid-${vIdx}`,
-                    type: 'video',
-                    url: vUrl,
-                    badge: `${plotNum} Video`,
-                    subbadge: cleanTitle,
-                    caption: `${plotNum} — Walkthrough Video`,
-                    category: 'Videos',
-                    plotNumber: plotNum
+                if (!seenCarouselUrls.has(pl.primary_image_url)) {
+                  seenCarouselUrls.add(pl.primary_image_url);
+                  carouselList.push({
+                    id: `c-plot-${pl.id}`,
+                    title: `${proj.name} • ${plotNum}`,
+                    project: proj.name,
+                    category: cleanTitle,
+                    url: pl.primary_image_url,
+                    type: 'image',
+                    badge: 'Plot Asset',
+                    subbadge: plotNum,
+                    tag: 'Ready to Build'
                   });
                 }
-              });
+              }
             });
 
             const photoCount = mediaList.filter((m) => m.type === 'image').length;
@@ -228,16 +292,36 @@ export default function GalleryPage() {
           })
         );
 
+        // 3. Add General Site Infrastructure card if there are standalone photos
+        if (siteMediaList.length > 0) {
+          cards.push({
+            id: 'site-infrastructure-general',
+            name: 'General Site & Infrastructure',
+            slug: 'general-infrastructure',
+            location: 'Trichy Region',
+            city: 'Tamil Nadu',
+            coverImage: siteMediaList[0]?.url || '/hero_gallery.jpg',
+            dtcpNumber: 'Verified Quality',
+            reraNumber: '',
+            status: 'Live Infrastructure',
+            media: siteMediaList,
+            photoCount: siteMediaList.length,
+            videoCount: 0,
+            plotCount: 0
+          });
+        }
+
         setProjectsGallery(cards);
+        setCarouselItems(carouselList);
       } catch (err) {
         console.error('Failed to load project galleries:', err);
       }
     }
 
-    loadProjectsWithMedia();
+    loadAllMedia();
   }, []);
 
-  // Dynamic filter categories
+  // Filter categories
   const categoryOptions = useMemo(() => {
     const list = ['All'];
     projectsGallery.forEach((p) => {
@@ -251,7 +335,7 @@ export default function GalleryPage() {
     return projectsGallery.filter((p) => p.name === selectedCategory);
   }, [projectsGallery, selectedCategory]);
 
-  // Lightbox media items for the currently opened project
+  // Lightbox media items
   const currentProjectMedia = useMemo(() => {
     if (!activeProject) return [];
     if (lightboxFilter === 'All') return activeProject.media;
@@ -271,19 +355,46 @@ export default function GalleryPage() {
     setActiveMediaIndex((prev) => (prev + 1) % currentProjectMedia.length);
   }, [currentProjectMedia.length]);
 
-  // Keyboard navigation for lightbox
+  const [carouselLightboxIndex, setCarouselLightboxIndex] = useState<number | null>(null);
+
+  // Lock body scroll when either lightbox is open
   useEffect(() => {
-    if (!activeProject) return;
+    const isAnyModalOpen = activeProject !== null || carouselLightboxIndex !== null;
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [activeProject, carouselLightboxIndex]);
+
+  // Keyboard navigation for both lightboxes
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setActiveProject(null);
-      if (e.key === 'ArrowLeft') handlePrevMedia();
-      if (e.key === 'ArrowRight') handleNextMedia();
+      if (carouselLightboxIndex !== null) {
+        if (e.key === 'Escape') setCarouselLightboxIndex(null);
+        if (e.key === 'ArrowLeft') {
+          setCarouselLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : carouselItems.length - 1));
+        }
+        if (e.key === 'ArrowRight') {
+          setCarouselLightboxIndex((prev) => (prev !== null && prev < carouselItems.length - 1 ? prev + 1 : 0));
+        }
+        return;
+      }
+
+      if (activeProject) {
+        if (e.key === 'Escape') setActiveProject(null);
+        if (e.key === 'ArrowLeft') handlePrevMedia();
+        if (e.key === 'ArrowRight') handleNextMedia();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeProject, handleNextMedia, handlePrevMedia]);
+  }, [activeProject, carouselLightboxIndex, carouselItems.length, handleNextMedia, handlePrevMedia]);
 
-  const openProjectLightbox = (project: ProjectGalleryCard, initialCategory: 'All' | 'Project' | 'Plots' | 'Videos' = 'All') => {
+  const openProjectLightbox = (project: ProjectGalleryCard, initialCategory: 'All' | 'Project' | 'Plots' | 'Videos' | 'General' = 'All') => {
     setActiveProject(project);
     setLightboxFilter(initialCategory);
     setActiveMediaIndex(0);
@@ -324,7 +435,178 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      {/* 2. Category Filter Pills */}
+      {/* 2. Featured Continuous Auto-Scroll Carousel Section (Matches Website Cream Theme) */}
+      {carouselItems.length > 0 && (
+        <section className="relative py-8 bg-[#fef9e6] border-y border-amber-200/80 overflow-hidden">
+          <style>{`
+            @keyframes galleryInfiniteMarquee {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+            .gallery-continuous-track {
+              display: flex;
+              gap: 1.25rem;
+              width: max-content;
+              animation: galleryInfiniteMarquee 48s linear infinite;
+              will-change: transform;
+            }
+            .gallery-continuous-track:hover {
+              animation-play-state: paused !important;
+            }
+          `}</style>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-300 text-[#006452] text-xs font-bold uppercase tracking-wider mb-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#006452]" />
+                <span>Featured Project & Site Carousel</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight font-serif-title flex items-center gap-2">
+                <span>Live Layout Developments</span>
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-700 mt-1 max-w-xl">
+                Continuous walkthrough across DTCP layout arches, 40ft blacktop roads, and individual plot assets. Hover any card to pause.
+              </p>
+            </div>
+
+            {/* Play/Pause & Scroll Navigation Controls */}
+            <div className="flex items-center gap-2.5 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setIsCarouselPlaying(!isCarouselPlaying)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition border cursor-pointer shadow-xs ${
+                  isCarouselPlaying
+                    ? 'bg-white hover:bg-emerald-50 text-[#006452] border-emerald-300'
+                    : 'bg-[#006452] hover:bg-[#005041] text-white border-[#006452] shadow-md'
+                }`}
+                title={isCarouselPlaying ? 'Click to Pause Auto-Scroll' : 'Click to Resume Auto-Scroll'}
+              >
+                {isCarouselPlaying ? (
+                  <>
+                    <Pause className="w-3.5 h-3.5 text-[#006452]" />
+                    <span>Auto-Scroll Active</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 fill-white" />
+                    <span>Resume Scroll</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (carouselContainerRef.current) {
+                    carouselContainerRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+                  }
+                }}
+                className="w-9 h-9 rounded-full bg-white hover:bg-emerald-50 text-[#006452] border border-amber-200/90 flex items-center justify-center transition cursor-pointer shadow-xs"
+                title="Scroll Left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (carouselContainerRef.current) {
+                    carouselContainerRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+                  }
+                }}
+                className="w-9 h-9 rounded-full bg-white hover:bg-emerald-50 text-[#006452] border border-amber-200/90 flex items-center justify-center transition cursor-pointer shadow-xs"
+                title="Scroll Right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Marquee Outer Container */}
+          <div
+            ref={carouselContainerRef}
+            className="w-full overflow-x-hidden py-3 cursor-grab active:cursor-grabbing"
+          >
+            <div
+              className="gallery-continuous-track px-4"
+              style={{
+                animationPlayState: isCarouselPlaying ? 'running' : 'paused'
+              }}
+            >
+              {[...carouselItems, ...carouselItems].map((item, idx) => (
+                <div
+                  key={`${item.id}-${idx}`}
+                  onClick={() => setCarouselLightboxIndex(idx % carouselItems.length)}
+                  className="w-72 sm:w-80 h-[360px] rounded-2xl bg-white border border-amber-200/90 hover:border-[#006452] shadow-sm hover:shadow-[0_15px_35px_-10px_rgba(0,100,82,0.22)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden group shrink-0 relative"
+                >
+                  {/* Top Image Thumbnail Container */}
+                  <div className="h-52 w-full bg-slate-100 relative overflow-hidden flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.url || '/project_park_avenue_new.jpg'}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = '/project_park_avenue_new.jpg';
+                      }}
+                    />
+
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+
+                    {/* Top Floating Badges */}
+                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+                      <span className="bg-[#006452]/95 backdrop-blur-md text-white text-[10.5px] font-bold px-2.5 py-0.5 rounded-full shadow-md uppercase tracking-wider border border-emerald-300/40">
+                        {item.badge}
+                      </span>
+                      <span className="bg-black/60 backdrop-blur-md text-[#f7db49] text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300/30">
+                        {item.category}
+                      </span>
+                    </div>
+
+                    {/* Quick View Pill */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
+                      <span className="px-4 py-1.5 rounded-full bg-[#006452] text-white text-xs font-bold shadow-xl flex items-center gap-1.5 border border-emerald-300/40">
+                        <Maximize2 className="w-3.5 h-3.5" />
+                        <span>View Photo</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Card Bottom Body */}
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-2 bg-gradient-to-b from-white to-[#fffdf5]">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1 text-[11px] text-[#006452] font-semibold truncate">
+                        <MapPin className="w-3 h-3 text-[#006452] shrink-0" />
+                        <span className="truncate">{item.project} • {item.subbadge}</span>
+                      </div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-gray-950 line-clamp-1 group-hover:text-[#006452] transition-colors">
+                        {item.title}
+                      </h3>
+                    </div>
+
+                    {/* Reference-style Footer with Tag Pill */}
+                    <div className="pt-2 border-t border-amber-100 flex items-center justify-between">
+                      <span className="text-[11px] text-gray-500 font-medium">
+                        Verified Development
+                      </span>
+
+                      <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-300 text-amber-900 text-[10.5px] font-extrabold shadow-2xs">
+                        <Sparkles className="w-3 h-3 text-amber-500" />
+                        <span>{item.tag}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 3. Category Filter Pills */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center gap-2">
           {categoryOptions.map((cat) => (
@@ -456,60 +738,163 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      {/* 5. Project Media Lightbox / Drawer Modal */}
-      {activeProject && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-6 animate-fadeIn select-none">
+      {/* 5. Carousel Single-Image Showcase Lightbox (Full Stream Across All Projects) */}
+      {carouselLightboxIndex !== null && carouselItems[carouselLightboxIndex] && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-6 animate-fadeIn select-none overflow-hidden h-screen w-screen">
           {/* Top Bar */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/10 gap-3">
+          <div className="flex items-center justify-between pb-3 border-b border-white/10 gap-3 shrink-0">
+            <div>
+              <span className="text-[10px] font-bold text-[#f7db49] uppercase tracking-widest block">
+                {carouselItems[carouselLightboxIndex].project} • SHOWCASE GALLERY
+              </span>
+              <h3 className="text-base sm:text-xl font-black text-white line-clamp-1">
+                {carouselItems[carouselLightboxIndex].title}
+              </h3>
+            </div>
+
             <div className="flex items-center gap-3">
-              <div>
-                <span className="text-[10px] font-bold text-[#f7db49] uppercase tracking-widest block">
-                  {activeProject.location} • GATED COMMUNITY
+              <span className="text-white/80 text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg border border-white/10">
+                {carouselLightboxIndex + 1} / {carouselItems.length}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setCarouselLightboxIndex(null)}
+                className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition border border-white/20 cursor-pointer"
+                title="Close Lightbox (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Main Viewport */}
+          <div className="relative flex-1 flex items-center justify-center my-2 min-h-0 overflow-hidden">
+            <div className="relative w-full h-full max-w-5xl flex items-center justify-center">
+              <div className="relative w-full h-full flex items-center justify-center">
+                <Image
+                  src={carouselItems[carouselLightboxIndex].url}
+                  alt={carouselItems[carouselLightboxIndex].title}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+
+              {/* Badge Overlay */}
+              <div className="absolute bottom-4 left-4 z-20 pointer-events-none flex flex-col gap-1 max-w-[85%]">
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#006452]/90 backdrop-blur-md text-white text-xs font-black uppercase px-3 py-1 rounded-full shadow-md border border-emerald-400/40">
+                    {carouselItems[carouselLightboxIndex].badge}
+                  </span>
+                  <span className="bg-[#f7db49] text-gray-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                    ★ {carouselItems[carouselLightboxIndex].tag}
+                  </span>
+                </div>
+                <span className="bg-black/75 backdrop-blur-md text-slate-200 text-xs font-medium px-3 py-1 rounded-xl shadow-md border border-white/10 w-fit">
+                  {carouselItems[carouselLightboxIndex].project} — {carouselItems[carouselLightboxIndex].category}
                 </span>
-                <h3 className="text-base sm:text-xl font-black text-white">
-                  {activeProject.name}
-                </h3>
               </div>
 
-              {/* Inner Lightbox Filter Tabs */}
-              <div className="hidden sm:flex items-center gap-1.5 ml-4 bg-white/10 p-1 rounded-xl border border-white/10">
-                {(['All', 'Project', 'Plots', 'Videos'] as const).map((tab) => {
-                  const count =
-                    tab === 'All'
-                      ? activeProject.media.length
-                      : tab === 'Videos'
-                      ? activeProject.media.filter((m) => m.type === 'video').length
-                      : activeProject.media.filter((m) => m.category === tab).length;
+              {/* Left/Right Prev/Next Buttons */}
+              {carouselItems.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setCarouselLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : carouselItems.length - 1))}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/20 cursor-pointer shadow-lg z-30"
+                    title="Previous (Left Arrow)"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCarouselLightboxIndex((prev) => (prev !== null && prev < carouselItems.length - 1 ? prev + 1 : 0))}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/20 cursor-pointer shadow-lg z-30"
+                    title="Next (Right Arrow)"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
 
-                  if (count === 0 && tab !== 'All') return null;
+          {/* Bottom Thumbnails */}
+          {carouselItems.length > 1 && (
+            <div className="pt-2 border-t border-white/10 flex items-center justify-center gap-2 overflow-x-auto max-w-4xl mx-auto w-full px-2 scrollbar-none shrink-0">
+              {carouselItems.map((item, idx) => {
+                const isSelected = carouselLightboxIndex === idx;
+                return (
+                  <button
+                    key={`${item.id}-${idx}`}
+                    type="button"
+                    onClick={() => setCarouselLightboxIndex(idx)}
+                    className={`relative w-16 h-12 rounded-xl overflow-hidden flex-shrink-0 border-2 transition cursor-pointer ${
+                      isSelected ? 'border-[#f7db49] scale-105 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <Image src={item.url} alt="" fill className="object-cover" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
-                  const isActive = lightboxFilter === tab;
-                  return (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => {
-                        setLightboxFilter(tab);
-                        setActiveMediaIndex(0);
-                      }}
-                      className={`text-xs px-3 py-1 rounded-lg font-bold transition cursor-pointer flex items-center gap-1 ${
-                        isActive
-                          ? 'bg-[#006452] text-white shadow-xs'
-                          : 'text-white/70 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      <span>{tab === 'Project' ? 'Infrastructure' : tab}</span>
-                      <span className={`text-[10px] px-1 rounded-full ${isActive ? 'bg-emerald-800 text-white' : 'bg-white/10 text-white/60'}`}>
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+      {/* 6. Project-Wise Media Lightbox / Drawer Modal */}
+      {activeProject && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-6 animate-fadeIn select-none overflow-hidden h-screen w-screen">
+          {/* Top Bar - Centered Tabs Layout */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-white/10 gap-3 shrink-0">
+            <div>
+              <span className="text-[10px] font-bold text-[#f7db49] uppercase tracking-widest block">
+                {activeProject.location} • GATED COMMUNITY
+              </span>
+              <h3 className="text-base sm:text-xl font-black text-white">
+                {activeProject.name}
+              </h3>
+            </div>
+
+            {/* Inner Lightbox Filter Tabs - Centered */}
+            <div className="flex items-center justify-center flex-wrap gap-1.5 bg-white/10 p-1 rounded-xl border border-white/10 mx-auto md:mx-0">
+              {(['All', 'Project', 'Plots', 'Videos', 'General'] as const).map((tab) => {
+                const count =
+                  tab === 'All'
+                    ? activeProject.media.length
+                    : tab === 'Videos'
+                    ? activeProject.media.filter((m) => m.type === 'video').length
+                    : activeProject.media.filter((m) => m.category === tab).length;
+
+                if (count === 0 && tab !== 'All') return null;
+
+                const isActive = lightboxFilter === tab;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => {
+                      setLightboxFilter(tab);
+                      setActiveMediaIndex(0);
+                    }}
+                    className={`text-xs px-3 py-1 rounded-lg font-bold transition cursor-pointer flex items-center gap-1 ${
+                      isActive
+                        ? 'bg-[#006452] text-white shadow-xs'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span>{tab === 'Project' ? 'Infrastructure' : tab === 'General' ? 'Site Photos' : tab}</span>
+                    <span className={`text-[10px] px-1 rounded-full ${isActive ? 'bg-emerald-800 text-white' : 'bg-white/10 text-white/60'}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Close Button and Counter */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-end gap-3">
               {currentProjectMedia.length > 0 && (
                 <span className="text-white/70 text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg border border-white/10">
                   {activeMediaIndex + 1} / {currentProjectMedia.length}
@@ -528,7 +913,7 @@ export default function GalleryPage() {
           </div>
 
           {/* Main Viewport */}
-          <div className="relative flex-1 flex items-center justify-center my-3 max-h-[70vh]">
+          <div className="relative flex-1 flex items-center justify-center my-2 min-h-0 overflow-hidden">
             {activeMediaItem ? (
               <div className="relative w-full h-full max-w-5xl flex items-center justify-center">
                 {activeMediaItem.type === 'video' ? (
@@ -538,7 +923,7 @@ export default function GalleryPage() {
                       title={activeMediaItem.caption}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
-                      className="w-full h-full max-h-[65vh] rounded-2xl border-0 aspect-video"
+                      className="w-full h-full max-h-[62vh] rounded-2xl border-0 aspect-video"
                     />
                   ) : (
                     <video
@@ -546,16 +931,17 @@ export default function GalleryPage() {
                       src={activeMediaItem.url}
                       controls
                       autoPlay
-                      className="w-full h-full max-h-[65vh] rounded-2xl object-contain"
+                      className="w-full h-full max-h-[62vh] rounded-2xl object-contain"
                     />
                   )
                 ) : (
-                  <div className="relative w-full h-full">
+                  <div className="relative w-full h-full flex items-center justify-center">
                     <Image
                       src={activeMediaItem.url}
                       alt={activeMediaItem.caption}
                       fill
                       className="object-contain"
+                      priority
                     />
                   </div>
                 )}
@@ -606,7 +992,7 @@ export default function GalleryPage() {
 
           {/* Bottom Thumbnail Strip */}
           {currentProjectMedia.length > 1 && (
-            <div className="pt-2 border-t border-white/10 flex items-center justify-center gap-2 overflow-x-auto max-w-5xl mx-auto w-full px-2">
+            <div className="pt-2 border-t border-white/10 flex items-center justify-center gap-2 overflow-x-auto max-w-4xl mx-auto w-full px-2 scrollbar-none shrink-0">
               {currentProjectMedia.map((m, idx) => {
                 const isSelected = activeMediaIndex === idx;
                 return (

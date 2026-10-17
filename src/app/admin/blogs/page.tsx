@@ -305,30 +305,30 @@ export default function AdminBlogsPage() {
   });
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 bg-slate-950 text-slate-100 min-h-screen">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen transition-colors">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl animate-fade-in">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl animate-fade-in">
+          <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0" />
           <span className="text-sm font-medium">{toastMessage}</span>
-          <button onClick={() => setToastMessage(null)} className="text-emerald-400 hover:text-emerald-200">
+          <button onClick={() => setToastMessage(null)} className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-200">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-inner">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-inner">
               <Newspaper className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
                 Blog Manager
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Manage real estate articles, guides, market news & SEO articles
               </p>
             </div>
@@ -337,23 +337,23 @@ export default function AdminBlogsPage() {
 
         {viewMode !== 'form' && (
           <div className="flex items-center gap-3">
-            <div className="bg-slate-900 border border-slate-800 rounded-lg p-1 flex items-center">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-1 flex items-center shadow-sm">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
                   viewMode === 'grid'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
                 <Grid className="w-3.5 h-3.5" /> Grid View
               </button>
               <button
                 onClick={() => setViewMode('table')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
                   viewMode === 'table'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
                 <ListIcon className="w-3.5 h-3.5" /> Table View
@@ -362,7 +362,7 @@ export default function AdminBlogsPage() {
 
             <button
               onClick={handleCreateNew}
-              className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all flex items-center gap-2 border border-emerald-400/30 shrink-0"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" /> Write New Article
             </button>
@@ -373,27 +373,27 @@ export default function AdminBlogsPage() {
       {/* VIEW MODE: FORM (Create / Edit Article) */}
       {viewMode === 'form' ? (
         <div className="space-y-6 max-w-5xl mx-auto">
-          <div className="flex items-center justify-between bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+          <div className="flex items-center justify-between bg-white dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <button
               onClick={() => setViewMode('grid')}
-              className="text-slate-400 hover:text-white text-xs font-medium flex items-center gap-2 transition-colors"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" /> Back to Articles List
             </button>
-            <h2 className="text-base font-semibold text-emerald-400">
+            <h2 className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
               {editingBlog ? 'Edit Blog Article' : 'Create & Publish New Blog Article'}
             </h2>
           </div>
 
           <form onSubmit={(e) => { e.preventDefault(); handleSave(formData.status || 'Published'); }} className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
-              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
-                <FileText className="w-4 h-4 text-amber-400" /> Article Metadata & Header Content
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <FileText className="w-4 h-4 text-amber-500" /> Article Metadata & Header Content
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="md:col-span-2 space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                     Article Title <span className="text-amber-500">*</span>
                   </label>
                   <input
@@ -402,20 +402,20 @@ export default function AdminBlogsPage() {
                     value={formData.title || ''}
                     onChange={(e) => handleTitleChange(e.target.value)}
                     placeholder="e.g. Complete Guide to Buying DTCP Approved Plots in Trichy"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-slate-300">URL Slug</label>
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300">URL Slug</label>
                     <button
                       type="button"
                       onClick={() => {
                         const s = (formData.title || '').toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
                         setFormData((prev) => ({ ...prev, slug: s }));
                       }}
-                      className="text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors cursor-pointer"
+                      className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 transition-colors cursor-pointer"
                       title="Sync slug with current title"
                     >
                       <RefreshCw className="w-3 h-3" /> Sync with Title
@@ -426,17 +426,17 @@ export default function AdminBlogsPage() {
                     value={formData.slug || ''}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-') })}
                     placeholder="dtcp-approved-plots-trichy-guide"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs font-mono text-amber-400 placeholder-slate-600 focus:outline-none transition-colors"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs font-mono text-amber-600 dark:text-amber-400 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
                   />
                   <p className="text-[10px] text-slate-500">Auto-generated from title. Accessible at /blog/{"{"}slug{"}"}</p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Category</label>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Category</label>
                   <select
                     value={formData.category || 'Buying Guide'}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none transition-colors"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none transition-colors"
                   >
                     {CATEGORIES.filter((c) => c !== 'All Categories').map((cat) => (
                       <option key={cat} value={cat}>
@@ -447,32 +447,32 @@ export default function AdminBlogsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Author Name</label>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Author Name</label>
                   <input
                     type="text"
                     value={formData.author || 'Sree Hari Realty Editorial'}
                     onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none transition-colors"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Read Time Estimate</label>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Read Time Estimate</label>
                   <input
                     type="text"
                     value={formData.read_time || '5 min read'}
                     onChange={(e) => setFormData({ ...formData, read_time: e.target.value })}
                     placeholder="e.g. 5 min read"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none transition-colors"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Status</label>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Status</label>
                   <select
                     value={formData.status || 'Published'}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none transition-colors"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none transition-colors"
                   >
                     <option value="Published">Published (Live on Website)</option>
                     <option value="Draft">Draft (Internal Only)</option>
@@ -481,14 +481,14 @@ export default function AdminBlogsPage() {
 
                 <div className="md:col-span-2 space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                      <ImageIcon className="w-4 h-4 text-amber-400" /> Cover / Header Image
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-emerald-600 dark:text-amber-400" /> Cover / Header Image
                     </label>
                     {formData.image_url && (
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, image_url: '' })}
-                        className="text-[11px] text-rose-400 hover:text-rose-300 hover:underline cursor-pointer"
+                        className="text-[11px] text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:underline cursor-pointer"
                       >
                         Reset to Default Image
                       </button>
@@ -506,34 +506,34 @@ export default function AdminBlogsPage() {
 
                   {/* Upload button and URL input */}
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                    <div className="sm:col-span-4">
+                    <div className="sm:col-span-5">
                       <button
                         type="button"
                         disabled={isUploadingImage}
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full h-full min-h-[42px] py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs rounded-xl border border-amber-500/30 flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+                        className="w-full h-full min-h-[42px] py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-amber-300 font-semibold text-xs rounded-xl border border-slate-200 dark:border-amber-500/30 flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
                       >
                         {isUploadingImage ? (
                           <>
-                            <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                            <Loader2 className="w-4 h-4 animate-spin text-emerald-600 dark:text-amber-400" />
                             <span>Uploading...</span>
                           </>
                         ) : (
                           <>
-                            <Upload className="w-4 h-4 text-amber-400" />
+                            <Upload className="w-4 h-4 text-emerald-600 dark:text-amber-400" />
                             <span>Upload Image from Device</span>
                           </>
                         )}
                       </button>
                     </div>
 
-                    <div className="sm:col-span-8">
+                    <div className="sm:col-span-7">
                       <input
                         type="url"
                         value={formData.image_url || ''}
                         onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                         placeholder="Or paste image URL (https://images.unsplash.com/...)"
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-colors"
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
                       />
                     </div>
                   </div>
@@ -544,7 +544,7 @@ export default function AdminBlogsPage() {
 
                 {/* Cover Image Preview */}
                 <div className="md:col-span-2">
-                  <div className="relative h-48 rounded-xl overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
+                  <div className="relative h-48 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={formData.image_url && formData.image_url.trim() !== '' ? formData.image_url : DEFAULT_BLOG_IMAGE}
@@ -554,12 +554,12 @@ export default function AdminBlogsPage() {
                         (e.target as HTMLImageElement).src = DEFAULT_BLOG_IMAGE;
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end justify-between p-4">
-                      <span className="text-[11px] text-slate-300 font-medium bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-700 backdrop-blur-md">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-between p-4">
+                      <span className="text-[11px] text-white font-medium bg-black/60 px-2.5 py-1 rounded-lg border border-white/20 backdrop-blur-md">
                         {formData.image_url ? 'Custom Upload / URL' : 'Default Real Estate Cover'}
                       </span>
                       {formData.image_url && (
-                        <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/80 border border-emerald-500/30 px-2 py-0.5 rounded">
+                        <span className="text-[10px] text-emerald-300 font-semibold bg-emerald-950/80 border border-emerald-500/40 px-2 py-0.5 rounded">
                           Active Image
                         </span>
                       )}
@@ -570,13 +570,13 @@ export default function AdminBlogsPage() {
             </div>
 
             {/* Article Content Section */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
-                <Sparkles className="w-4 h-4 text-amber-400" /> Article Content & Summary
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <Sparkles className="w-4 h-4 text-amber-500" /> Article Content & Summary
               </h3>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-300">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Short Excerpt / Summary <span className="text-amber-500">*</span>
                 </label>
                 <textarea
@@ -585,12 +585,12 @@ export default function AdminBlogsPage() {
                   value={formData.excerpt || ''}
                   onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
                   placeholder="Brief 2-3 sentence overview displayed on blog index card grid..."
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl p-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none transition-colors"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl p-3 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-300">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Full Article Body (Rich Text & Visual / HTML Editor) <span className="text-amber-500">*</span>
                 </label>
                 <RichTextEditor
@@ -603,43 +603,43 @@ export default function AdminBlogsPage() {
             </div>
 
             {/* SEO Settings & Snippet Preview */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
-              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-3">
-                <Globe className="w-4 h-4 text-amber-400" /> SEO Optimization & Search Engine Snippet Preview
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <Globe className="w-4 h-4 text-amber-500" /> SEO Optimization & Search Engine Snippet Preview
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">SEO Meta Title</label>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">SEO Meta Title</label>
                   <input
                     type="text"
                     value={formData.seo_title || ''}
                     onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
                     placeholder="DTCP Approved Plots Guide Trichy 2026"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none transition-colors"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">SEO Meta Description</label>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">SEO Meta Description</label>
                   <input
                     type="text"
                     value={formData.seo_description || ''}
                     onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
                     placeholder="Discover step-by-step guidance on DTCP layout approval..."
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none transition-colors"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
                   />
                 </div>
 
                 {/* Google Snippet Card */}
-                <div className="md:col-span-2 bg-slate-950 border border-slate-800/80 rounded-xl p-4 space-y-1">
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                <div className="md:col-span-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 space-y-1">
+                  <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
                     <GoogleIcon className="w-3.5 h-3.5" /> https://sreeharirealty.com › blog › {formData.slug || 'article-slug'}
                   </div>
-                  <h4 className="text-sm font-medium text-blue-400 truncate hover:underline cursor-pointer">
+                  <h4 className="text-sm font-medium text-blue-600 dark:text-blue-400 truncate hover:underline cursor-pointer">
                     {formData.seo_title || formData.title || 'Article Title Preview'} | Sree Hari Realty Promoters
                   </h4>
-                  <p className="text-xs text-slate-400 line-clamp-2">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
                     {formData.seo_description || formData.excerpt || 'Article summary description snippet preview will appear here in Google Search results.'}
                   </p>
                 </div>
@@ -647,11 +647,11 @@ export default function AdminBlogsPage() {
             </div>
 
             {/* Form Actions */}
-            <div className="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-slate-800">
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium rounded-xl transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -661,9 +661,9 @@ export default function AdminBlogsPage() {
                 type="button"
                 disabled={isSaving}
                 onClick={() => handleSave('Draft')}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs rounded-xl border border-amber-500/40 flex items-center gap-2 transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                className="px-5 py-2.5 bg-amber-50 hover:bg-amber-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-amber-700 dark:text-amber-300 font-semibold text-xs rounded-xl border border-amber-200 dark:border-amber-500/40 flex items-center gap-2 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
               >
-                <FileText className="w-4 h-4 text-amber-400" />
+                <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 <span>Save as Draft</span>
               </button>
 
@@ -672,7 +672,7 @@ export default function AdminBlogsPage() {
                 type="button"
                 disabled={isSaving}
                 onClick={() => handleSave('Published')}
-                className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all border border-emerald-400/30 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
                 <span>{editingBlog ? 'Update & Publish Article' : 'Save & Publish Article'}</span>
@@ -684,21 +684,21 @@ export default function AdminBlogsPage() {
         /* VIEW MODE: LIST / GRID */
         <div className="space-y-6">
           {/* Search & Filter Toolbar */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between shadow-sm">
             {/* Search Input */}
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search articles by title, excerpt, category, author..."
-                className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-colors"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -710,7 +710,7 @@ export default function AdminBlogsPage() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
+                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-300 focus:outline-none"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -722,7 +722,7 @@ export default function AdminBlogsPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-800 focus:border-amber-500/50 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
+                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-300 focus:outline-none"
               >
                 {STATUSES.map((st) => (
                   <option key={st} value={st}>
@@ -738,7 +738,7 @@ export default function AdminBlogsPage() {
                     setCategoryFilter('All Categories');
                     setStatusFilter('All Statuses');
                   }}
-                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl transition-colors"
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-xl transition-colors border border-slate-200 dark:border-transparent cursor-pointer"
                 >
                   Reset
                 </button>
@@ -747,10 +747,10 @@ export default function AdminBlogsPage() {
           </div>
 
           {/* Results Summary */}
-          <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
             <span>
-              Showing <strong className="text-amber-400">{filteredBlogs.length}</strong> of{' '}
-              <strong className="text-slate-200">{blogs.length}</strong> blog articles
+              Showing <strong className="text-emerald-600 dark:text-amber-400">{filteredBlogs.length}</strong> of{' '}
+              <strong className="text-slate-800 dark:text-slate-200">{blogs.length}</strong> blog articles
             </span>
           </div>
 
@@ -758,22 +758,22 @@ export default function AdminBlogsPage() {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-slate-900/60 border border-slate-800/80 rounded-2xl h-80 animate-pulse" />
+                <div key={i} className="bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-2xl h-80 animate-pulse" />
               ))}
             </div>
           ) : filteredBlogs.length === 0 ? (
             /* Empty State */
-            <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-12 text-center space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+            <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center space-y-4 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
                 <Newspaper className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-semibold text-slate-200">No blog articles found</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
+              <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">No blog articles found</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                 Try adjusting your search query or category filters, or click Write New Article to publish a new post.
               </p>
               <button
                 onClick={handleCreateNew}
-                className="px-4 py-2 bg-amber-500 text-slate-950 font-bold text-xs rounded-xl hover:bg-amber-400 transition-colors inline-flex items-center gap-2"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-colors inline-flex items-center gap-2 cursor-pointer shadow-md"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" /> Write First Article
               </button>
@@ -784,28 +784,28 @@ export default function AdminBlogsPage() {
               {filteredBlogs.map((blog) => (
                 <div
                   key={blog.id}
-                  className="bg-slate-900 border border-slate-800 hover:border-amber-500/30 rounded-2xl overflow-hidden shadow-lg transition-all group flex flex-col"
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/40 dark:hover:border-amber-500/30 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col"
                 >
                   {/* Card Cover Image */}
-                  <div className="relative h-48 bg-slate-950 overflow-hidden">
+                  <div className="relative h-48 bg-slate-100 dark:bg-slate-950 overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={blog.image_url || DEFAULT_BLOG_IMAGE}
                       alt={blog.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-85"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = DEFAULT_BLOG_IMAGE;
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                     {/* Status Badge */}
                     <div className="absolute top-3 left-3">
                       <span
-                        className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border backdrop-blur-md ${
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md ${
                           blog.status === 'Published'
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-amber-600 text-white'
                         }`}
                       >
                         {blog.status || 'Published'}
@@ -814,17 +814,17 @@ export default function AdminBlogsPage() {
 
                     {/* Category Badge */}
                     <div className="absolute top-3 right-3">
-                      <span className="text-[10px] font-medium px-2.5 py-1 rounded-full bg-slate-900/80 text-amber-400 border border-amber-500/30 backdrop-blur-md">
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-900/95 text-amber-300 border border-amber-400/40 shadow-md">
                         {blog.category || 'Guide'}
                       </span>
                     </div>
 
                     {/* Read Time & Date overlay */}
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[11px] text-slate-300">
-                      <span className="flex items-center gap-1 text-slate-300">
-                        <Clock className="w-3.5 h-3.5 text-amber-400" /> {blog.read_time || '5 min read'}
+                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[11px] text-white font-medium bg-slate-950/75 backdrop-blur-sm px-2.5 py-1 rounded-lg">
+                      <span className="flex items-center gap-1 text-amber-300 font-semibold">
+                        <Clock className="w-3.5 h-3.5 text-amber-300" /> {blog.read_time || '5 min read'}
                       </span>
-                      <span className="flex items-center gap-1 text-slate-400">
+                      <span className="flex items-center gap-1 text-slate-200">
                         <Calendar className="w-3.5 h-3.5" />{' '}
                         {blog.created_at ? new Date(blog.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '2026'}
                       </span>
@@ -834,17 +834,17 @@ export default function AdminBlogsPage() {
                   {/* Card Content Body */}
                   <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
                     <div className="space-y-2">
-                      <h3 className="text-sm font-semibold text-white line-clamp-2 group-hover:text-amber-400 transition-colors">
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-amber-400 transition-colors">
                         {blog.title}
                       </h3>
-                      <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
+                      <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
                         {blog.excerpt || blog.content}
                       </p>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                      <span className="text-[11px] text-slate-400 flex items-center gap-1 truncate max-w-[140px]">
-                        <User className="w-3 h-3 text-amber-400 shrink-0" /> {blog.author || 'Sree Hari Editorial'}
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 truncate max-w-[140px]">
+                        <User className="w-3 h-3 text-emerald-600 dark:text-amber-400 shrink-0" /> {blog.author || 'Sree Hari Editorial'}
                       </span>
 
                       {/* Quick Action Buttons */}
@@ -852,21 +852,21 @@ export default function AdminBlogsPage() {
                         <button
                           onClick={() => handleView(blog)}
                           title="View Article Details"
-                          className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-800 transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-950 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleEdit(blog)}
                           title="Edit Article"
-                          className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-800 transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-950 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setDeletingBlogId(blog.id)}
                           title="Delete Article"
-                          className="p-1.5 rounded-lg bg-slate-950 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-900 transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-950 hover:bg-rose-50 dark:hover:bg-rose-950 text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-900 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -878,10 +878,10 @@ export default function AdminBlogsPage() {
             </div>
           ) : (
             /* TABLE VIEW */
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-950 text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider text-[10px]">
+                <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                  <thead className="bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold uppercase tracking-wider text-[10px]">
                     <tr>
                       <th className="px-4 py-3.5">Article</th>
                       <th className="px-4 py-3.5">Category</th>
@@ -891,32 +891,32 @@ export default function AdminBlogsPage() {
                       <th className="px-4 py-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/80">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                     {filteredBlogs.map((blog) => (
-                      <tr key={blog.id} className="hover:bg-slate-800/40 transition-colors">
+                      <tr key={blog.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                         <td className="px-4 py-3.5 max-w-xs">
                           <div className="flex items-center gap-3">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={blog.image_url || DEFAULT_BLOG_IMAGE}
                               alt=""
-                              className="w-10 h-10 rounded-lg object-cover bg-slate-950 shrink-0 border border-slate-800"
+                              className="w-10 h-10 rounded-lg object-cover bg-slate-100 dark:bg-slate-950 shrink-0 border border-slate-200 dark:border-slate-800"
                             />
                             <div className="truncate">
-                              <p className="font-semibold text-white truncate">{blog.title}</p>
+                              <p className="font-semibold text-slate-900 dark:text-white truncate">{blog.title}</p>
                               <p className="text-[10px] text-slate-500 font-mono truncate">/blog/{blog.slug}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 font-medium text-amber-400">{blog.category}</td>
-                        <td className="px-4 py-3.5 text-slate-300">{blog.author || 'Editorial'}</td>
-                        <td className="px-4 py-3.5 text-slate-400">{blog.read_time || '5 min'}</td>
+                        <td className="px-4 py-3.5 font-medium text-emerald-600 dark:text-amber-400">{blog.category}</td>
+                        <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">{blog.author || 'Editorial'}</td>
+                        <td className="px-4 py-3.5 text-slate-500 dark:text-slate-400">{blog.read_time || '5 min'}</td>
                         <td className="px-4 py-3.5">
                           <span
                             className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                               blog.status === 'Published'
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
                             }`}
                           >
                             {blog.status}
@@ -926,19 +926,19 @@ export default function AdminBlogsPage() {
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleView(blog)}
-                              className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-800"
+                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-950 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleEdit(blog)}
-                              className="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-800"
+                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-950 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-amber-400 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setDeletingBlogId(blog.id)}
-                              className="p-1.5 rounded-lg bg-slate-950 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-900"
+                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-950 hover:bg-rose-50 dark:hover:bg-rose-950 text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-900 transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -961,28 +961,28 @@ export default function AdminBlogsPage() {
           onClick={() => setIsViewModalOpen(false)}
         >
           <div
-            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl relative"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl relative text-slate-900 dark:text-slate-100"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Prominent High-Z Close 'X' Button */}
             <button
               type="button"
               onClick={() => setIsViewModalOpen(false)}
-              className="absolute top-4 right-4 z-50 p-2.5 rounded-full bg-slate-950/95 text-slate-300 hover:text-white hover:bg-rose-600 border border-slate-700 shadow-2xl transition-all cursor-pointer"
+              className="absolute top-4 right-4 z-50 p-2.5 rounded-full bg-slate-100 dark:bg-slate-950/95 text-slate-600 dark:text-slate-300 hover:text-white hover:bg-rose-600 border border-slate-200 dark:border-slate-700 shadow-2xl transition-all cursor-pointer"
               title="Close preview"
             >
               <X className="w-5 h-5 stroke-[2.5]" />
             </button>
 
             {/* Modal Image Header */}
-            <div className="relative h-64 rounded-2xl overflow-hidden border border-slate-800 bg-slate-950">
+            <div className="relative h-64 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={viewingBlog.image_url || DEFAULT_BLOG_IMAGE}
                 alt={viewingBlog.title}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent flex items-end p-6">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex items-end p-6">
                 <div className="space-y-2">
                   <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 backdrop-blur-md">
                     {viewingBlog.category}
@@ -993,48 +993,48 @@ export default function AdminBlogsPage() {
             </div>
 
             {/* Article Details Meta */}
-            <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400 border-b border-slate-800 pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 pb-4">
               <span className="flex items-center gap-1.5">
-                <User className="w-4 h-4 text-amber-400" /> {viewingBlog.author || 'Editorial Team'}
+                <User className="w-4 h-4 text-emerald-600 dark:text-amber-400" /> {viewingBlog.author || 'Editorial Team'}
               </span>
               <span className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-amber-400" /> {viewingBlog.read_time || '5 min read'}
+                <Clock className="w-4 h-4 text-emerald-600 dark:text-amber-400" /> {viewingBlog.read_time || '5 min read'}
               </span>
-              <span className="flex items-center gap-1.5 font-mono text-amber-400/80">
-                <Globe className="w-4 h-4 text-amber-400" /> /blog/{viewingBlog.slug}
+              <span className="flex items-center gap-1.5 font-mono text-emerald-600 dark:text-amber-400/80">
+                <Globe className="w-4 h-4 text-emerald-600 dark:text-amber-400" /> /blog/{viewingBlog.slug}
               </span>
             </div>
 
             {/* Excerpt Summary */}
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1">
-              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Summary Excerpt</span>
-              <p className="text-xs text-slate-300 leading-relaxed italic">{viewingBlog.excerpt}</p>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-amber-400 uppercase tracking-wider">Summary Excerpt</span>
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed italic">{viewingBlog.excerpt}</p>
             </div>
 
             {/* Full Content */}
             <div className="space-y-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Full Content Body</span>
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Full Content Body</span>
               <div
-                className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed font-sans max-h-80 overflow-y-auto prose prose-invert max-w-none prose-img:rounded-xl prose-a:text-amber-400"
+                className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-300 leading-relaxed font-sans max-h-80 overflow-y-auto prose dark:prose-invert max-w-none prose-img:rounded-xl prose-a:text-emerald-600 dark:prose-a:text-amber-400"
                 dangerouslySetInnerHTML={{ __html: viewingBlog.content }}
               />
             </div>
 
             {/* SEO Metadata */}
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Globe className="w-3 h-3 text-amber-400" /> Search Engine Preview
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Globe className="w-3 h-3 text-emerald-600 dark:text-amber-400" /> Search Engine Preview
               </span>
-              <p className="text-xs font-semibold text-blue-400">{viewingBlog.seo_title || viewingBlog.title}</p>
-              <p className="text-[11px] text-slate-400">{viewingBlog.seo_description || viewingBlog.excerpt}</p>
+              <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">{viewingBlog.seo_title || viewingBlog.title}</p>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400">{viewingBlog.seo_description || viewingBlog.excerpt}</p>
             </div>
 
             {/* Bottom Actions Bar */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
               <span className={`text-[11px] font-semibold px-3 py-1 rounded-full border ${
                 viewingBlog.status === 'Published'
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40'
+                  : 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40'
               }`}>
                 Status: {viewingBlog.status || 'Published'}
               </span>
@@ -1042,7 +1042,7 @@ export default function AdminBlogsPage() {
               <button
                 type="button"
                 onClick={() => setIsViewModalOpen(false)}
-                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 Close Preview
               </button>
@@ -1054,26 +1054,26 @@ export default function AdminBlogsPage() {
       {/* CONFIRM DELETE MODAL */}
       {deletingBlogId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
-            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-400 flex items-center justify-center mx-auto">
               <Trash2 className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-semibold text-white">Delete Blog Article?</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white">Delete Blog Article?</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 This action will permanently remove this blog post from PostgreSQL database and website feed.
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 onClick={() => setDeletingBlogId(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl transition-colors"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors"
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-lg transition-colors cursor-pointer"
               >
                 Delete Article
               </button>

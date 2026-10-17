@@ -89,10 +89,12 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
   const [projectFormData, setProjectFormData] = useState<any>(null);
   const [projectSaving, setProjectSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingBrochure, setUploadingBrochure] = useState(false);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
+  const [editModalTab, setEditModalTab] = useState<'basic' | 'content' | 'media' | 'landmarks'>('basic');
   const [newHighlightInput, setNewHighlightInput] = useState('');
 
-  // Landmark draft
+  // Landmark draft for in-page Tab 4
   const [newLandmark, setNewLandmark] = useState<LandmarkItem>({
     landmark: '',
     category: 'Worship',
@@ -100,6 +102,17 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
     time: '',
     map_url: ''
   });
+  const [customCategory, setCustomCategory] = useState('');
+
+  // Landmark draft for Edit Project Modal Tab 4
+  const [modalLandmark, setModalLandmark] = useState<LandmarkItem>({
+    landmark: '',
+    category: 'Worship',
+    distance: '',
+    time: '',
+    map_url: ''
+  });
+  const [modalCustomCategory, setModalCustomCategory] = useState('');
 
   useEffect(() => {
     loadProjectDetails();
@@ -182,6 +195,40 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
     } finally {
       setProjectSaving(false);
     }
+  };
+
+  const handleOpenEditProjectModal = () => {
+    setEditModalTab('basic');
+    setIsEditProjectModalOpen(true);
+  };
+
+  const handleAddModalLandmark = () => {
+    if (!modalLandmark.landmark.trim()) return;
+    const resolvedCat = modalLandmark.category === 'Other' ? (modalCustomCategory.trim() || 'Other') : modalLandmark.category;
+    const itemToAdd = {
+      ...modalLandmark,
+      category: resolvedCat,
+      landmark: modalLandmark.landmark.trim()
+    };
+    setProjectFormData((prev: any) => ({
+      ...prev,
+      nearby_landmarks: [...(prev.nearby_landmarks || []), itemToAdd]
+    }));
+    setModalLandmark({
+      landmark: '',
+      category: 'Worship',
+      distance: '',
+      time: '',
+      map_url: ''
+    });
+    setModalCustomCategory('');
+  };
+
+  const handleRemoveModalLandmark = (idx: number) => {
+    setProjectFormData((prev: any) => ({
+      ...prev,
+      nearby_landmarks: (prev.nearby_landmarks || []).filter((_: any, i: number) => i !== idx)
+    }));
   };
 
   // Reload just plots for this project
@@ -282,6 +329,30 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
     }
   };
 
+  const handleBrochureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBrochure(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        const uploadRes = await api.uploadMedia({ imageBase64: base64, filename: file.name });
+        if (uploadRes?.success && uploadRes?.fileUrl) {
+          setProjectFormData((prev: any) => ({ ...prev, brochure_url: uploadRes.fileUrl }));
+        } else {
+          alert('Upload failed: ' + (uploadRes?.message || 'Unknown error'));
+        }
+        setUploadingBrochure(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      alert('Upload error: ' + err.message);
+      setUploadingBrochure(false);
+    }
+  };
+
   // Filtered plots for this project
   const filteredPlots = plots.filter(plot => {
     if (plotSearch.trim()) {
@@ -335,7 +406,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
       <div className="flex items-center justify-between gap-4">
         <Link
           href="/admin/projects"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition cursor-pointer"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to All Projects</span>
@@ -344,7 +415,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setIsEditProjectModalOpen(true)}
+            onClick={handleOpenEditProjectModal}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 px-3.5 py-2 rounded-xl transition shadow-md cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5" />
@@ -354,9 +425,9 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
           <Link
             href={`/properties/${project.slug}`}
             target="_blank"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3.5 py-2 rounded-xl transition border border-slate-700"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3.5 py-2 rounded-xl transition border border-slate-200 dark:border-slate-700"
           >
-            <Eye className="w-3.5 h-3.5 text-emerald-400" />
+            <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>View Public Page</span>
             <ExternalLink className="w-3 h-3 text-slate-400" />
           </Link>
@@ -364,67 +435,67 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
       </div>
 
       {/* Main Project Header Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-950/80 border border-emerald-800/80 text-emerald-400 flex items-center justify-center flex-shrink-0 shadow-lg">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 shadow-sm">
               <Building2 className="w-8 h-8" />
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
                   Project Workspace
                 </span>
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
                     project.status === 'Ongoing'
-                      ? 'bg-emerald-900/80 text-emerald-200 border border-emerald-500/40'
+                      ? 'bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-500/40'
                       : project.status === 'Sold Out'
-                      ? 'bg-rose-900/80 text-rose-200 border border-rose-500/40'
-                      : 'bg-blue-900/80 text-blue-200 border border-blue-500/40'
+                      ? 'bg-rose-100 dark:bg-rose-900/80 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-500/40'
+                      : 'bg-blue-100 dark:bg-blue-900/80 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-500/40'
                   }`}
                 >
                   {project.status}
                 </span>
-                <span className="text-[11px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
+                <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                   ID: {project.id}
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 {project.name}
               </h1>
-              <p className="text-slate-400 text-xs flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-slate-500" />
+              <p className="text-slate-600 dark:text-slate-400 text-xs flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                 <span>{project.location_area}, {project.location_city}</span>
-                <span className="text-slate-600">•</span>
+                <span className="text-slate-400 dark:text-slate-600">•</span>
                 <span>{project.total_extent_acres || 0} Acres Extent</span>
               </p>
             </div>
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="flex items-center gap-3 bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl flex-wrap">
-            <div className="px-3 border-r border-slate-800">
-              <div className="text-[10px] text-slate-400 font-semibold uppercase">Total Plots</div>
-              <div className="text-lg font-bold text-white">{plots.length}</div>
+          <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800/80 p-3 rounded-xl flex-wrap">
+            <div className="px-3 border-r border-slate-200 dark:border-slate-800">
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Total Plots</div>
+              <div className="text-lg font-bold text-slate-900 dark:text-white">{plots.length}</div>
             </div>
-            <div className="px-3 border-r border-slate-800">
-              <div className="text-[10px] text-emerald-400 font-semibold uppercase">Available</div>
-              <div className="text-lg font-bold text-emerald-400">{availableCount}</div>
+            <div className="px-3 border-r border-slate-200 dark:border-slate-800">
+              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase">Available</div>
+              <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{availableCount}</div>
             </div>
-            <div className="px-3 border-r border-slate-800">
-              <div className="text-[10px] text-amber-400 font-semibold uppercase">Booked</div>
-              <div className="text-lg font-bold text-amber-400">{bookedCount}</div>
+            <div className="px-3 border-r border-slate-200 dark:border-slate-800">
+              <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold uppercase">Booked</div>
+              <div className="text-lg font-bold text-amber-600 dark:text-amber-400">{bookedCount}</div>
             </div>
             <div className="px-3">
-              <div className="text-[10px] text-rose-400 font-semibold uppercase">Sold</div>
-              <div className="text-lg font-bold text-rose-400">{soldCount}</div>
+              <div className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold uppercase">Sold</div>
+              <div className="text-lg font-bold text-rose-600 dark:text-rose-400">{soldCount}</div>
             </div>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 mt-6 border-t border-slate-800 pt-4 overflow-x-auto">
+        <div className="flex items-center gap-2 mt-6 border-t border-slate-200 dark:border-slate-800 pt-4 overflow-x-auto">
           {[
             { id: 'plots', label: 'Plot Inventory', icon: Grid, count: plots.length },
             { id: 'overview', label: 'Overview', icon: FileText },
@@ -440,8 +511,8 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/50'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -449,7 +520,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                 {tab.count !== undefined && (
                   <span
                     className={`ml-1 px-2 py-0.5 rounded-full text-[10px] ${
-                      isActive ? 'bg-emerald-800 text-white' : 'bg-slate-800 text-slate-300'
+                      isActive ? 'bg-emerald-800 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     {tab.count}
@@ -465,23 +536,23 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
       {activeTab === 'plots' && (
         <div className="space-y-6">
           {/* Action Header & Filters */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
             <div className="flex items-center gap-3 flex-1 max-w-md">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search plot number, facing, or dimension..."
                   value={plotSearch}
                   onChange={e => setPlotSearch(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white pl-9 pr-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white pl-9 pr-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <select
                 value={plotStatusFilter}
                 onChange={e => setPlotStatusFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="All">All Statuses</option>
                 <option value="Available">Available Only</option>
@@ -492,7 +563,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
 
             <button
               onClick={handleOpenAddPlot}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-950/50 cursor-pointer"
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer self-start sm:self-auto"
             >
               <Plus className="w-4 h-4" />
               <span>Add Plot to {project.name}</span>
@@ -500,11 +571,11 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
           </div>
 
           {/* Plots Table */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                     <th className="py-3.5 px-4">Plot Number</th>
                     <th className="py-3.5 px-4">Dimension</th>
                     <th className="py-3.5 px-4">Area (Sq.Ft)</th>
@@ -515,7 +586,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                     <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/80 text-xs">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
                   {filteredPlots.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-slate-500">
@@ -528,27 +599,27 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                       const priceLakhs = (priceVal / 100000).toFixed(2);
 
                       return (
-                        <tr key={plot.id} className="hover:bg-slate-800/40 transition">
-                          <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        <tr key={plot.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
                             <span>{plot.plot_number}</span>
                           </td>
-                          <td className="py-3.5 px-4 text-slate-300 font-medium">
+                          <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">
                             {plot.dimension || plot.dimension_str || 'N/A'}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-300 font-semibold">
+                          <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-semibold">
                             {plot.area_sqft} Sq.Ft
                           </td>
-                          <td className="py-3.5 px-4 text-slate-400">
+                          <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
                             {plot.facing || 'North Facing'}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-400">
-                            <span className="bg-slate-800 text-slate-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-700">
+                          <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
+                            <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                               {plot.approval_status || 'DTCP Approved'}
                             </span>
                           </td>
                           <td className="py-3.5 px-4">
-                            <div className="font-extrabold text-emerald-400 text-sm">
+                            <div className="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">
                               ₹ {priceLakhs} L
                             </div>
                             <div className="text-[10px] text-slate-500">
@@ -561,10 +632,10 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                               onChange={e => handleQuickStatusChange(plot.id, e.target.value)}
                               className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border focus:outline-none cursor-pointer ${
                                 plot.status === 'Available'
-                                  ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800'
                                   : plot.status === 'Booked'
-                                  ? 'bg-amber-950/80 text-amber-300 border-amber-800'
-                                  : 'bg-rose-950/80 text-rose-300 border-rose-800'
+                                  ? 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800'
+                                  : 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800'
                               }`}
                             >
                               <option value="Available">Available</option>
@@ -577,21 +648,21 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                             <div className="inline-flex items-center gap-1.5">
                               <button
                                 onClick={() => handleOpenViewPlot(plot)}
-                                className="p-1.5 text-slate-300 hover:text-emerald-400 rounded-lg bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
+                                className="p-1.5 text-slate-600 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition cursor-pointer"
                                 title="View Plot Details"
                               >
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleOpenEditPlot(plot)}
-                                className="p-1.5 text-slate-300 hover:text-white rounded-lg bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
+                                className="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition cursor-pointer"
                                 title="Edit Plot"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeletePlot(plot.id, plot.plot_number)}
-                                className="p-1.5 text-rose-400 hover:text-rose-200 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-900/50 transition cursor-pointer"
+                                className="p-1.5 text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-200 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 transition cursor-pointer"
                                 title="Delete Plot"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -612,93 +683,76 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
       {/* TAB 2: OVERVIEW */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-sm">
-            <div>
-              <h2 className="text-base font-bold text-white">Project Overview & Specifications</h2>
-              <p className="text-xs text-slate-400">View and update project tagline, narrative, infrastructure highlights, and legal compliance.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsEditProjectModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition shadow-md cursor-pointer self-start sm:self-auto"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Edit Project Details</span>
-            </button>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">Project Overview & Specifications</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Project tagline, narrative description, infrastructure highlights, and legal compliance.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-base font-bold text-white">Project Tagline & Narrative</h3>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditProjectModalOpen(true)}
-                    className="text-xs text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <Edit3 className="w-3 h-3" /> Edit
-                  </button>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Project Tagline & Narrative</h3>
                 </div>
-                <p className="text-emerald-400 text-sm font-semibold">{project.tagline}</p>
-                <div className="text-slate-300 text-xs leading-relaxed whitespace-pre-line bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                <p className="text-emerald-700 dark:text-emerald-400 text-sm font-bold">{project.tagline}</p>
+                <div className="text-slate-800 dark:text-slate-300 text-xs leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
                   {project.description || 'No description provided.'}
                 </div>
               </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-3">
-              <h3 className="text-base font-bold text-white">Key Infrastructure Highlights</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {(project.highlights || []).map((hl: string, idx: number) => (
-                  <div key={idx} className="flex items-start gap-2 bg-slate-950/60 border border-slate-800 p-3 rounded-xl text-xs text-slate-300">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                    <span>{hl}</span>
-                  </div>
-                ))}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-3">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Key Infrastructure Highlights</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {(project.highlights || []).map((hl: string, idx: number) => (
+                    <div key={idx} className="flex items-start gap-2 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-xs text-slate-800 dark:text-slate-300">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <span className="font-medium">{hl}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-              <h3 className="text-base font-bold text-white">Legal & Compliance</h3>
-              <div className="space-y-3 text-xs">
-                <div>
-                  <div className="text-slate-500 font-semibold text-[10px] uppercase">DTCP Approval</div>
-                  <div className="font-bold text-emerald-400 text-sm mt-0.5">{project.dtcp_number || '100% DTCP Approved'}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500 font-semibold text-[10px] uppercase">RERA Registration</div>
-                  <div className="font-bold text-emerald-400 text-sm mt-0.5">{project.rera_number || 'TNRERA Approved Layout'}</div>
-                </div>
-                <div>
-                  <div className="text-slate-500 font-semibold text-[10px] uppercase">Total Layout Area</div>
-                  <div className="font-semibold text-slate-200 mt-0.5">{project.total_extent_acres} Acres</div>
-                </div>
-                <div>
-                  <div className="text-slate-500 font-semibold text-[10px] uppercase">Total Capacity</div>
-                  <div className="font-semibold text-slate-200 mt-0.5">{project.total_plots_count} Plots Designed</div>
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Legal & Compliance</h3>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <div className="text-slate-500 font-semibold text-[10px] uppercase">DTCP Approval</div>
+                    <div className="font-bold text-emerald-700 dark:text-emerald-400 text-sm mt-0.5">{project.dtcp_number || '100% DTCP Approved'}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500 font-semibold text-[10px] uppercase">RERA Registration</div>
+                    <div className="font-bold text-emerald-700 dark:text-emerald-400 text-sm mt-0.5">{project.rera_number || 'TNRERA Approved Layout'}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500 font-semibold text-[10px] uppercase">Total Layout Area</div>
+                    <div className="font-bold text-slate-900 dark:text-slate-200 mt-0.5">{project.total_extent_acres} Acres</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-500 font-semibold text-[10px] uppercase">Total Capacity</div>
+                    <div className="font-bold text-slate-900 dark:text-slate-200 mt-0.5">{project.total_plots_count} Plots Designed</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
       )}
 
       {/* TAB 3: MEDIA */}
       {activeTab === 'media' && projectFormData && (
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 <span>Project Cover & Gallery Media</span>
               </h3>
               <button
                 onClick={handleSaveProject}
                 disabled={projectSaving}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2 rounded-xl transition cursor-pointer"
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition cursor-pointer shadow-sm"
               >
                 <Save className="w-4 h-4" />
                 <span>{projectSaving ? 'Saving...' : 'Save Media Changes'}</span>
@@ -708,28 +762,28 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
             {/* Cover Image */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300">Cover Banner Image URL</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Cover Banner Image URL</label>
                 <input
                   type="text"
-                  value={projectFormData.banner_image}
+                  value={projectFormData.banner_image || ''}
                   onChange={e => setProjectFormData({ ...projectFormData, banner_image: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500"
                 />
                 <div className="flex items-center gap-2 pt-1">
-                  <label className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-medium bg-emerald-950/60 border border-emerald-900/60 px-3 py-1.5 rounded-lg">
+                  <label className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 hover:underline font-bold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 px-3 py-1.5 rounded-lg">
                     <Upload className="w-3.5 h-3.5" />
                     <span>Upload New Cover Image</span>
                     <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'banner_image')} />
                   </label>
-                  {uploadingImage && <span className="text-[11px] text-amber-400">Uploading...</span>}
+                  {uploadingImage && <span className="text-[11px] text-amber-500 font-medium">Uploading...</span>}
                 </div>
               </div>
 
               <div>
-                <span className="text-xs font-semibold text-slate-400 block mb-2">Cover Preview</span>
-                <div className="h-44 w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">Cover Preview</span>
+                <div className="h-44 w-full rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                   <img
-                    src={projectFormData.banner_image || '/project_park_avenue_new.jpg'}
+                    src={projectFormData.banner_image || '/images/hero-bg.jpg'}
                     alt="Cover Preview"
                     className="w-full h-full object-cover"
                   />
@@ -738,16 +792,16 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
             </div>
 
             {/* Promotional Video */}
-            <div className="border-t border-slate-800 pt-6 space-y-4">
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                  <Video className="w-4 h-4 text-pink-400" />
+                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                  <Video className="w-4 h-4 text-pink-600 dark:text-pink-400" />
                   <span>Promotional Video (YouTube, Vimeo, or MP4)</span>
                 </h4>
                 <button
                   type="button"
                   onClick={() => setIsMediaLibraryOpen(true)}
-                  className="inline-flex items-center gap-1.5 text-xs text-pink-300 hover:text-pink-200 bg-pink-950/80 border border-pink-700/60 px-3 py-1.5 rounded-xl transition"
+                  className="inline-flex items-center gap-1.5 text-xs text-pink-700 dark:text-pink-300 hover:text-pink-800 dark:hover:text-pink-200 bg-pink-50 dark:bg-pink-950/80 border border-pink-200 dark:border-pink-700/60 px-3 py-1.5 rounded-xl transition font-medium"
                 >
                   <FolderOpen className="w-3.5 h-3.5" />
                   <span>Select from Video Library</span>
@@ -756,19 +810,52 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
               <input
                 type="text"
                 placeholder="https://www.youtube.com/watch?v=... or direct MP4 URL"
-                value={projectFormData.video_url}
+                value={projectFormData.video_url || ''}
                 onChange={e => setProjectFormData({ ...projectFormData, video_url: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Project Brochure Upload & Link */}
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Project Brochure Document (PDF / Image)</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    This file is downloaded when public website visitors click &quot;Download Brochure&quot;.
+                  </p>
+                </div>
+                <label className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 hover:underline font-bold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 px-3 py-1.5 rounded-lg">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{uploadingBrochure ? 'Uploading...' : 'Upload Brochure File'}</span>
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    className="hidden"
+                    onChange={handleBrochureUpload}
+                    disabled={uploadingBrochure}
+                  />
+                </label>
+              </div>
+              <input
+                type="text"
+                placeholder="e.g. /brochure_park_avenue.pdf or upload file above"
+                value={projectFormData.brochure_url || ''}
+                onChange={e => setProjectFormData({ ...projectFormData, brochure_url: e.target.value })}
+                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             {/* Gallery Images */}
-            <div className="border-t border-slate-800 pt-6 space-y-4">
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
                   Gallery Images Carousel ({projectFormData.gallery_images?.length || 0})
                 </h4>
-                <label className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-medium bg-emerald-950/60 border border-emerald-900/60 px-3 py-1.5 rounded-lg">
+                <label className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 hover:underline font-bold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 px-3 py-1.5 rounded-lg">
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Photo to Gallery</span>
                   <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'gallery')} />
@@ -777,14 +864,14 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {(projectFormData.gallery_images || []).map((imgUrl: string, idx: number) => (
-                  <div key={idx} className="relative group h-32 rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
+                  <div key={idx} className="relative group h-32 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                     <img src={imgUrl} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
                     <button
                       onClick={() => {
                         const next = projectFormData.gallery_images.filter((_: any, i: number) => i !== idx);
                         setProjectFormData({ ...projectFormData, gallery_images: next });
                       }}
-                      className="absolute top-2 right-2 p-1.5 bg-rose-900/90 hover:bg-rose-800 text-white rounded-lg opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                      className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg opacity-0 group-hover:opacity-100 transition cursor-pointer shadow-sm"
                       title="Remove image"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -800,14 +887,14 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
       {/* TAB 4: LOCATION ADVANTAGES */}
       {activeTab === 'landmarks' && projectFormData && (
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Compass className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   <span>Location Advantages & Strategic Connectivity</span>
                 </h3>
-                <p className="text-slate-400 text-xs mt-0.5">
+                <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
                   Verified nearby places of worship, universities, transit hubs, and healthcare.
                 </p>
               </div>
@@ -815,7 +902,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
               <button
                 onClick={handleSaveProject}
                 disabled={projectSaving}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2 rounded-xl transition cursor-pointer"
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition cursor-pointer shadow-sm"
               >
                 <Save className="w-4 h-4" />
                 <span>{projectSaving ? 'Saving...' : 'Save Hubs'}</span>
@@ -825,15 +912,15 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
             {/* Repeater List */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {(projectFormData.nearby_landmarks || []).map((lm: any, idx: number) => (
-                <div key={idx} className="flex items-center justify-between bg-slate-950 border border-slate-800 p-3.5 rounded-xl">
+                <div key={idx} className="flex items-center justify-between bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                         {lm.category || 'Transit'}
                       </span>
-                      <span className="text-xs font-bold text-white">{lm.name || lm.landmark}</span>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white">{lm.name || lm.landmark}</span>
                     </div>
-                    <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
                       <span>{lm.distance || 'Close proximity'}</span>
                       {lm.time && <span>• {lm.time}</span>}
                     </div>
@@ -844,7 +931,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                       const next = projectFormData.nearby_landmarks.filter((_: any, i: number) => i !== idx);
                       setProjectFormData({ ...projectFormData, nearby_landmarks: next });
                     }}
-                    className="text-slate-500 hover:text-rose-400 p-1.5 transition cursor-pointer"
+                    className="text-slate-400 hover:text-rose-500 p-1.5 transition cursor-pointer"
                     title="Remove landmark"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -854,25 +941,29 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
             </div>
 
             {/* Add New Hub Row */}
-            <div className="border-t border-slate-800 pt-4 space-y-3">
-              <h4 className="text-xs font-bold text-slate-300">Add Verified Landmark / Place of Worship</h4>
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-3">
+              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Add Verified Landmark, Transit Hub or Place of Worship</h4>
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <input
                   type="text"
                   placeholder="Hub Name (e.g. Gundur Mathurakaliamman Temple)"
                   value={newLandmark.landmark}
                   onChange={e => setNewLandmark({ ...newLandmark, landmark: e.target.value })}
-                  className="sm:col-span-2 bg-slate-950 border border-slate-800 text-xs text-white px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500"
+                  className="sm:col-span-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500"
                 />
                 <select
                   value={newLandmark.category}
                   onChange={e => setNewLandmark({ ...newLandmark, category: e.target.value as any })}
-                  className="bg-slate-950 border border-slate-800 text-xs text-slate-300 px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500 cursor-pointer"
                 >
-                  <option value="Worship">Places of Worship</option>
+                  <option value="Worship">Places of Worship (Temple / Mosque / Church)</option>
                   <option value="Education">Education & Universities</option>
-                  <option value="Transit">Transit & Highway</option>
+                  <option value="Transit">Transit, Airport & Bus Stand</option>
                   <option value="Healthcare">Healthcare & Hospitals</option>
+                  <option value="Shopping">Shopping & Markets</option>
+                  <option value="Workplace">Workplace & Industries</option>
+                  <option value="Entertainment">Entertainment, Theatre & Cinema</option>
+                  <option value="Other">Other (Custom Category)</option>
                 </select>
                 <div className="flex gap-2">
                   <input
@@ -880,12 +971,15 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                     placeholder="Dist (e.g. 2 km)"
                     value={newLandmark.distance}
                     onChange={e => setNewLandmark({ ...newLandmark, distance: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-500"
                   />
                   <button
                     type="button"
                     onClick={() => {
                       if (!newLandmark.landmark.trim()) return;
+                      const cat = newLandmark.category === 'Other' && customCategory.trim()
+                        ? customCategory.trim()
+                        : newLandmark.category;
                       setProjectFormData((prev: any) => ({
                         ...prev,
                         nearby_landmarks: [
@@ -893,19 +987,35 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                           {
                             name: newLandmark.landmark.trim(),
                             landmark: newLandmark.landmark.trim(),
-                            category: newLandmark.category,
+                            category: cat,
                             distance: newLandmark.distance || 'Short drive',
                             time: newLandmark.time || ''
                           }
                         ]
                       }));
                       setNewLandmark({ landmark: '', category: 'Worship', distance: '', time: '', map_url: '' });
+                      setCustomCategory('');
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-2 rounded-xl transition cursor-pointer"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition cursor-pointer shadow-sm"
                   >
                     Add
                   </button>
                 </div>
+
+                {newLandmark.category === 'Other' && (
+                  <div className="sm:col-span-4">
+                    <label className="block text-emerald-700 dark:text-emerald-400 text-[11px] font-bold mb-1">
+                      Specify Custom Category Name *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Multiplex Cinema, Theatre, Sports Stadium, Amusement Park"
+                      value={customCategory}
+                      onChange={e => setCustomCategory(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-950 border border-emerald-400 dark:border-emerald-600 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -915,16 +1025,16 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
       {/* TAB 5: SETTINGS */}
       {activeTab === 'settings' && projectFormData && (
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Layers className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 <span>Project Parameters & Publishing Controls</span>
               </h3>
               <button
                 onClick={handleSaveProject}
                 disabled={projectSaving}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2 rounded-xl transition cursor-pointer"
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition cursor-pointer shadow-sm"
               >
                 <Save className="w-4 h-4" />
                 <span>{projectSaving ? 'Saving...' : 'Save Settings'}</span>
@@ -933,21 +1043,21 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300">Project Name</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Project Name</label>
                 <input
                   type="text"
                   value={projectFormData.name}
                   onChange={e => setProjectFormData({ ...projectFormData, name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Publishing Status</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Publishing Status</label>
                 <select
                   value={projectFormData.status}
                   onChange={e => setProjectFormData({ ...projectFormData, status: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs text-slate-300 px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1 cursor-pointer"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1 cursor-pointer"
                 >
                   <option value="Ongoing">Ongoing (Active Selling)</option>
                   <option value="Upcoming">Upcoming (Pre-Launch)</option>
@@ -958,63 +1068,63 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Total Extent (Acres)</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Total Extent (Acres)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={projectFormData.total_extent_acres}
                   onChange={e => setProjectFormData({ ...projectFormData, total_extent_acres: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-xs font-semibold text-slate-300">Location Area</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Location Area</label>
                 <input
                   type="text"
                   value={projectFormData.location_area}
                   onChange={e => setProjectFormData({ ...projectFormData, location_area: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">City</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">City</label>
                 <input
                   type="text"
                   value={projectFormData.location_city}
                   onChange={e => setProjectFormData({ ...projectFormData, location_city: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">DTCP Registration Number</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">DTCP Registration Number</label>
                 <input
                   type="text"
                   value={projectFormData.dtcp_number}
                   onChange={e => setProjectFormData({ ...projectFormData, dtcp_number: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">RERA Approval Number</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">RERA Approval Number</label>
                 <input
                   type="text"
                   value={projectFormData.rera_number}
                   onChange={e => setProjectFormData({ ...projectFormData, rera_number: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300">Google Maps Embed URL</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Google Maps Embed URL</label>
                 <input
                   type="text"
                   value={projectFormData.google_maps_embed_url}
                   onChange={e => setProjectFormData({ ...projectFormData, google_maps_embed_url: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500 mt-1"
                 />
               </div>
             </div>
@@ -1031,11 +1141,11 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
             </div>
 
             {/* Danger Zone */}
-            <div className="border-t border-rose-950 pt-6 mt-6">
-              <div className="flex items-center justify-between p-4 bg-rose-950/20 border border-rose-900/40 rounded-xl">
+            <div className="border-t border-rose-200 dark:border-rose-950 pt-6 mt-6">
+              <div className="flex items-center justify-between p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 rounded-xl">
                 <div>
-                  <h4 className="text-xs font-bold text-rose-400">Danger Zone: Delete Project</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <h4 className="text-xs font-bold text-rose-700 dark:text-rose-400">Danger Zone: Delete Project</h4>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
                     Deleting this project will permanently remove it and all {plots.length} linked plots from the database.
                   </p>
                 </div>
@@ -1383,19 +1493,19 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
 
       {/* EDIT PROJECT OVERVIEW & SPECIFICATIONS MODAL */}
       {isEditProjectModalOpen && projectFormData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-5 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto animate-scale-up">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/80 sticky top-0 z-10 flex-shrink-0">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-950/80 sticky top-0 z-10 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                   <Building2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-white">
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                     Edit Project: {project.name}
                   </h3>
-                  <p className="text-[11px] text-slate-400 font-mono">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                     ID: {project.id} • Slug: {project.slug} (Preserved)
                   </p>
                 </div>
@@ -1404,302 +1514,509 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
               <button
                 type="button"
                 onClick={() => setIsEditProjectModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
+            {/* Modal Tabs Bar */}
+            <div className="flex items-center gap-2 px-6 pt-3 pb-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 overflow-x-auto flex-shrink-0">
+              {[
+                { id: 'basic', label: '1. Basic Info', icon: FileText },
+                { id: 'content', label: '2. Overview & Legal', icon: Layers },
+                { id: 'media', label: '3. Media & Brochure', icon: ImageIcon },
+                { id: 'landmarks', label: '4. Location Advantages', icon: Compass, count: projectFormData.nearby_landmarks?.length }
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = editModalTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setEditModalTab(tab.id as any)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{tab.label}</span>
+                    {tab.count !== undefined && (
+                      <span className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-emerald-800 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Modal Form Content */}
-            <form onSubmit={handleSaveProjectOverview} className="p-6 overflow-y-auto space-y-6 text-xs flex-1">
-              {/* 1. Basic Info */}
-              <div className="space-y-4 bg-slate-950/40 border border-slate-800/80 p-5 rounded-2xl">
-                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  <span>1. Project Identity & Status</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className="block text-slate-300 font-semibold mb-1.5">Project Name *</label>
+            <form onSubmit={handleSaveProjectOverview} className="p-6 overflow-y-auto space-y-6 text-xs flex-1 bg-white dark:bg-slate-900">
+              {/* TAB 1: BASIC INFO */}
+              {editModalTab === 'basic' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="sm:col-span-2">
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Project Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={projectFormData.name}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, name: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Publish Status *</label>
+                      <select
+                        value={projectFormData.status || 'Ongoing'}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, status: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 cursor-pointer font-bold"
+                      >
+                        <option value="Ongoing">Ongoing (Active Selling)</option>
+                        <option value="Upcoming">Upcoming (Pre-Launch)</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Sold Out">Sold Out</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Tagline / Catchphrase</label>
                     <input
                       type="text"
-                      required
-                      value={projectFormData.name}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, name: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500 font-semibold"
+                      placeholder="e.g. Trichy's Most Coveted Gated Community on Airport Corridor"
+                      value={projectFormData.tagline || ''}
+                      onChange={(e) => setProjectFormData({ ...projectFormData, tagline: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">Publish Status *</label>
-                    <select
-                      value={projectFormData.status || 'Ongoing'}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, status: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
-                    >
-                      <option value="Ongoing">Ongoing (Active Selling)</option>
-                      <option value="Upcoming">Upcoming (Pre-Launch)</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Sold Out">Sold Out</option>
-                    </select>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">City</label>
+                      <input
+                        type="text"
+                        value={projectFormData.location_city || 'Trichy'}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, location_city: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Locality / Area</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Gundur / Airport Road"
+                        value={projectFormData.location_area || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, location_area: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1.5">Tagline / Catchphrase</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Trichy's Most Coveted Gated Community on Airport Corridor"
-                    value={projectFormData.tagline || ''}
-                    onChange={(e) => setProjectFormData({ ...projectFormData, tagline: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Total Extent (Acres)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="e.g. 10.00"
+                        value={projectFormData.total_extent_acres || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, total_extent_acres: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Total Plots Count</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 80"
+                        value={projectFormData.total_plots_count || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, total_plots_count: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Available Plots Count</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 40"
+                        value={projectFormData.available_plots_count || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, available_plots_count: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">DTCP Number</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. DTCP / 148 / 2024"
+                        value={projectFormData.dtcp_number || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, dtcp_number: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">RERA Number</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. TN/19/Layout/0284/2024"
+                        value={projectFormData.rera_number || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, rera_number: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <GpsLocationPicker
+                    latitude={projectFormData.latitude || ''}
+                    longitude={projectFormData.longitude || ''}
+                    onChange={(lat, lng) => setProjectFormData({ ...projectFormData, latitude: lat, longitude: lng })}
+                    label="Master Project GPS Coordinates"
+                    helpText="Powers driving directions and turn-by-turn navigation for public website visitors."
                   />
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1.5">Project Narrative / Detailed Description</label>
-                  <textarea
-                    rows={4}
-                    placeholder="Comprehensive project narrative..."
-                    value={projectFormData.description || ''}
-                    onChange={(e) => setProjectFormData({ ...projectFormData, description: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
-                  />
-                </div>
-              </div>
+              {/* TAB 2: OVERVIEW & LEGAL */}
+              {editModalTab === 'content' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">
+                      Project Narrative / Detailed Description *
+                    </label>
+                    <textarea
+                      rows={5}
+                      required
+                      placeholder="Comprehensive project narrative describing layout advantages, potable water, wide roads, and living environment..."
+                      value={projectFormData.description || ''}
+                      onChange={(e) => setProjectFormData({ ...projectFormData, description: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
+                    />
+                  </div>
 
-              {/* 2. Infrastructure Highlights */}
-              <div className="space-y-4 bg-slate-950/40 border border-slate-800/80 p-5 rounded-2xl">
-                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  <span>2. Infrastructure Highlights</span>
-                </h4>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="e.g. 40ft & 33ft Wide Blacktop Tar Roads"
-                    value={newHighlightInput}
-                    onChange={(e) => setNewHighlightInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddHighlight();
-                      }
-                    }}
-                    className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddHighlight}
-                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition cursor-pointer"
-                  >
-                    Add
-                  </button>
-                </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Plot Size Range</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 1200 - 2400 Sq.Ft"
+                        value={projectFormData.plot_size_range || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, plot_size_range: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Price Range Display</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. ₹ 18 - 36 Lakhs"
+                        value={projectFormData.price_range || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, price_range: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                  {(projectFormData.highlights || []).map((hl: string, idx: number) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-300"
-                    >
-                      <span className="truncate mr-2 font-medium">{hl}</span>
+                  {/* Infrastructure Highlights */}
+                  <div className="space-y-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-5 rounded-2xl">
+                    <h4 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      <span>Infrastructure Highlights</span>
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. 40ft & 33ft Wide Blacktop Tar Roads"
+                        value={newHighlightInput}
+                        onChange={(e) => setNewHighlightInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddHighlight();
+                          }
+                        }}
+                        className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
                       <button
                         type="button"
-                        onClick={() => handleRemoveHighlight(idx)}
-                        className="text-slate-400 hover:text-rose-400 p-1 cursor-pointer"
-                        title="Remove highlight"
+                        onClick={handleAddHighlight}
+                        className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition cursor-pointer shadow-sm"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        Add
                       </button>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* 3. Legal, Approvals & Capacities */}
-              <div className="space-y-4 bg-slate-950/40 border border-slate-800/80 p-5 rounded-2xl">
-                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>3. Legal Approvals & Layout Capacity</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">DTCP Number</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. DTCP / 148 / 2024"
-                      value={projectFormData.dtcp_number || ''}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, dtcp_number: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">RERA Number</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. TN/19/Layout/0284/2024"
-                      value={projectFormData.rera_number || ''}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, rera_number: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">Total Extent (Acres)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={projectFormData.total_extent_acres || ''}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, total_extent_acres: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">Total Plots Count</label>
-                    <input
-                      type="number"
-                      value={projectFormData.total_plots_count || ''}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, total_plots_count: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      {(projectFormData.highlights || []).map((hl: string, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-300"
+                        >
+                          <span className="truncate mr-2 font-medium">{hl}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveHighlight(idx)}
+                            className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
+                            title="Remove highlight"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* TAB 3: VISUAL MEDIA & BROCHURE */}
+              {editModalTab === 'media' && (
+                <div className="space-y-4">
+                  {/* Cover Banner Image */}
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">Available Plots Count</label>
-                    <input
-                      type="number"
-                      value={projectFormData.available_plots_count || ''}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, available_plots_count: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">Plot Size Range</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 1200 - 2400 Sq.Ft"
-                      value={projectFormData.plot_size_range || ''}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, plot_size_range: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">Price Range Display</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. ₹ 18 - 36 Lakhs"
-                      value={projectFormData.price_range || ''}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, price_range: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 4. Location & GPS Map Coordinates */}
-              <div className="space-y-4 bg-slate-950/40 border border-slate-800/80 p-5 rounded-2xl">
-                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>4. Location & Interactive Map Coordinates</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">Locality / Area</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Gundur / Airport Road"
-                      value={projectFormData.location_area || ''}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, location_area: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">City</label>
-                    <input
-                      type="text"
-                      value={projectFormData.location_city || 'Trichy'}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, location_city: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                </div>
-
-                <GpsLocationPicker
-                  latitude={projectFormData.latitude || ''}
-                  longitude={projectFormData.longitude || ''}
-                  onChange={(lat, lng) => setProjectFormData({ ...projectFormData, latitude: lat, longitude: lng })}
-                  label="Master Project GPS Coordinates"
-                  helpText="Use Current Location or Select on Map with a draggable pin. This directs visitors using Google Maps."
-                />
-              </div>
-
-              {/* 5. Project Media */}
-              <div className="space-y-4 bg-slate-950/40 border border-slate-800/80 p-5 rounded-2xl">
-                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4" />
-                  <span>5. Project Cover & Walkthrough Video</span>
-                </h4>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">Cover Banner Image URL</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Cover Banner Image URL</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
                         value={projectFormData.banner_image || ''}
                         onChange={(e) => setProjectFormData({ ...projectFormData, banner_image: e.target.value })}
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
+                        className="flex-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
                       <label className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex-shrink-0">
                         <Upload className="w-4 h-4" />
-                        <span>Upload File</span>
+                        <span>{uploadingImage ? 'Uploading...' : 'Upload Image'}</span>
                         <input
                           type="file"
                           accept="image/*"
                           className="hidden"
                           onChange={(e) => handleImageUpload(e, 'banner_image')}
+                          disabled={uploadingImage}
                         />
                       </label>
                     </div>
+
+                    {projectFormData.banner_image && (
+                      <div className="mt-3 relative h-36 w-full max-w-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                        <img
+                          src={projectFormData.banner_image}
+                          alt="Cover Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-[10px] text-white px-2 py-0.5 rounded">
+                          Cover Preview
+                        </span>
+                      </div>
+                    )}
                   </div>
 
+                  {/* Walkthrough Video URL */}
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1.5">Project Walkthrough Video URL</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Project Walkthrough Video URL</label>
                     <input
                       type="url"
                       placeholder="e.g. https://www.youtube.com/watch?v=... or direct MP4 link"
                       value={projectFormData.video_url || ''}
                       onChange={(e) => setProjectFormData({ ...projectFormData, video_url: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  {/* Project Brochure */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold">Project Brochure Document (PDF / Link)</label>
+                      <label className="cursor-pointer inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline">
+                        <Upload className="w-3 h-3" />
+                        <span>{uploadingBrochure ? 'Uploading...' : 'Upload Brochure PDF'}</span>
+                        <input
+                          type="file"
+                          accept=".pdf,image/*"
+                          className="hidden"
+                          onChange={handleBrochureUpload}
+                          disabled={uploadingBrochure}
+                        />
+                      </label>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="e.g. /brochure_park_avenue.pdf or upload file above"
+                      value={projectFormData.brochure_url || ''}
+                      onChange={(e) => setProjectFormData({ ...projectFormData, brochure_url: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* TAB 4: LOCATION ADVANTAGES */}
+              {editModalTab === 'landmarks' && (
+                <div className="space-y-4">
+                  <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-5 rounded-2xl space-y-3">
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Add Nearby Landmark, Hub, Theatre or Institution
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-2">
+                        <input
+                          type="text"
+                          placeholder="Landmark / Facility Name (e.g. Cauvery Multiplex, BHEL Hospital)"
+                          value={modalLandmark.landmark}
+                          onChange={(e) => setModalLandmark({ ...modalLandmark, landmark: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <select
+                          value={modalLandmark.category}
+                          onChange={(e) => setModalLandmark({ ...modalLandmark, category: e.target.value as any })}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                        >
+                          <option value="Education">Education & Schools</option>
+                          <option value="Transit">Transit & Railway / Bus</option>
+                          <option value="Healthcare">Healthcare & Hospitals</option>
+                          <option value="Worship">Worship & Temples</option>
+                          <option value="Entertainment">Entertainment, Theatre & Cinema</option>
+                          <option value="Shopping">Shopping & Markets</option>
+                          <option value="Workplace">Workplace & IT / Industry</option>
+                          <option value="Other">Other (Custom Category)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {modalLandmark.category === 'Other' && (
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Type custom category (e.g. Cinema Theatre, Park, Stadium)..."
+                          value={modalCustomCategory}
+                          onChange={(e) => setModalCustomCategory(e.target.value)}
+                          className="w-full bg-white dark:bg-slate-900 border border-emerald-500 rounded-xl p-2.5 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
+                        />
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 items-center">
+                      <input
+                        type="text"
+                        placeholder="Distance (e.g. 2.5 km)"
+                        value={modalLandmark.distance}
+                        onChange={(e) => setModalLandmark({ ...modalLandmark, distance: e.target.value })}
+                        className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Time (e.g. 5 Mins)"
+                        value={modalLandmark.time}
+                        onChange={(e) => setModalLandmark({ ...modalLandmark, time: e.target.value })}
+                        className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddModalLandmark}
+                        className="w-full col-span-2 sm:col-span-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-2.5 rounded-xl transition cursor-pointer shadow-sm"
+                      >
+                        + Add Landmark
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* List of Landmarks */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Configured Landmarks ({projectFormData.nearby_landmarks?.length || 0})
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(projectFormData.nearby_landmarks || []).map((item: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs shadow-sm"
+                        >
+                          <div className="min-w-0 pr-2">
+                            <span className="font-semibold text-slate-900 dark:text-white block truncate">
+                              {item.landmark || item.name}
+                            </span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                {item.category || 'Transit'}
+                              </span>
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                {item.distance} • {item.time}
+                              </span>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveModalLandmark(idx)}
+                            className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                            title="Remove"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Modal Save Bar */}
-              <div className="sticky bottom-0 bg-slate-950/95 border-t border-slate-800 p-4 -mx-6 -mb-6 flex items-center justify-end gap-3 z-10">
-                <button
-                  type="button"
-                  onClick={() => setIsEditProjectModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={projectSaving}
-                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold shadow-lg shadow-emerald-950/50 flex items-center gap-2 cursor-pointer"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{projectSaving ? 'Saving Changes...' : 'Save Project Details'}</span>
-                </button>
+              <div className="sticky bottom-0 bg-white/95 dark:bg-slate-950/95 border-t border-slate-200 dark:border-slate-800 p-4 -mx-6 -mb-6 flex items-center justify-between z-10">
+                <div className="flex items-center gap-2">
+                  {editModalTab !== 'basic' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (editModalTab === 'content') setEditModalTab('basic');
+                        if (editModalTab === 'media') setEditModalTab('content');
+                        if (editModalTab === 'landmarks') setEditModalTab('media');
+                      }}
+                      className="inline-flex items-center gap-1 px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition cursor-pointer"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Previous</span>
+                    </button>
+                  )}
+
+                  {editModalTab !== 'landmarks' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (editModalTab === 'basic') setEditModalTab('content');
+                        if (editModalTab === 'content') setEditModalTab('media');
+                        if (editModalTab === 'media') setEditModalTab('landmarks');
+                      }}
+                      className="inline-flex items-center gap-1 px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition cursor-pointer"
+                    >
+                      <span>Next</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditProjectModalOpen(false)}
+                    className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={projectSaving}
+                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold shadow-md flex items-center gap-2 cursor-pointer"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{projectSaving ? 'Saving Changes...' : 'Save Project Details'}</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

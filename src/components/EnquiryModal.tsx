@@ -23,7 +23,7 @@ export default function EnquiryModal({
   plotName,
   source,
   title = 'Book a Site Visit & Plot Consultation',
-  subtitle = 'Get layout blueprints, DTCP approvals, pickup assistance & price details.'
+  subtitle = 'Get layout blueprints, DTCP approvals, free consultation & price details.'
 }: EnquiryModalProps) {
   const [formData, setFormData] = useState({
     name: '',
@@ -81,6 +81,13 @@ export default function EnquiryModal({
     setErrorMessage('');
 
     try {
+      const projectNameToIdMap: Record<string, string> = {
+        'park avenue': 'proj-park-avenue',
+        'sri amman nagar': 'proj-sri-amman-nagar',
+        'aishwarya nagar': 'proj-aishwarya-nagar'
+      };
+      const cleanProjectName = (formData.propertyName || propertyName || '').toLowerCase().trim();
+      const resolvedProjectId = projectNameToIdMap[cleanProjectName] || null;
       const resolvedProject = formData.propertyName || propertyName || 'General Enquiry';
       const notesContent = [
         formData.location ? `Location: ${formData.location}` : null,
@@ -88,31 +95,21 @@ export default function EnquiryModal({
         formData.message || null
       ].filter(Boolean).join(' | ');
 
-      if (formData.preferredDate) {
-        await api.submitPublicSiteVisit({
-          customer_name: formData.name,
-          customer_phone: formData.phone,
-          customer_email: formData.email,
-          project_name: resolvedProject,
-          pickup_location: formData.location || undefined,
-          visit_date: formData.preferredDate,
-          visit_time: formData.preferredTime,
-          preferred_plot_size: formData.budget,
-          notes: notesContent,
-          source: resolvedSource,
-        });
-      } else {
-        await api.submitPublicLead({
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          preferred_plot_size: formData.budget,
-          message: `[${resolvedProject}] ${notesContent}`.trim(),
-          source: resolvedSource,
-          visit_date: formData.preferredDate,
-          visit_time: formData.preferredTime,
-        });
-      }
+      // 1. Create the CRM Lead with full project and budget details (auto-schedules site visit if date provided)
+      await api.submitPublicLead({
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        project_id: resolvedProjectId,
+        project_interest: resolvedProject,
+        budget: formData.budget,
+        preferred_plot_size: formData.budget,
+        location: formData.location,
+        message: notesContent,
+        source: resolvedSource,
+        visit_date: formData.preferredDate || undefined,
+        visit_time: formData.preferredTime || undefined,
+      });
 
       // Save lead to localStorage as well
       try {

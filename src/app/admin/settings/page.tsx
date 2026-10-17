@@ -118,7 +118,6 @@ export default function AdminSettingsPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bannerDesktopFileRef = useRef<HTMLInputElement>(null);
-  const bannerMobileFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const activeMode = getCrmThemeMode();
@@ -449,27 +448,27 @@ export default function AdminSettingsPage() {
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-5xl">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-xs dark:shadow-xl">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-3">
             <SettingsIcon className="w-7 h-7" style={{ color: settings.primary_color || '#10b981' }} />
             <span>Admin Settings & Homepage Banners</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
             Configure branding, CRM themes, and manage auto-sliding Hero Banners for the public website.
           </p>
         </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
         <button
           type="button"
           onClick={() => setActiveTab('branding')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
             activeTab === 'branding'
-              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-md'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shadow-xs'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
           }`}
         >
           <Palette className="w-4 h-4" />
@@ -481,8 +480,8 @@ export default function AdminSettingsPage() {
           onClick={() => setActiveTab('hero_banners')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
             activeTab === 'hero_banners'
-              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-md'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shadow-xs'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
           }`}
         >
           <Layers className="w-4 h-4" />
@@ -496,8 +495,8 @@ export default function AdminSettingsPage() {
       </div>
 
       {message && (
-        <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-fade-in shadow-xs">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>{message}</span>
         </div>
       )}
@@ -507,90 +506,90 @@ export default function AdminSettingsPage() {
           ========================================================================= */}
       {activeTab === 'branding' && (
         <form onSubmit={handleSubmit} className="space-y-6 text-xs">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5 shadow-xl">
-            <div className="border-b border-slate-800 pb-4">
-              <h2 className="text-lg font-bold text-white">Company Office & Contact Information</h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-xs dark:shadow-xl">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Company Office & Contact Information</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Set primary helpline numbers, WhatsApp routing, and official address.
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1.5">Company / Brand Name</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Company / Brand Name</label>
                 <input
                   type="text"
                   value={settings.company_name || ''}
                   onChange={(e) => setSettings({ ...settings, company_name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white text-xs placeholder-slate-400 dark:placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1.5">Primary Call Phone (10 Digits)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Primary Call Phone (10 Digits)</label>
                   <input
                     type="tel"
                     maxLength={10}
                     placeholder="10-digit phone"
                     value={settings.phone_primary ? settings.phone_primary.replace(/\D/g, '').slice(0, 10) : ''}
                     onChange={(e) => setSettings({ ...settings, phone_primary: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white text-xs placeholder-slate-400 dark:placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1.5">WhatsApp Number (10 Digits)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">WhatsApp Number (10 Digits)</label>
                   <input
                     type="tel"
                     maxLength={10}
                     placeholder="10-digit phone"
                     value={settings.phone_whatsapp ? settings.phone_whatsapp.replace(/\D/g, '').slice(0, 10) : ''}
                     onChange={(e) => setSettings({ ...settings, phone_whatsapp: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white text-xs placeholder-slate-400 dark:placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1.5">Office Email</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Office Email</label>
                 <input
                   type="email"
                   value={settings.email_primary || ''}
                   onChange={(e) => setSettings({ ...settings, email_primary: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white text-xs placeholder-slate-400 dark:placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1.5">Trichy Office Address</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Trichy Office Address</label>
                 <textarea
                   rows={3}
                   value={settings.office_address || ''}
                   onChange={(e) => setSettings({ ...settings, office_address: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white text-xs placeholder-slate-400 dark:placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1.5">Working Hours</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Working Hours</label>
                 <input
                   type="text"
                   value={settings.working_hours || ''}
                   onChange={(e) => setSettings({ ...settings, working_hours: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white text-xs placeholder-slate-400 dark:placeholder-slate-600 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
           {/* SECTION 2: APPEARANCE & CRM THEME MODE */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
-            <div className="border-b border-slate-800 pb-4">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-xs dark:shadow-xl">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
                 <Sun className="w-5 h-5 text-amber-500" />
                 <span>Appearance & CRM Theme Mode</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Choose your CRM workspace visual theme. Light Theme is the default for daylight productivity; Dark Theme provides high-contrast nighttime comfort.
               </p>
             </div>
@@ -600,8 +599,8 @@ export default function AdminSettingsPage() {
                 onClick={() => handleThemeModeChange('light')}
                 className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
                   themeMode === 'light'
-                    ? 'border-emerald-500 bg-emerald-500/10 shadow-lg ring-2 ring-emerald-500/20'
-                    : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                    ? 'border-emerald-500 bg-emerald-500/10 shadow-md ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
                 <div className="space-y-3">
@@ -611,13 +610,13 @@ export default function AdminSettingsPage() {
                         <Sun className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                           <span>Light Theme</span>
-                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                             Default
                           </span>
                         </h3>
-                        <p className="text-[11px] text-slate-400">High-clarity daylight theme</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">High-clarity daylight theme</p>
                       </div>
                     </div>
                     {themeMode === 'light' ? (
@@ -625,7 +624,7 @@ export default function AdminSettingsPage() {
                         <CheckCircle2 className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
                     ) : (
-                      <div className="w-5 h-5 rounded-full border border-slate-700" />
+                      <div className="w-5 h-5 rounded-full border border-slate-300 dark:border-slate-700" />
                     )}
                   </div>
                 </div>
@@ -635,8 +634,8 @@ export default function AdminSettingsPage() {
                 onClick={() => handleThemeModeChange('dark')}
                 className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col justify-between ${
                   themeMode === 'dark'
-                    ? 'border-emerald-500 bg-emerald-500/10 shadow-lg ring-2 ring-emerald-500/20'
-                    : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
+                    ? 'border-emerald-500 bg-emerald-500/10 shadow-md ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
                 <div className="space-y-3">
@@ -646,8 +645,8 @@ export default function AdminSettingsPage() {
                         <Moon className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-sm text-white">Dark Theme</h3>
-                        <p className="text-[11px] text-slate-400">Deep luxury night mode</p>
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">Dark Theme</h3>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">Deep luxury night mode</p>
                       </div>
                     </div>
                     {themeMode === 'dark' ? (
@@ -655,7 +654,7 @@ export default function AdminSettingsPage() {
                         <CheckCircle2 className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
                     ) : (
-                      <div className="w-5 h-5 rounded-full border border-slate-700" />
+                      <div className="w-5 h-5 rounded-full border border-slate-300 dark:border-slate-700" />
                     )}
                   </div>
                 </div>
@@ -664,31 +663,31 @@ export default function AdminSettingsPage() {
           </div>
 
           {/* SECTION 3: BRAND IDENTITY & PRIMARY COLOR */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
-            <div className="border-b border-slate-800 pb-4">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-xs dark:shadow-xl">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Palette className="w-5 h-5" style={{ color: settings.primary_color || '#10b981' }} />
                 <span>Brand Identity & Primary Color</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Upload your official company logo and choose the primary accent color.
               </p>
             </div>
 
             {/* Logo Upload Section */}
             <div className="space-y-3">
-              <label className="block text-slate-200 font-bold text-sm">Company logo</label>
+              <label className="block text-slate-800 dark:text-slate-200 font-bold text-sm">Company Logo</label>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-                <div className="w-28 h-20 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                <div className="w-32 h-20 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0 shadow-xs p-2">
                   {settings.logo_url ? (
                     <img
                       src={settings.logo_url}
                       alt="Brand Logo"
-                      className="max-w-full max-h-full object-contain p-2"
+                      className="max-w-full max-h-full object-contain"
                     />
                   ) : (
-                    <div className="text-center text-slate-500">
+                    <div className="text-center text-slate-400 dark:text-slate-500">
                       <ImageIcon className="w-6 h-6 mx-auto mb-1 opacity-50" />
                       <span className="text-[10px]">No logo</span>
                     </div>
@@ -701,10 +700,10 @@ export default function AdminSettingsPage() {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs border border-slate-700 transition-colors inline-flex items-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
+                      className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-semibold text-xs border border-slate-200 dark:border-slate-700 transition-colors inline-flex items-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
                     >
                       <Upload className="w-4 h-4" style={{ color: settings.primary_color || '#10b981' }} />
-                      <span>{uploading ? 'Uploading...' : 'Upload logo'}</span>
+                      <span>{uploading ? 'Uploading...' : 'Upload Logo'}</span>
                     </button>
 
                     <input
@@ -719,14 +718,14 @@ export default function AdminSettingsPage() {
                       <button
                         type="button"
                         onClick={handleRemoveLogo}
-                        className="px-4 py-2.5 rounded-xl bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 font-semibold text-xs border border-rose-900/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                        className="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 font-semibold text-xs border border-rose-200 dark:border-rose-900/40 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Remove</span>
                       </button>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Recommended transparent PNG or SVG logo image. Max file size: 2MB.
                   </p>
                 </div>
@@ -734,13 +733,13 @@ export default function AdminSettingsPage() {
             </div>
 
             {/* Primary Color Section */}
-            <div className="space-y-3 pt-4 border-t border-slate-800">
-              <label className="block text-slate-200 font-bold text-sm">Primary color</label>
+            <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <label className="block text-slate-800 dark:text-slate-200 font-bold text-sm">Primary Color</label>
 
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-12 h-12 rounded-xl border border-white/20 shadow-lg shrink-0 transition-transform"
+                    className="w-12 h-12 rounded-xl border border-slate-200 dark:border-white/20 shadow-md shrink-0 transition-transform"
                     style={{ backgroundColor: settings.primary_color || '#10b981' }}
                     title="Active Brand Color Preview"
                   />
@@ -750,8 +749,8 @@ export default function AdminSettingsPage() {
                       type="text"
                       value={settings.primary_color || '#10b981'}
                       onChange={(e) => handleColorChange(e.target.value)}
-                      placeholder="#FFFCDD"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
+                      placeholder="#10b981"
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-mono text-sm focus:border-emerald-500 focus:outline-none"
                     />
                     <input
                       type="color"
@@ -764,7 +763,7 @@ export default function AdminSettingsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                     Quick Presets
                   </span>
                   <div className="flex flex-wrap gap-2">
@@ -775,11 +774,11 @@ export default function AdminSettingsPage() {
                         onClick={() => handleColorChange(preset.hex)}
                         className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                           settings.primary_color?.toLowerCase() === preset.hex.toLowerCase()
-                            ? 'bg-slate-800 border-white text-white shadow-sm ring-1 ring-white/50'
-                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                            ? 'bg-slate-100 dark:bg-slate-800 border-slate-400 dark:border-white text-slate-900 dark:text-white shadow-xs ring-1 ring-slate-400/50 dark:ring-white/50'
+                            : 'bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
                         }`}
                       >
-                        <span className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: preset.hex }} />
+                        <span className="w-3.5 h-3.5 rounded-full border border-black/10 dark:border-white/20 shrink-0" style={{ backgroundColor: preset.hex }} />
                         <span>{preset.name}</span>
                       </button>
                     ))}
@@ -788,7 +787,7 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800 flex justify-end">
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
               <button
                 type="submit"
                 disabled={saving}
@@ -796,7 +795,7 @@ export default function AdminSettingsPage() {
                   backgroundColor: settings.primary_color || '#10b981',
                   color: currentContrastText
                 }}
-                className="flex items-center gap-2 font-bold px-6 py-3 rounded-xl transition-all shadow-lg disabled:opacity-50 text-xs cursor-pointer"
+                className="flex items-center gap-2 font-bold px-6 py-3 rounded-xl transition-all shadow-md disabled:opacity-50 text-xs cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 <span>{saving ? 'Saving...' : 'Save Branding & Settings'}</span>
@@ -812,20 +811,20 @@ export default function AdminSettingsPage() {
       {activeTab === 'hero_banners' && (
         <div className="space-y-6 text-xs">
           {/* Top Controls Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs dark:shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Layers className="w-5 h-5 text-amber-400" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Layers className="w-5 h-5 text-amber-500" />
                 <span>Homepage Hero Banners & Slider</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Manage promotional posters (Casagrand zero-crop flyers) and photos with dynamic text. Reorder slides, toggle visibility, and configure two buttons.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               {/* Autoplay Interval Control */}
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
                 <Clock className="w-4 h-4 text-slate-400" />
                 <span className="text-[11px]">Slide Delay:</span>
                 <select
@@ -835,12 +834,12 @@ export default function AdminSettingsPage() {
                     setAutoplayInterval(val);
                     await api.updateSettings({ hero_autoplay_interval: val }).catch(() => null);
                   }}
-                  className="bg-transparent text-emerald-400 font-bold text-xs focus:outline-none cursor-pointer"
+                  className="bg-transparent text-emerald-600 dark:text-emerald-400 font-bold text-xs focus:outline-none cursor-pointer"
                 >
-                  <option value={5} className="bg-slate-900 text-white">5 seconds</option>
-                  <option value={6} className="bg-slate-900 text-white">6 seconds (Default)</option>
-                  <option value={7} className="bg-slate-900 text-white">7 seconds</option>
-                  <option value={8} className="bg-slate-900 text-white">8 seconds</option>
+                  <option value={5} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">5 seconds</option>
+                  <option value={6} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">6 seconds (Default)</option>
+                  <option value={7} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">7 seconds</option>
+                  <option value={8} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">8 seconds</option>
                 </select>
               </div>
 
@@ -848,7 +847,7 @@ export default function AdminSettingsPage() {
               <button
                 type="button"
                 onClick={handleOpenAddBanner}
-                className="flex items-center gap-2 font-bold px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 transition-all shadow-lg cursor-pointer"
+                className="flex items-center gap-2 font-bold px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-md cursor-pointer"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
                 <span>Add Banner Slide</span>
@@ -858,18 +857,18 @@ export default function AdminSettingsPage() {
 
           {/* Banners List */}
           {heroBanners.length === 0 ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center mx-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center space-y-3 shadow-xs">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto">
                 <ImageIcon className="w-7 h-7" />
               </div>
-              <h3 className="text-white font-bold text-sm">No Custom Banners Added Yet</h3>
-              <p className="text-slate-400 text-xs max-w-md mx-auto">
+              <h3 className="text-slate-900 dark:text-white font-bold text-sm">No Custom Banners Added Yet</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-xs max-w-md mx-auto">
                 Click &quot;Add Banner Slide&quot; to upload promotional project flyers or photos that will auto-slide every {autoplayInterval} seconds.
               </p>
               <button
                 type="button"
                 onClick={handleOpenAddBanner}
-                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 cursor-pointer"
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-500 cursor-pointer shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create Your First Slide</span>
@@ -882,14 +881,14 @@ export default function AdminSettingsPage() {
                   key={banner.id}
                   className={`p-4 sm:p-5 rounded-2xl border transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
                     banner.active
-                      ? 'bg-slate-900 border-slate-800 hover:border-slate-700 shadow-md'
-                      : 'bg-slate-950/60 border-slate-800/60 opacity-60'
+                      ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-500/40 shadow-xs dark:shadow-md'
+                      : 'bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800/60 opacity-60'
                   }`}
                 >
                   {/* Left: Preview thumbnail & details */}
                   <div className="flex items-center gap-4 w-full md:w-auto">
                     {/* Thumbnail */}
-                    <div className="w-28 sm:w-36 h-20 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden relative shrink-0 flex items-center justify-center">
+                    <div className="w-28 sm:w-36 h-20 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-hidden relative shrink-0 flex items-center justify-center">
                       <img
                         src={banner.image_url}
                         alt={banner.title || 'Banner'}
@@ -900,37 +899,41 @@ export default function AdminSettingsPage() {
                     {/* Metadata */}
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                           Slide #{index + 1}
                         </span>
 
                         {banner.banner_type === 'graphic' ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                             Graphic Flyer (Zero-Crop)
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30">
                             Photo + Dynamic Text
                           </span>
                         )}
 
                         {banner.active ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                             Active
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
                             Inactive (Hidden)
                           </span>
                         )}
+
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                          All Devices (16:9)
+                        </span>
                       </div>
 
-                      <h4 className="text-white font-bold text-sm">
+                      <h4 className="text-slate-900 dark:text-white font-bold text-sm">
                         {banner.title || (banner.banner_type === 'graphic' ? 'Marketing Flyer Poster' : 'Untitled Slide')}
                       </h4>
 
                       {banner.subtitle && (
-                        <p className="text-slate-400 text-xs line-clamp-1 max-w-md">
+                        <p className="text-slate-500 dark:text-slate-400 text-xs line-clamp-1 max-w-md">
                           {banner.subtitle}
                         </p>
                       )}
@@ -958,7 +961,7 @@ export default function AdminSettingsPage() {
                       disabled={index === 0}
                       onClick={() => handleMoveBanner(index, 'up')}
                       title="Move slide up"
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 disabled:opacity-30 cursor-pointer"
+                      className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 disabled:opacity-30 cursor-pointer"
                     >
                       <MoveUp className="w-4 h-4" />
                     </button>
@@ -969,7 +972,7 @@ export default function AdminSettingsPage() {
                       disabled={index === heroBanners.length - 1}
                       onClick={() => handleMoveBanner(index, 'down')}
                       title="Move slide down"
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 disabled:opacity-30 cursor-pointer"
+                      className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 disabled:opacity-30 cursor-pointer"
                     >
                       <MoveDown className="w-4 h-4" />
                     </button>
@@ -981,8 +984,8 @@ export default function AdminSettingsPage() {
                       title={banner.active ? 'Hide slide from homepage' : 'Show slide on homepage'}
                       className={`p-2 rounded-xl border cursor-pointer ${
                         banner.active
-                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
-                          : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-white'
+                          ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       {banner.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -993,7 +996,7 @@ export default function AdminSettingsPage() {
                       type="button"
                       onClick={() => handleOpenEditBanner(banner)}
                       title="Edit slide"
-                      className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer"
+                      className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 cursor-pointer"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
@@ -1003,7 +1006,7 @@ export default function AdminSettingsPage() {
                       type="button"
                       onClick={() => handleDeleteBanner(banner.id)}
                       title="Delete slide"
-                      className="p-2 rounded-xl bg-rose-950/50 hover:bg-rose-900 text-rose-300 border border-rose-900/50 cursor-pointer"
+                      className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50 cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1078,15 +1081,20 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* Desktop Banner Image Upload */}
+            {/* Banner Image Upload (One image for Desktop, Tablet, and Mobile) */}
             <div className="space-y-1.5">
-              <label className="block text-slate-700 dark:text-slate-300 font-bold text-xs">
-                Banner Image <span className="text-rose-500">*</span>
-              </label>
+              <div className="flex flex-wrap items-center justify-between gap-1">
+                <label className="block text-slate-700 dark:text-slate-300 font-bold text-xs">
+                  Banner Image <span className="text-rose-500">*</span>
+                </label>
+                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                  Recommended: 1920 × 1080 px (16:9) — One image used for Desktop, Tablet & Mobile
+                </span>
+              </div>
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Image URL or upload below"
+                  placeholder="Image URL or upload below (used across all devices)"
                   value={bannerForm.image_url || ''}
                   onChange={(e) => setBannerForm({ ...bannerForm, image_url: e.target.value })}
                   className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
@@ -1110,46 +1118,30 @@ export default function AdminSettingsPage() {
               </div>
 
               {bannerForm.image_url && (
-                <div className="mt-1.5 w-full h-28 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-hidden flex items-center justify-center">
+                <div className="mt-1.5 relative w-full h-28 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-hidden flex items-center justify-center group">
                   <img
                     src={bannerForm.image_url}
-                    alt="Preview"
+                    alt="Banner Preview"
                     className="max-w-full max-h-full object-contain"
                   />
+                  <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
+                    <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-black/70 text-white backdrop-blur-xs">
+                      All Devices (16:9)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setBannerForm({ ...bannerForm, image_url: '' })}
+                      title="Clear image"
+                      className="p-1 rounded-md bg-rose-600/90 hover:bg-rose-600 text-white shadow-xs cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               )}
-            </div>
-
-            {/* Optional Mobile Image Upload */}
-            <div className="space-y-1.5">
-              <label className="block text-slate-700 dark:text-slate-300 font-bold text-xs">
-                Mobile Image <span className="text-[10.5px] font-normal text-slate-500">(Optional)</span>
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Optional mobile image URL"
-                  value={bannerForm.mobile_image_url || ''}
-                  onChange={(e) => setBannerForm({ ...bannerForm, mobile_image_url: e.target.value })}
-                  className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => bannerMobileFileRef.current?.click()}
-                  disabled={bannerModalUploading}
-                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-semibold inline-flex items-center gap-1.5 shrink-0 border border-slate-300 dark:border-slate-700 disabled:opacity-50 cursor-pointer"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Upload</span>
-                </button>
-                <input
-                  ref={bannerMobileFileRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleBannerFileUpload(e, true)}
-                  className="hidden"
-                />
-              </div>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                This single image automatically scales with natural aspect ratio (width: 100%, height: auto) across desktop, tablet, and mobile with zero cropping.
+              </p>
             </div>
 
             {/* DYNAMIC TEXT FIELDS (Only when banner_type === 'overlay') */}

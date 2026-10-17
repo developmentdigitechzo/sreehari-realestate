@@ -8,7 +8,6 @@ import GpsLocationPicker from './GpsLocationPicker';
 import {
   X,
   Save,
-  Plus,
   Layers,
   Sparkles,
   Lock,
@@ -20,7 +19,8 @@ import {
   Play,
   FileText,
   Building2,
-  FolderOpen
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 
 const DEFAULT_PROPERTY_IMAGE =
@@ -80,16 +80,6 @@ export function formatPlotNumber(plotNumber?: string, title?: string, id?: strin
   return 'Plot Entry';
 }
 
-function getVideoEmbedInfo(url: string): { type: 'youtube' | 'direct' | 'unknown'; embedUrl: string } {
-  if (!url || typeof url !== 'string') return { type: 'unknown', embedUrl: '' };
-  const trimmed = url.trim();
-  const ytMatch = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/i);
-  if (ytMatch && ytMatch[1]) {
-    return { type: 'youtube', embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}` };
-  }
-  return { type: 'direct', embedUrl: trimmed };
-}
-
 interface PlotFormModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -109,17 +99,18 @@ export default function PlotFormModal({
   plotToEdit,
   initialProjectId,
   initialProjectName,
-  projectsList = []
+  projectsList
 }: PlotFormModalProps) {
-  const [projects, setProjects] = useState<Project[]>(projectsList);
+  const [projects, setProjects] = useState<Project[]>(projectsList || []);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [activeTab, setActiveTab] = useState<'basic' | 'dimensions' | 'media' | 'location'>('basic');
 
-  // Media Library Modal sub-dialog
+  // Media Library state
   const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
-  const [mediaTarget, setMediaTarget] = useState<'video' | 'image'>('video');
+  const [mediaTarget, setMediaTarget] = useState<'image' | 'video'>('image');
 
-  // Form State
+  // Form Data State
   const [formData, setFormData] = useState<Partial<Plot>>({
     project_id: initialProjectId || '',
     title: '',
@@ -128,22 +119,22 @@ export default function PlotFormModal({
     category: 'Sale',
     locality: '',
     road_corridor: '',
-    taluk: 'Central',
+    taluk: '',
     district: 'Trichy',
     plot_number: '',
-    length_ft: 40,
-    width_ft: 30,
-    dimension_str: '40 x 30 Ft',
-    area_sqft: 1200,
+    length_ft: '' as any,
+    width_ft: '' as any,
+    dimension_str: '',
+    area_sqft: '' as any,
     facing: 'North',
     approval_status: 'DTCP Approved',
-    price_per_sqft: 1500,
-    total_price_lakhs: 18.0,
-    price: 1800000,
+    price_per_sqft: '' as any,
+    total_price_lakhs: '' as any,
+    price: '' as any,
     currency: 'INR',
     status: 'Available',
     listing_visibility: 'Publish to Website & CRM',
-    amenities: 'Clear Patta Title, Tar Road, Street Lights, Fenced, Water Connection',
+    amenities: '',
     description: '',
     meta_title: '',
     meta_description: '',
@@ -151,7 +142,7 @@ export default function PlotFormModal({
     video_urls: [],
     latitude: '',
     longitude: '',
-    primary_image_url: DEFAULT_PROPERTY_IMAGE,
+    primary_image_url: '',
     gallery_images: []
   });
 
@@ -181,7 +172,6 @@ export default function PlotFormModal({
       api.getProjects().then((res) => {
         if (res?.data) {
           setProjects(res.data);
-          // Only fill missing project_id if not already set, without touching any user-typed inputs
           setFormData((prev) => {
             if (prev.project_id) return prev;
             const defaultId = initialProjectId || res.data[0]?.id || '';
@@ -210,12 +200,13 @@ export default function PlotFormModal({
     prevIsOpenRef.current = true;
     prevPlotIdRef.current = plotToEdit?.id;
 
-    // Do NOT re-initialize form state if modal is already open and target hasn't changed (prevents typing reset)
     if (!wasClosed && !plotChanged) {
       return;
     }
 
+    setActiveTab('basic');
     setSaveError('');
+
     if (plotToEdit) {
       // Editing existing plot
       const facingIsOther = !FACING_OPTIONS.filter((o) => o !== 'Other').includes(plotToEdit.facing);
@@ -247,9 +238,10 @@ export default function PlotFormModal({
         longitude: plotToEdit.longitude || ''
       });
     } else {
-      // Adding new plot
-      const defaultPid = initialProjectId || (projects[0]?.id || (projectsList[0]?.id || ''));
-      const linkedProj = projects.find((p) => p.id === defaultPid) || projectsList.find((p) => p.id === defaultPid);
+      // Adding new plot with clean, fresh values (no dummy numbers)
+      const defaultPid = initialProjectId || (projects[0]?.id || (projectsList && projectsList[0]?.id) || '');
+      const linkedProj = projects.find((p) => p.id === defaultPid) || (projectsList && projectsList.find((p) => p.id === defaultPid));
+
       setFormData({
         project_id: defaultPid,
         title: '',
@@ -258,22 +250,22 @@ export default function PlotFormModal({
         category: 'Sale',
         locality: '',
         road_corridor: '',
-        taluk: 'Central',
+        taluk: '',
         district: 'Trichy',
         plot_number: '',
-        length_ft: 40,
-        width_ft: 30,
-        dimension_str: '40 x 30 Ft',
-        area_sqft: 1200,
+        length_ft: '' as any,
+        width_ft: '' as any,
+        dimension_str: '',
+        area_sqft: '' as any,
         facing: 'North',
         approval_status: 'DTCP Approved',
-        price_per_sqft: 1500,
-        total_price_lakhs: 18.0,
-        price: 1800000,
+        price_per_sqft: '' as any,
+        total_price_lakhs: '' as any,
+        price: '' as any,
         currency: 'INR',
         status: 'Available',
         listing_visibility: 'Publish to Website & CRM',
-        amenities: 'Clear Patta Title, Tar Road, Street Lights, Fenced, Water Connection',
+        amenities: '',
         description: '',
         meta_title: '',
         meta_description: '',
@@ -281,7 +273,7 @@ export default function PlotFormModal({
         video_urls: [],
         latitude: linkedProj?.latitude || '',
         longitude: linkedProj?.longitude || '',
-        primary_image_url: DEFAULT_PROPERTY_IMAGE,
+        primary_image_url: '',
         gallery_images: []
       });
       setCustomFacing('');
@@ -364,7 +356,7 @@ export default function PlotFormModal({
       const filtered = (prev.gallery_images || []).filter((img) => img !== urlToRemove);
       let newPrimary = prev.primary_image_url;
       if (prev.primary_image_url === urlToRemove) {
-        newPrimary = filtered[0] || DEFAULT_PROPERTY_IMAGE;
+        newPrimary = filtered[0] || '';
       }
       return {
         ...prev,
@@ -456,7 +448,6 @@ export default function PlotFormModal({
     });
   };
 
-  // Selected media from MediaLibraryModal callback
   const handleMediaLibrarySelect = (url: string, type: 'video' | 'image') => {
     if (type === 'video' || mediaTarget === 'video') {
       setFormData((prev) => {
@@ -518,7 +509,7 @@ export default function PlotFormModal({
 
       let result: any;
       if (plotToEdit && plotToEdit.id) {
-        // EDIT MODE: Update existing plot ID directly, ensuring NO DUPLICATE is created
+        // EDIT MODE: Update existing plot ID directly
         result = await api.updatePlot(plotToEdit.id, payload);
       } else {
         // ADD MODE: Create new plot entry
@@ -545,827 +536,815 @@ export default function PlotFormModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/80 sticky top-0 z-10">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-950/80 sticky top-0 z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                 <Layers className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <span>{isEditMode ? 'Edit Plot Entry' : 'Add New Plot Entry'}</span>
                   {isEditMode ? (
-                    <span className="text-[10px] font-mono bg-blue-950 border border-blue-800 text-blue-300 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-mono bg-blue-100 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
                       ID: {plotToEdit?.id}
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold bg-emerald-950 border border-emerald-800 text-emerald-400 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full">
                       New Record
                     </span>
                   )}
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {initialProjectName || selectedProject?.name
                     ? `Managing plots for project: ${initialProjectName || selectedProject?.name}`
-                    : 'Single canonical form for website listing & confidential CRM inventory'}
+                    : 'Manage plot details, dimensions, commercials, media, and location.'}
                 </p>
               </div>
             </div>
 
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Form Body (Scrollable 7 Sections) */}
-          <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1">
+          {/* Clean 4-Tab Navigation */}
+          <div className="flex items-center gap-2 px-6 pt-3 pb-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 overflow-x-auto">
+            {[
+              { id: 'basic', label: '1. Basic & Project', icon: FileText },
+              { id: 'dimensions', label: '2. Dimensions & Pricing', icon: Layers },
+              { id: 'media', label: '3. Photos & Video', icon: ImageIcon },
+              { id: 'location', label: '4. Location & Details', icon: MapPin }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    isActive
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Form Body */}
+          <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1 bg-white dark:bg-slate-900">
             {saveError && (
-              <div className="p-4 bg-rose-950/80 border border-rose-800 rounded-2xl text-rose-300 text-xs font-semibold">
+              <div className="p-4 bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 rounded-2xl text-rose-700 dark:text-rose-300 text-xs font-semibold">
                 {saveError}
               </div>
             )}
 
-            {/* SECTION 1: BASIC INFORMATION */}
-            <div className="bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl space-y-4">
-              <div className="border-b border-slate-800/60 pb-2.5 flex items-center justify-between">
-                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  <span>1. BASIC INFORMATION</span>
-                </h3>
-              </div>
+            {/* TAB 1: BASIC INFORMATION & PARENT PROJECT */}
+            {activeTab === 'basic' && (
+              <div className="space-y-5">
+                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-5 rounded-2xl space-y-4">
+                  <h3 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    <span>Plot Identification & Visibility</span>
+                  </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">
-                    Plot Number / Designation *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Plot 01, Plot A-102"
-                    value={formData.plot_number || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData((prev) => ({ ...prev, plot_number: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">
-                    Listing Title (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. East Facing Corner Plot"
-                    value={formData.title || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData((prev) => ({ ...prev, title: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">
-                    Listing Visibility
-                  </label>
-                  <select
-                    value={formData.listing_visibility || 'Publish to Website & CRM'}
-                    onChange={(e) => {
-                      const val = e.target.value as any;
-                      setFormData((prev) => ({ ...prev, listing_visibility: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
-                  >
-                    <option value="Publish to Website & CRM">Publish to Website & CRM</option>
-                    <option value="Private CRM Only">Private CRM Only</option>
-                    <option value="Draft">Draft</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Plot Type & Category with "Other" */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Plot Type</label>
-                  <select
-                    value={formData.type || 'Residential Plot'}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData((prev) => ({ ...prev, type: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
-                  >
-                    {PLOT_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                  {formData.type === 'Other' && (
-                    <input
-                      type="text"
-                      required
-                      placeholder="Type custom plot type..."
-                      value={customType}
-                      onChange={(e) => setCustomType(e.target.value)}
-                      className="mt-2 w-full bg-emerald-950/40 border border-emerald-800/80 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none"
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Category</label>
-                  <select
-                    value={formData.category || 'Sale'}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData((prev) => ({ ...prev, category: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
-                  >
-                    {CATEGORY_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                  {formData.category === 'Other' && (
-                    <input
-                      type="text"
-                      required
-                      placeholder="Type custom category..."
-                      value={customCategory}
-                      onChange={(e) => setCustomCategory(e.target.value)}
-                      className="mt-2 w-full bg-emerald-950/40 border border-emerald-800/80 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none"
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 2: PARENT PROJECT ASSOCIATION */}
-            <div className="bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl space-y-3">
-              <div className="border-b border-slate-800/60 pb-2.5 flex items-center justify-between">
-                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  <span>2. PARENT PROJECT ASSOCIATION *</span>
-                </h3>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 text-xs font-semibold mb-1.5">
-                  Select Parent Real Estate Project
-                </label>
-                <select
-                  required
-                  value={formData.project_id || ''}
-                  onChange={(e) => {
-                    const newPid = e.target.value;
-                    const proj = projects.find((p) => p.id === newPid);
-                    setFormData((prev) => ({
-                      ...prev,
-                      project_id: newPid,
-                      latitude: prev.latitude || proj?.latitude || '',
-                      longitude: prev.longitude || proj?.longitude || ''
-                    }));
-                  }}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
-                >
-                  <option value="" disabled>-- Select Project --</option>
-                  {projects.map((proj) => (
-                    <option key={proj.id} value={proj.id}>
-                      {proj.name} ({proj.location_area || proj.location_city || 'Trichy'})
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[11px] text-slate-400 mt-1.5">
-                  Associates this plot with its master project workspace and ensures it renders on the public project details page.
-                </p>
-              </div>
-            </div>
-
-            {/* SECTION 3: DIMENSIONS & FACING */}
-            <div className="bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl space-y-4">
-              <div className="border-b border-slate-800/60 pb-2.5 flex items-center justify-between">
-                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <Layers className="w-4 h-4" />
-                  <span>3. DIMENSIONS & FACING</span>
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Length (Ft)</label>
-                  <input
-                    type="number"
-                    value={formData.length_ft || ''}
-                    onChange={(e) => {
-                      const l = Number(e.target.value);
-                      setFormData((prev) => {
-                        const w = Number(prev.width_ft) || 0;
-                        const area = l * w;
-                        const rate = Number(prev.price_per_sqft) || 1500;
-                        const lakhs = (area * rate) / 100000;
-                        return {
-                          ...prev,
-                          length_ft: l,
-                          area_sqft: area,
-                          dimension_str: `${l} x ${w} Ft`,
-                          total_price_lakhs: Number(lakhs.toFixed(2)),
-                          price: lakhs * 100000
-                        };
-                      });
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Width (Ft)</label>
-                  <input
-                    type="number"
-                    value={formData.width_ft || ''}
-                    onChange={(e) => {
-                      const w = Number(e.target.value);
-                      setFormData((prev) => {
-                        const l = Number(prev.length_ft) || 0;
-                        const area = l * w;
-                        const rate = Number(prev.price_per_sqft) || 1500;
-                        const lakhs = (area * rate) / 100000;
-                        return {
-                          ...prev,
-                          width_ft: w,
-                          area_sqft: area,
-                          dimension_str: `${l} x ${w} Ft`,
-                          total_price_lakhs: Number(lakhs.toFixed(2)),
-                          price: lakhs * 100000
-                        };
-                      });
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Dimension String</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 40 x 30 Ft"
-                    value={formData.dimension_str || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData((prev) => ({ ...prev, dimension_str: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Total Area (Sq.Ft) *</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={formData.area_sqft || ''}
-                    onChange={(e) => {
-                      const area = Number(e.target.value);
-                      setFormData((prev) => {
-                        const rate = Number(prev.price_per_sqft) || 1500;
-                        const lakhs = (area * rate) / 100000;
-                        return {
-                          ...prev,
-                          area_sqft: area,
-                          total_price_lakhs: Number(lakhs.toFixed(2)),
-                          price: lakhs * 100000
-                        };
-                      });
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-emerald-400 font-bold focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Facing Direction */}
-              <div>
-                <label className="block text-slate-300 text-xs font-semibold mb-1.5">Facing Direction *</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <select
-                    value={formData.facing || 'North'}
-                    onChange={(e) => {
-                      const val = e.target.value as any;
-                      setFormData((prev) => ({ ...prev, facing: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
-                  >
-                    {FACING_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt} Facing
-                      </option>
-                    ))}
-                  </select>
-
-                  {formData.facing === 'Other' && (
-                    <input
-                      type="text"
-                      required
-                      placeholder="Type custom facing (e.g. North-East Corner)"
-                      value={customFacing}
-                      onChange={(e) => setCustomFacing(e.target.value)}
-                      className="w-full bg-emerald-950/40 border border-emerald-800/80 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none"
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 4: PRICING & COMMERCIALS (CRM ONLY) */}
-            <div className="bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl space-y-4">
-              <div className="border-b border-slate-800/60 pb-2.5 flex items-center justify-between">
-                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  <span>4. PRICING & COMMERCIALS (CRM ONLY)</span>
-                </h3>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded-lg flex items-center gap-1.5">
-                  <Lock className="w-3 h-3" />
-                  <span>Strictly Confidential</span>
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Rate / Sq.Ft (₹)</label>
-                  <input
-                    type="number"
-                    value={formData.price_per_sqft || ''}
-                    onChange={(e) => {
-                      const rate = Number(e.target.value);
-                      setFormData((prev) => {
-                        const area = Number(prev.area_sqft) || 0;
-                        const price = rate * area;
-                        const lakhs = price / 100000;
-                        return {
-                          ...prev,
-                          price_per_sqft: rate,
-                          price,
-                          total_price_lakhs: Number(lakhs.toFixed(2))
-                        };
-                      });
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Total Price (₹)</label>
-                  <input
-                    type="number"
-                    value={formData.price || ''}
-                    onChange={(e) => {
-                      const price = Number(e.target.value);
-                      setFormData((prev) => {
-                        const area = Number(prev.area_sqft) || 1;
-                        const rate = Math.round(price / area);
-                        const lakhs = price / 100000;
-                        return {
-                          ...prev,
-                          price,
-                          price_per_sqft: rate,
-                          total_price_lakhs: Number(lakhs.toFixed(2))
-                        };
-                      });
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-emerald-400 font-bold focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Total Price (Lakhs)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.total_price_lakhs || ''}
-                    onChange={(e) => {
-                      const l = Number(e.target.value);
-                      setFormData((prev) => {
-                        const price = l * 100000;
-                        const area = Number(prev.area_sqft) || 1;
-                        const rate = Math.round(price / area);
-                        return {
-                          ...prev,
-                          total_price_lakhs: l,
-                          price,
-                          price_per_sqft: rate
-                        };
-                      });
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-emerald-400 font-black focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 5: MULTIPLE IMAGES & VIDEO MEDIA */}
-            <div className="bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl space-y-5">
-              <div className="border-b border-slate-800/60 pb-2.5 flex items-center justify-between">
-                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4" />
-                  <span>5. MULTIPLE IMAGES & VIDEO MEDIA</span>
-                </h3>
-              </div>
-
-              {/* Images Manager */}
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                      Plot Image Gallery ({Array.isArray(formData.gallery_images) ? formData.gallery_images.length : 0})
-                    </h4>
-                    <p className="text-[11px] text-slate-400">
-                      Upload photos or choose from the Media Library. Set one as Primary Cover.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMediaTarget('image');
-                        setIsMediaLibraryOpen(true);
-                      }}
-                      className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-xl transition"
-                    >
-                      <FolderOpen className="w-3.5 h-3.5" />
-                      <span>Media Library</span>
-                    </button>
-
-                    <label className="cursor-pointer inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition shadow">
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Upload Images</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">
+                        Plot Number / Designation *
+                      </label>
                       <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={handleMultipleImageUpload}
+                        type="text"
+                        required
+                        placeholder="e.g. Plot 01, Plot A-102"
+                        value={formData.plot_number || ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, plot_number: e.target.value }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none font-semibold"
                       />
-                    </label>
-                    {uploadingImage && <span className="text-[11px] text-amber-400 font-semibold animate-pulse">Uploading...</span>}
-                  </div>
-                </div>
-
-                {/* Paste URL */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="Or paste image URL..."
-                    value={newImageInput}
-                    onChange={(e) => setNewImageInput(e.target.value)}
-                    className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddImageUrl}
-                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition"
-                  >
-                    Add URL
-                  </button>
-                </div>
-
-                {/* Thumbnails */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 pt-1">
-                  {formData.primary_image_url && (
-                    <div className="relative group h-24 rounded-xl overflow-hidden bg-slate-900 border-2 border-emerald-500 shadow">
-                      <img
-                        src={formData.primary_image_url}
-                        alt="Primary Cover"
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-1 left-1 bg-emerald-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow">
-                        PRIMARY
-                      </div>
                     </div>
-                  )}
 
-                  {(Array.isArray(formData.gallery_images) ? formData.gallery_images : []).map((imgUrl, idx) => {
-                    if (imgUrl === formData.primary_image_url) return null;
-                    return (
-                      <div
-                        key={idx}
-                        className="relative group h-24 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-slate-600 transition"
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">
+                        Listing Title (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. East Facing Corner Plot"
+                        value={formData.title || ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">
+                        Listing Visibility
+                      </label>
+                      <select
+                        value={formData.listing_visibility || 'Publish to Website & CRM'}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, listing_visibility: e.target.value as any }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none cursor-pointer font-medium"
                       >
-                        <img src={imgUrl} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(imgUrl)}
-                            className="self-end p-1 rounded-md bg-rose-600 text-white hover:bg-rose-500 transition"
-                            title="Remove"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleSetPrimaryImage(imgUrl)}
-                            className="text-[9px] font-bold bg-emerald-600 text-white px-1.5 py-1 rounded hover:bg-emerald-500 transition text-center"
-                          >
-                            Set Cover
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Videos Section - Simplified Direct Upload */}
-              <div className="border-t border-slate-800/80 pt-5 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                      <Video className="w-4 h-4 text-emerald-400" />
-                      <span>Plot Video Walkthrough</span>
-                    </h4>
-                    <p className="text-[11px] text-slate-400">
-                      Upload an MP4, WebM, or MOV video walkthrough directly from your device.
-                    </p>
+                        <option value="Publish to Website & CRM">Publish to Website & CRM</option>
+                        <option value="Private CRM Only">Private CRM Only</option>
+                        <option value="Draft">Draft</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <input
-                      ref={videoFileInputRef}
-                      type="file"
-                      accept="video/mp4,video/webm,video/ogg,video/quicktime"
-                      onChange={handleDirectVideoUpload}
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      disabled={uploadingVideo}
-                      onClick={() => videoFileInputRef.current?.click()}
-                      className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition cursor-pointer shadow-md disabled:opacity-50"
-                    >
-                      <Upload className="w-4 h-4" />
-                      <span>{uploadingVideo ? 'Uploading Video...' : (formData.video_url ? 'Replace Video File' : 'Upload Video File')}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Video Playable Preview or Empty State */}
-                {formData.video_url ? (
-                  <div className="space-y-2 pt-2">
-                    <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-800 aspect-video max-h-64 flex items-center justify-center">
-                      {formData.video_url.includes('youtube.com') || formData.video_url.includes('youtu.be') ? (
-                        <iframe
-                          src={formData.video_url.replace('watch?v=', 'embed/')}
-                          title="Plot Video"
-                          allowFullScreen
-                          className="w-full h-full border-0"
-                        />
-                      ) : (
-                        <video
-                          src={formData.video_url}
-                          controls
-                          className="w-full h-full object-contain"
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Plot Type</label>
+                      <select
+                        value={formData.type || 'Residential Plot'}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
+                      >
+                        {PLOT_TYPE_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                      {formData.type === 'Other' && (
+                        <input
+                          type="text"
+                          required
+                          placeholder="Type custom plot type..."
+                          value={customType}
+                          onChange={(e) => setCustomType(e.target.value)}
+                          className="mt-2 w-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/80 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
                         />
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Play className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                        <span className="font-mono text-[11px] text-slate-300 truncate">{formData.video_url}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => videoFileInputRef.current?.click()}
-                          className="px-2.5 py-1 text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition cursor-pointer"
-                        >
-                          Replace
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveVideoUrl(0)}
-                          className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition cursor-pointer"
-                          title="Remove Video"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Category</label>
+                      <select
+                        value={formData.category || 'Sale'}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
+                      >
+                        {CATEGORY_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                      {formData.category === 'Other' && (
+                        <input
+                          type="text"
+                          required
+                          placeholder="Type custom category..."
+                          value={customCategory}
+                          onChange={(e) => setCustomCategory(e.target.value)}
+                          className="mt-2 w-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/80 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
+                        />
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <div className="p-4 rounded-xl border border-dashed border-slate-800 bg-slate-950/40 text-center space-y-1">
-                    <Video className="w-6 h-6 text-slate-600 mx-auto" />
-                    <p className="text-xs text-slate-400 font-medium">No video attached yet for this plot.</p>
-                    <p className="text-[10.5px] text-slate-500">Click &ldquo;Upload Video File&rdquo; above to select an MP4 from your device.</p>
-                  </div>
-                )}
+                </div>
 
-                {/* Optional External Video / YouTube URL */}
-                <div className="pt-1">
-                  <details className="group text-xs text-slate-400">
-                    <summary className="cursor-pointer hover:text-slate-300 text-[11px] flex items-center gap-1 font-semibold">
-                      <span>▸ Or paste external video / YouTube URL</span>
-                    </summary>
-                    <div className="flex items-center gap-2 mt-2">
+                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-5 rounded-2xl space-y-3">
+                  <h3 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <Building2 className="w-4 h-4" />
+                    <span>Parent Project Association *</span>
+                  </h3>
+
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">
+                      Select Master Project
+                    </label>
+                    <select
+                      required
+                      value={formData.project_id || ''}
+                      onChange={(e) => {
+                        const newPid = e.target.value;
+                        const proj = projects.find((p) => p.id === newPid);
+                        setFormData((prev) => ({
+                          ...prev,
+                          project_id: newPid,
+                          latitude: prev.latitude || proj?.latitude || '',
+                          longitude: prev.longitude || proj?.longitude || ''
+                        }));
+                      }}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none cursor-pointer font-medium"
+                    >
+                      <option value="" disabled>-- Select Project --</option>
+                      {projects.map((proj) => (
+                        <option key={proj.id} value={proj.id}>
+                          {proj.name} ({proj.location_area || proj.location_city || 'Trichy'})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                      Associates this plot with its parent layout workspace and links it on the public project page.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: DIMENSIONS & COMMERCIAL PRICING */}
+            {activeTab === 'dimensions' && (
+              <div className="space-y-5">
+                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-5 rounded-2xl space-y-4">
+                  <h3 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <Layers className="w-4 h-4" />
+                    <span>Plot Dimensions & Sizing</span>
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Length (Ft)</label>
                       <input
-                        type="url"
-                        placeholder="https://www.youtube.com/watch?v=... or https://.../video.mp4"
-                        value={newVideoInput}
-                        onChange={(e) => setNewVideoInput(e.target.value)}
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                        type="number"
+                        placeholder="e.g. 40"
+                        value={formData.length_ft || ''}
+                        onChange={(e) => {
+                          const l = Number(e.target.value);
+                          setFormData((prev) => {
+                            const w = Number(prev.width_ft) || 0;
+                            const area = l && w ? l * w : prev.area_sqft;
+                            const rate = Number(prev.price_per_sqft) || 0;
+                            const lakhs = rate && area ? (area * rate) / 100000 : prev.total_price_lakhs;
+                            return {
+                              ...prev,
+                              length_ft: l || ('' as any),
+                              area_sqft: area || ('' as any),
+                              dimension_str: l && w ? `${l} x ${w} Ft` : prev.dimension_str,
+                              total_price_lakhs: lakhs ? Number(lakhs.toFixed(2)) : ('' as any),
+                              price: lakhs ? lakhs * 100000 : ('' as any)
+                            };
+                          });
+                        }}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Width (Ft)</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 30"
+                        value={formData.width_ft || ''}
+                        onChange={(e) => {
+                          const w = Number(e.target.value);
+                          setFormData((prev) => {
+                            const l = Number(prev.length_ft) || 0;
+                            const area = l && w ? l * w : prev.area_sqft;
+                            const rate = Number(prev.price_per_sqft) || 0;
+                            const lakhs = rate && area ? (area * rate) / 100000 : prev.total_price_lakhs;
+                            return {
+                              ...prev,
+                              width_ft: w || ('' as any),
+                              area_sqft: area || ('' as any),
+                              dimension_str: l && w ? `${l} x ${w} Ft` : prev.dimension_str,
+                              total_price_lakhs: lakhs ? Number(lakhs.toFixed(2)) : ('' as any),
+                              price: lakhs ? lakhs * 100000 : ('' as any)
+                            };
+                          });
+                        }}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Dimension Display</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 40 x 30 Ft"
+                        value={formData.dimension_str || ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, dimension_str: e.target.value }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Total Area (Sq.Ft) *</label>
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        placeholder="e.g. 1200"
+                        value={formData.area_sqft || ''}
+                        onChange={(e) => {
+                          const area = Number(e.target.value);
+                          setFormData((prev) => {
+                            const rate = Number(prev.price_per_sqft) || 0;
+                            const lakhs = rate && area ? (area * rate) / 100000 : prev.total_price_lakhs;
+                            return {
+                              ...prev,
+                              area_sqft: area || ('' as any),
+                              total_price_lakhs: lakhs ? Number(lakhs.toFixed(2)) : ('' as any),
+                              price: lakhs ? lakhs * 100000 : ('' as any)
+                            };
+                          });
+                        }}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-400 font-bold focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Facing Direction *</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <select
+                        value={formData.facing || 'North'}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, facing: e.target.value as any }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
+                      >
+                        {FACING_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt} Facing
+                          </option>
+                        ))}
+                      </select>
+
+                      {formData.facing === 'Other' && (
+                        <input
+                          type="text"
+                          required
+                          placeholder="Type custom facing (e.g. North-East Corner)"
+                          value={customFacing}
+                          onChange={(e) => setCustomFacing(e.target.value)}
+                          className="w-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/80 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-5 rounded-2xl space-y-4">
+                  <div className="border-b border-slate-200 dark:border-slate-800/60 pb-2.5 flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      <span>Commercial Pricing & Status</span>
+                    </h3>
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800/80 px-2 py-0.5 rounded-lg flex items-center gap-1.5">
+                      <Lock className="w-3 h-3" />
+                      <span>CRM Confidential</span>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Rate / Sq.Ft (₹)</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 1500"
+                        value={formData.price_per_sqft || ''}
+                        onChange={(e) => {
+                          const rate = Number(e.target.value);
+                          setFormData((prev) => {
+                            const area = Number(prev.area_sqft) || 0;
+                            const price = rate && area ? rate * area : prev.price;
+                            const lakhs = price ? price / 100000 : prev.total_price_lakhs;
+                            return {
+                              ...prev,
+                              price_per_sqft: rate || ('' as any),
+                              price: price || ('' as any),
+                              total_price_lakhs: lakhs ? Number(lakhs.toFixed(2)) : ('' as any)
+                            };
+                          });
+                        }}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Total Price (₹)</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 1800000"
+                        value={formData.price || ''}
+                        onChange={(e) => {
+                          const price = Number(e.target.value);
+                          setFormData((prev) => {
+                            const area = Number(prev.area_sqft) || 1;
+                            const rate = price ? Math.round(price / area) : prev.price_per_sqft;
+                            const lakhs = price ? price / 100000 : ('' as any);
+                            return {
+                              ...prev,
+                              price: price || ('' as any),
+                              price_per_sqft: rate || ('' as any),
+                              total_price_lakhs: lakhs ? Number(lakhs.toFixed(2)) : ('' as any)
+                            };
+                          });
+                        }}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-400 font-bold focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Total Price (in Lakhs)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="e.g. 18.00"
+                        value={formData.total_price_lakhs || ''}
+                        onChange={(e) => {
+                          const lakhs = Number(e.target.value);
+                          setFormData((prev) => {
+                            const price = lakhs ? lakhs * 100000 : ('' as any);
+                            const area = Number(prev.area_sqft) || 1;
+                            const rate = price ? Math.round(price / area) : prev.price_per_sqft;
+                            return {
+                              ...prev,
+                              total_price_lakhs: lakhs || ('' as any),
+                              price,
+                              price_per_sqft: rate || ('' as any)
+                            };
+                          });
+                        }}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Approval Status</label>
+                      <select
+                        value={formData.approval_status || 'DTCP Approved'}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, approval_status: e.target.value }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
+                      >
+                        {APPROVAL_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                      {formData.approval_status === 'Other' && (
+                        <input
+                          type="text"
+                          required
+                          placeholder="Type custom approval (e.g. LPS Approved)"
+                          value={customApproval}
+                          onChange={(e) => setCustomApproval(e.target.value)}
+                          className="mt-2 w-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/80 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Plot Status *</label>
+                      <select
+                        value={formData.status || 'Available'}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as any }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none cursor-pointer font-bold"
+                      >
+                        <option value="Available">Available (Green)</option>
+                        <option value="Booked">Booked (Amber)</option>
+                        <option value="Sold">Sold (Rose)</option>
+                        <option value="Blocked">Blocked / Reserved</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: PHOTOS & VIDEO */}
+            {activeTab === 'media' && (
+              <div className="space-y-5">
+                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-5 rounded-2xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Plot Photos & Cover Image</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Upload plot pictures or select from the media repository.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleMultipleImageUpload}
+                        className="hidden"
                       />
                       <button
                         type="button"
-                        onClick={handleAddVideoUrl}
-                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition cursor-pointer"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition cursor-pointer shadow-sm"
                       >
-                        Set Link
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{uploadingImage ? 'Uploading...' : 'Upload Images'}</span>
                       </button>
                     </div>
-                  </details>
-                </div>
-              </div>
-            </div>
+                  </div>
 
-            {/* SECTION 6: LOCATION & AMENITIES */}
-            <div className="bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl space-y-4">
-              <div className="border-b border-slate-800/60 pb-2.5 flex items-center justify-between">
-                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>6. LOCATION & AMENITIES</span>
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Locality / Neighborhood</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Gundur / Airport Road"
-                    value={formData.locality || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData((prev) => ({ ...prev, locality: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Road / Prime Corridor</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Pudukkottai Main Road"
-                    value={formData.road_corridor || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData((prev) => ({ ...prev, road_corridor: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">District</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Trichy"
-                    value={formData.district || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData((prev) => ({ ...prev, district: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 text-xs font-semibold mb-1.5">Amenities (comma separated)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 40ft Tar Road, Street Lights, Avenue Trees, Sweet Water, Fenced"
-                  value={formData.amenities || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setFormData((prev) => ({ ...prev, amenities: val }));
-                  }}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              {/* GPS Coordinates Interactive Component */}
-              <GpsLocationPicker
-                latitude={formData.latitude || ''}
-                longitude={formData.longitude || ''}
-                onChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
-                label="Plot GPS Coordinates (Directions Navigation)"
-                helpText="Public visitors clicking 'Directions' will open turn-by-turn navigation directly to these coordinates."
-              />
-            </div>
-
-            {/* SECTION 7: APPROVAL & STATUS */}
-            <div className="bg-slate-950/60 border border-slate-800/80 p-5 rounded-2xl space-y-4">
-              <div className="border-b border-slate-800/60 pb-2.5 flex items-center justify-between">
-                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>7. APPROVAL & STATUS</span>
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Approval Status</label>
-                  <select
-                    value={formData.approval_status || 'DTCP Approved'}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData((prev) => ({ ...prev, approval_status: val }));
-                    }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
-                  >
-                    {APPROVAL_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                  {formData.approval_status === 'Other' && (
+                  {/* URL Paste */}
+                  <div className="flex items-center gap-2">
                     <input
                       type="text"
-                      required
-                      placeholder="Type custom approval (e.g. LPS Approved)"
-                      value={customApproval}
-                      onChange={(e) => setCustomApproval(e.target.value)}
-                      className="mt-2 w-full bg-emerald-950/40 border border-emerald-800/80 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none"
+                      placeholder="Or paste external image URL..."
+                      value={newImageInput}
+                      onChange={(e) => setNewImageInput(e.target.value)}
+                      className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                     />
+                    <button
+                      type="button"
+                      onClick={handleAddImageUrl}
+                      className="px-3.5 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl transition cursor-pointer"
+                    >
+                      Add URL
+                    </button>
+                  </div>
+
+                  {/* Thumbnails */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 pt-1">
+                    {formData.primary_image_url && (
+                      <div className="relative group h-24 rounded-xl overflow-hidden bg-white dark:bg-slate-900 border-2 border-emerald-500 shadow">
+                        <img
+                          src={formData.primary_image_url}
+                          alt="Primary Cover"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-1 left-1 bg-emerald-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow">
+                          COVER
+                        </div>
+                      </div>
+                    )}
+
+                    {(Array.isArray(formData.gallery_images) ? formData.gallery_images : []).map((imgUrl, idx) => {
+                      if (imgUrl === formData.primary_image_url) return null;
+                      return (
+                        <div
+                          key={idx}
+                          className="relative group h-24 rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-400 transition"
+                        >
+                          <img src={imgUrl} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(imgUrl)}
+                              className="self-end p-1 rounded-md bg-rose-600 text-white hover:bg-rose-500 transition cursor-pointer"
+                              title="Remove"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSetPrimaryImage(imgUrl)}
+                              className="text-[9px] font-bold bg-emerald-600 text-white px-1.5 py-1 rounded hover:bg-emerald-500 transition text-center cursor-pointer"
+                            >
+                              Set Cover
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Videos Section */}
+                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-5 rounded-2xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                        <Video className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Plot Video Walkthrough</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Upload an MP4 walkthrough video directly from your device.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={videoFileInputRef}
+                        type="file"
+                        accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                        onChange={handleDirectVideoUpload}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        disabled={uploadingVideo}
+                        onClick={() => videoFileInputRef.current?.click()}
+                        className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition cursor-pointer shadow-md disabled:opacity-50"
+                      >
+                        <Upload className="w-4 h-4" />
+                        <span>{uploadingVideo ? 'Uploading Video...' : (formData.video_url ? 'Replace Video File' : 'Upload Video File')}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {formData.video_url ? (
+                    <div className="space-y-2 pt-1">
+                      <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-200 dark:border-slate-800 aspect-video max-h-56 flex items-center justify-center">
+                        {formData.video_url.includes('youtube.com') || formData.video_url.includes('youtu.be') ? (
+                          <iframe
+                            src={formData.video_url.replace('watch?v=', 'embed/')}
+                            title="Plot Video"
+                            allowFullScreen
+                            className="w-full h-full border-0"
+                          />
+                        ) : (
+                          <video
+                            src={formData.video_url}
+                            controls
+                            className="w-full h-full object-contain"
+                          />
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Play className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                          <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300 truncate">{formData.video_url}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVideoUrl(0)}
+                            className="p-1 text-slate-400 hover:text-rose-500 transition cursor-pointer"
+                            title="Remove Video"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/40 text-center space-y-1">
+                      <Video className="w-6 h-6 text-slate-400 mx-auto" />
+                      <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">No video attached yet for this plot.</p>
+                      <p className="text-[10.5px] text-slate-400">Click &ldquo;Upload Video File&rdquo; above or paste a video link below.</p>
+                    </div>
                   )}
+
+                  {/* External Video / YouTube URL */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="url"
+                      placeholder="Or paste external video link (e.g. YouTube or MP4 URL)..."
+                      value={newVideoInput}
+                      onChange={(e) => setNewVideoInput(e.target.value)}
+                      className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddVideoUrl}
+                      className="px-3.5 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl transition cursor-pointer"
+                    >
+                      Set Link
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: LOCATION & SPECIFICATIONS */}
+            {activeTab === 'location' && (
+              <div className="space-y-5">
+                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-5 rounded-2xl space-y-4">
+                  <h3 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>Location Address & Amenities</span>
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Locality / Neighborhood</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Gundur / Airport Road"
+                        value={formData.locality || ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, locality: e.target.value }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Road / Prime Corridor</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Pudukkottai Main Road"
+                        value={formData.road_corridor || ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, road_corridor: e.target.value }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">District</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Trichy"
+                        value={formData.district || ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, district: e.target.value }))}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 text-xs font-semibold mb-1.5">Amenities (comma separated)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 40ft Tar Road, Street Lights, Avenue Trees, Sweet Water, Fenced"
+                      value={formData.amenities || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, amenities: e.target.value }))}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <GpsLocationPicker
+                    latitude={formData.latitude || ''}
+                    longitude={formData.longitude || ''}
+                    onChange={(lat, lng) => setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))}
+                    label="Plot GPS Coordinates (Directions Navigation)"
+                    helpText="Public visitors clicking 'Directions' will open turn-by-turn navigation directly to these coordinates."
+                  />
                 </div>
 
-                <div>
-                  <label className="block text-slate-300 text-xs font-semibold mb-1.5">Plot Status *</label>
-                  <select
-                    value={formData.status || 'Available'}
-                    onChange={(e) => {
-                      const val = e.target.value as any;
-                      setFormData((prev) => ({ ...prev, status: val }));
+                <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 p-5 rounded-2xl space-y-3">
+                  <h3 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Plot Description & Key Selling Features</span>
+                  </h3>
+
+                  <textarea
+                    rows={4}
+                    placeholder="Describe unique characteristics, sweet groundwater depth, frontage, corner advantages, etc."
+                    value={formData.description || ''}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none leading-relaxed"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Actions Footer */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between sticky bottom-0 bg-white/95 dark:bg-slate-900/95 py-3 -mx-6 px-6 z-10">
+              <div className="flex items-center gap-2">
+                {activeTab !== 'basic' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (activeTab === 'dimensions') setActiveTab('basic');
+                      if (activeTab === 'media') setActiveTab('dimensions');
+                      if (activeTab === 'location') setActiveTab('media');
                     }}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-emerald-500 focus:outline-none cursor-pointer"
+                    className="inline-flex items-center gap-1 px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition cursor-pointer"
                   >
-                    <option value="Available">Available (Green Badge)</option>
-                    <option value="Booked">Booked (Amber Badge)</option>
-                    <option value="Sold">Sold (Rose Badge)</option>
-                    <option value="Blocked">Blocked / Reserved</option>
-                  </select>
-                </div>
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Previous</span>
+                  </button>
+                )}
+
+                {activeTab !== 'location' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (activeTab === 'basic') setActiveTab('dimensions');
+                      if (activeTab === 'dimensions') setActiveTab('media');
+                      if (activeTab === 'media') setActiveTab('location');
+                    }}
+                    className="inline-flex items-center gap-1 px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition cursor-pointer"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
-              <div>
-                <label className="block text-slate-300 text-xs font-semibold mb-1.5">
-                  Plot Description & Key Selling Features
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Describe unique characteristics, sweet groundwater depth, frontage, corner advantages, etc."
-                  value={formData.description || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setFormData((prev) => ({ ...prev, description: val }));
-                  }}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none leading-relaxed"
-                />
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition shadow flex items-center gap-2 cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{saving ? 'Saving Plot...' : (isEditMode ? 'Update Plot' : 'Create Plot')}</span>
+                </button>
               </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 bg-slate-900/95 py-3 -mx-6 px-6">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-xs font-bold rounded-xl transition shadow flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>{saving ? 'Saving Plot...' : (isEditMode ? 'Update Plot' : 'Create Plot')}</span>
-              </button>
             </div>
           </form>
         </div>

@@ -33,26 +33,27 @@ export default function AdminProjectsPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'content' | 'media' | 'landmarks'>('basic');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingBrochure, setUploadingBrochure] = useState(false);
 
   // Plot Modal State for adding a plot directly from project cards
   const [isPlotModalOpen, setIsPlotModalOpen] = useState(false);
   const [plotModalProject, setPlotModalProject] = useState<Project | null>(null);
 
-  // Form Data with all comprehensive project attributes
+  // Form Data with clean, fresh defaults (no fake pre-filled numbers)
   const [formData, setFormData] = useState({
     name: '',
     tagline: '',
     status: 'Ongoing',
     location_city: 'Trichy',
-    location_area: 'Trichy-Pudukkottai Highway Corridor',
+    location_area: '',
     map_url: '',
-    total_acres: 5.37,
-    total_plots: 101,
-    available_plots: 38,
-    price_starting_lakhs: 22.65,
-    dtcp_number: '100% DTCP Approved',
-    rera_number: 'TNRERA Approved Layout',
-    hero_image: '/project_park_avenue_new.jpg',
+    total_acres: '' as any,
+    total_plots: '' as any,
+    available_plots: '' as any,
+    price_starting_lakhs: '' as any,
+    dtcp_number: '',
+    rera_number: '',
+    hero_image: '',
     video_url: '',
     brochure_url: '',
     description: '',
@@ -69,6 +70,7 @@ export default function AdminProjectsPage() {
     time: '',
     map_url: ''
   });
+  const [customCategory, setCustomCategory] = useState('');
 
   useEffect(() => {
     loadProjects();
@@ -96,13 +98,13 @@ export default function AdminProjectsPage() {
       location_city: 'Trichy',
       location_area: '',
       map_url: '',
-      total_acres: 10,
-      total_plots: 80,
-      available_plots: 40,
-      price_starting_lakhs: 25,
-      dtcp_number: '100% DTCP Approved',
-      rera_number: 'TNRERA Approved Layout',
-      hero_image: '/project_park_avenue_new.jpg',
+      total_acres: '' as any,
+      total_plots: '' as any,
+      available_plots: '' as any,
+      price_starting_lakhs: '' as any,
+      dtcp_number: '',
+      rera_number: '',
+      hero_image: '',
       video_url: '',
       brochure_url: '',
       description: '',
@@ -110,6 +112,7 @@ export default function AdminProjectsPage() {
       highlightsText: '',
       nearby_landmarks: []
     });
+    setCustomCategory('');
     setIsModalOpen(true);
   };
 
@@ -124,13 +127,13 @@ export default function AdminProjectsPage() {
       location_city: project.location_city || 'Trichy',
       location_area: project.location_area || '',
       map_url: project.google_maps_embed_url || project.map_url || '',
-      total_acres: project.total_extent_acres !== undefined ? project.total_extent_acres : (project.total_acres || 0),
-      total_plots: project.total_plots_count !== undefined ? project.total_plots_count : (project.total_plots || 0),
-      available_plots: project.available_plots_count !== undefined ? project.available_plots_count : (project.available_plots || 0),
-      price_starting_lakhs: project.price_starting_lakhs || 0,
-      dtcp_number: project.dtcp_number || '100% DTCP Approved',
-      rera_number: project.rera_number || 'TNRERA Approved Layout',
-      hero_image: project.banner_image || project.hero_image || '/project_park_avenue_new.jpg',
+      total_acres: project.total_extent_acres !== undefined ? project.total_extent_acres : (project.total_acres || ''),
+      total_plots: project.total_plots_count !== undefined ? project.total_plots_count : (project.total_plots || ''),
+      available_plots: project.available_plots_count !== undefined ? project.available_plots_count : (project.available_plots || ''),
+      price_starting_lakhs: project.price_starting_lakhs || '',
+      dtcp_number: project.dtcp_number || '',
+      rera_number: project.rera_number || '',
+      hero_image: project.banner_image || project.hero_image || '',
       video_url: project.video_url || '',
       brochure_url: project.brochure_url || '',
       description: project.description || '',
@@ -138,6 +141,7 @@ export default function AdminProjectsPage() {
       highlightsText: Array.isArray(existingHighlights) ? existingHighlights.join('\n') : '',
       nearby_landmarks: Array.isArray(project.nearby_landmarks) ? [...project.nearby_landmarks] : []
     });
+    setCustomCategory('');
     setIsModalOpen(true);
   };
 
@@ -166,14 +170,44 @@ export default function AdminProjectsPage() {
     }
   };
 
+  const handleBrochureFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBrochure(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        const res = await api.uploadMedia({ imageBase64: base64, filename: file.name });
+        if (res && res.success && res.fileUrl) {
+          setFormData((prev) => ({ ...prev, brochure_url: res.fileUrl }));
+        } else {
+          alert('Failed to upload brochure file.');
+        }
+        setUploadingBrochure(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Brochure upload error:', err);
+      alert('Brochure upload failed: ' + err.message);
+      setUploadingBrochure(false);
+    }
+  };
+
   const handleAddLandmark = () => {
     if (!newLandmark.landmark.trim()) {
       alert('Please enter a landmark name');
       return;
     }
+    const finalCategory =
+      newLandmark.category === 'Other' && customCategory.trim()
+        ? customCategory.trim()
+        : newLandmark.category;
+
     setFormData((prev) => ({
       ...prev,
-      nearby_landmarks: [...prev.nearby_landmarks, { ...newLandmark }]
+      nearby_landmarks: [...prev.nearby_landmarks, { ...newLandmark, category: finalCategory }]
     }));
     setNewLandmark({
       landmark: '',
@@ -182,6 +216,7 @@ export default function AdminProjectsPage() {
       time: '',
       map_url: ''
     });
+    setCustomCategory('');
   };
 
   const handleRemoveLandmark = (index: number) => {
@@ -253,19 +288,19 @@ export default function AdminProjectsPage() {
   return (
     <div className="p-6 sm:p-8 space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3">
-            <FolderKanban className="w-7 h-7 text-emerald-400" />
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-3">
+            <FolderKanban className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             <span>Land & Plot Projects Manager</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
             Manage projects, cover images, promotional videos, descriptions, verified location advantages, and plot inventory.
           </p>
         </div>
         <button
           onClick={handleOpenCreate}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-950/50 cursor-pointer"
+          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer self-start md:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Project</span>
@@ -289,44 +324,46 @@ export default function AdminProjectsPage() {
             return (
               <div
                 key={proj.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm group"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between shadow-sm hover:shadow-md group"
               >
                 <div>
                   {/* Project Cover Image Preview */}
-                  <Link href={`/admin/projects/${proj.id}`} className="block relative h-44 w-full bg-slate-950 overflow-hidden cursor-pointer">
+                  <Link href={`/admin/projects/${proj.id}`} className="block relative h-48 w-full bg-slate-950 overflow-hidden cursor-pointer">
                     <img
                       src={coverImg}
                       alt={proj.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />
                     
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 z-10">
                       <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md ${
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md shadow-sm ${
                           proj.status === 'Ongoing'
-                            ? 'bg-emerald-900/90 text-emerald-200 border border-emerald-500/40'
+                            ? 'bg-emerald-900/90 text-emerald-200 border border-emerald-500/50'
                             : proj.status === 'Sold Out'
-                            ? 'bg-rose-900/90 text-rose-200 border border-rose-500/40'
-                            : 'bg-blue-900/90 text-blue-200 border border-blue-500/40'
+                            ? 'bg-rose-900/90 text-rose-200 border border-rose-500/50'
+                            : 'bg-blue-900/90 text-blue-200 border border-blue-500/50'
                         }`}
                       >
                         {proj.status}
                       </span>
                     </div>
 
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <h3 className="text-lg font-bold text-white leading-tight drop-shadow-sm group-hover:text-emerald-400 transition-colors">
+                    <div className="absolute bottom-3 left-3 right-3 project-cover-overlay z-10">
+                      <h3 className="text-lg font-extrabold text-white project-cover-title leading-tight drop-shadow-md group-hover:text-emerald-300 transition-colors">
                         {proj.name}
                       </h3>
-                      <p className="text-[11px] text-slate-300 line-clamp-1 mt-0.5">{proj.tagline}</p>
+                      <p className="text-[11px] text-slate-100 project-cover-text line-clamp-1 mt-0.5 font-medium drop-shadow-sm">
+                        {proj.tagline || `${acres || 0} Acres in ${proj.location_area || proj.location_city || 'Trichy'}`}
+                      </p>
                     </div>
                   </Link>
 
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 z-20">
                     <button
                       onClick={() => handleOpenEdit(proj)}
-                      className="p-1.5 text-slate-300 hover:text-white rounded-lg bg-black/60 backdrop-blur-md hover:bg-black/90 transition cursor-pointer"
+                      className="p-1.5 text-slate-200 hover:text-white rounded-lg bg-black/60 backdrop-blur-md hover:bg-black/90 transition cursor-pointer"
                       title="Quick Edit Project"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -342,30 +379,34 @@ export default function AdminProjectsPage() {
 
                   {/* Project Details Body */}
                   <div className="p-4 space-y-2.5 text-xs">
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-slate-500" /> Location</span>
-                      <span className="font-semibold text-slate-200 text-right line-clamp-1 max-w-[180px]">{proj.location_area}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> Location
+                      </span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 text-right line-clamp-1 max-w-[180px]">
+                        {proj.location_area || proj.location_city}
+                      </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span>Total Extent</span>
-                      <span className="font-semibold text-slate-200">{acres} Acres</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-slate-400">Total Extent</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{acres} Acres</span>
                     </div>
 
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span>Plot Inventory</span>
-                      <span className="font-semibold text-emerald-400">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-slate-400">Plot Inventory</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
                         {availableCount} / {plotsCount} Available
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span>Location Advantages</span>
-                      <span className="font-semibold text-amber-400">{landmarksCount} Verified Hubs</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-slate-400">Location Advantages</span>
+                      <span className="font-bold text-amber-600 dark:text-amber-400">{landmarksCount} Verified Hubs</span>
                     </div>
 
                     {proj.video_url && (
-                      <div className="flex items-center gap-1 text-[11px] text-pink-400">
+                      <div className="flex items-center gap-1 text-[11px] text-pink-600 dark:text-pink-400 font-medium">
                         <Video className="w-3 h-3" /> Promotional Video Attached
                       </div>
                     )}
@@ -373,11 +414,11 @@ export default function AdminProjectsPage() {
                 </div>
 
                 {/* Card Footer Actions */}
-                <div className="p-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs gap-2">
+                <div className="p-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs gap-2">
                   <Link
                     href={`/properties/${proj.slug}`}
                     target="_blank"
-                    className="inline-flex items-center gap-1 text-slate-400 hover:text-white transition"
+                    className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition font-medium"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>View Live</span>
@@ -391,7 +432,7 @@ export default function AdminProjectsPage() {
                         setPlotModalProject(proj);
                         setIsPlotModalOpen(true);
                       }}
-                      className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-bold bg-emerald-950/60 hover:bg-emerald-900/60 px-3 py-1.5 rounded-lg border border-emerald-800/60 transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/60 transition cursor-pointer"
                       title={`Add a new plot directly into ${proj.name}`}
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -400,9 +441,9 @@ export default function AdminProjectsPage() {
 
                     <Link
                       href={`/admin/projects/${proj.id}?tab=plots`}
-                      className="inline-flex items-center gap-1.5 text-slate-200 hover:text-white font-bold bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition"
+                      className="inline-flex items-center gap-1.5 text-slate-800 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 transition"
                     >
-                      <Grid className="w-3.5 h-3.5 text-emerald-400" />
+                      <Grid className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>Manage</span>
                     </Link>
                   </div>
@@ -416,37 +457,37 @@ export default function AdminProjectsPage() {
       {/* Comprehensive Project Create/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl my-6 flex flex-col max-h-[92vh] shadow-2xl">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl my-6 flex flex-col max-h-[92vh] shadow-2xl">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4 flex-shrink-0">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex-shrink-0 bg-slate-50 dark:bg-slate-950/80 rounded-t-3xl">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-950 text-emerald-400 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <Building2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                     {editingProject ? `Edit Project: ${editingProject.name}` : 'Add New Gated Community'}
                   </h3>
-                  <p className="text-[11px] text-slate-400">All saved data immediately reflects in the database and public project page.</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">All saved data immediately reflects in the database and public project page.</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+                className="text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Tab Buttons */}
-            <div className="flex items-center border-b border-slate-800 px-6 bg-slate-950/50 flex-shrink-0 text-xs">
+            <div className="flex items-center border-b border-slate-200 dark:border-slate-800 px-6 bg-slate-50/50 dark:bg-slate-950/50 flex-shrink-0 text-xs overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setActiveTab('basic')}
-                className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'basic'
-                    ? 'border-emerald-500 text-emerald-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-emerald-600 text-emerald-600 dark:border-emerald-500 dark:text-emerald-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
@@ -455,10 +496,10 @@ export default function AdminProjectsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('content')}
-                className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'content'
-                    ? 'border-emerald-500 text-emerald-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-emerald-600 text-emerald-600 dark:border-emerald-500 dark:text-emerald-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -467,10 +508,10 @@ export default function AdminProjectsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('media')}
-                className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'media'
-                    ? 'border-emerald-500 text-emerald-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-emerald-600 text-emerald-600 dark:border-emerald-500 dark:text-emerald-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <Upload className="w-3.5 h-3.5" />
@@ -479,14 +520,14 @@ export default function AdminProjectsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('landmarks')}
-                className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
+                className={`py-3 px-4 font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   activeTab === 'landmarks'
-                    ? 'border-emerald-500 text-emerald-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-emerald-600 text-emerald-600 dark:border-emerald-500 dark:text-emerald-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
                 <Compass className="w-3.5 h-3.5" />
-                <span>4. Location & Worship ({formData.nearby_landmarks.length})</span>
+                <span>4. Location & Hubs ({formData.nearby_landmarks.length})</span>
               </button>
             </div>
 
@@ -497,22 +538,22 @@ export default function AdminProjectsPage() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">Project Name *</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Project Name *</label>
                       <input
                         type="text"
                         required
                         placeholder="e.g. Park Avenue"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">Status</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Status</label>
                       <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
                       >
                         <option value="Ongoing">Ongoing (Active Selling)</option>
                         <option value="Upcoming">Upcoming (New Launch)</option>
@@ -524,41 +565,41 @@ export default function AdminProjectsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Tagline</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Tagline</label>
                     <input
                       type="text"
                       placeholder="e.g. Premier Gated Plotted Community with Grand Entrance on Highway Corridor"
                       value={formData.tagline}
                       onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">City</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">City</label>
                       <input
                         type="text"
                         value={formData.location_city}
                         onChange={(e) => setFormData({ ...formData, location_city: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">Area / Corridor *</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Area / Corridor *</label>
                       <input
                         type="text"
                         required
                         placeholder="e.g. Trichy-Pudukkottai Highway Corridor (Near Airport)"
                         value={formData.location_area}
                         onChange={(e) => setFormData({ ...formData, location_area: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
                       Google Maps Location / Direction Link
                     </label>
                     <input
@@ -566,7 +607,7 @@ export default function AdminProjectsPage() {
                       placeholder="https://maps.google.com/?q=..."
                       value={formData.map_url || ''}
                       onChange={(e) => setFormData({ ...formData, map_url: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                     />
                     <p className="text-[10px] text-slate-500 mt-1">
                       Touching the property location on the frontend opens this exact Google Maps pin.
@@ -575,54 +616,57 @@ export default function AdminProjectsPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">DTCP Approval Reference</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">DTCP Approval Reference</label>
                       <input
                         type="text"
-                        placeholder="e.g. 100% DTCP Approved No. 56/2024"
+                        placeholder="e.g. DTCP / 148 / 2024"
                         value={formData.dtcp_number}
                         onChange={(e) => setFormData({ ...formData, dtcp_number: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">TNRERA Approval Reference</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">TNRERA Approval Reference</label>
                       <input
                         type="text"
-                        placeholder="e.g. TNRERA Approved Layout TN/16/..."
+                        placeholder="e.g. TN/19/Layout/0284/2024"
                         value={formData.rera_number}
                         onChange={(e) => setFormData({ ...formData, rera_number: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">Total Acres</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Total Acres</label>
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.total_acres}
-                        onChange={(e) => setFormData({ ...formData, total_acres: Number(e.target.value) })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                        placeholder="e.g. 10.00"
+                        value={formData.total_acres ?? ''}
+                        onChange={(e) => setFormData({ ...formData, total_acres: e.target.value ? Number(e.target.value) : '' })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">Total Plots</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Total Plots</label>
                       <input
                         type="number"
-                        value={formData.total_plots}
-                        onChange={(e) => setFormData({ ...formData, total_plots: Number(e.target.value) })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                        placeholder="e.g. 80"
+                        value={formData.total_plots ?? ''}
+                        onChange={(e) => setFormData({ ...formData, total_plots: e.target.value ? Number(e.target.value) : '' })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-300 font-semibold mb-1">Available Plots</label>
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Available Plots</label>
                       <input
                         type="number"
-                        value={formData.available_plots}
-                        onChange={(e) => setFormData({ ...formData, available_plots: Number(e.target.value) })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                        placeholder="e.g. 40"
+                        value={formData.available_plots ?? ''}
+                        onChange={(e) => setFormData({ ...formData, available_plots: e.target.value ? Number(e.target.value) : '' })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                   </div>
@@ -633,7 +677,7 @@ export default function AdminProjectsPage() {
               {activeTab === 'content' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
                       Project Description & Overview *
                     </label>
                     <textarea
@@ -642,15 +686,15 @@ export default function AdminProjectsPage() {
                       placeholder="Detailed overview describing location advantages, civil infrastructure, water quality, bank loans, and community standards..."
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
                     />
                     <p className="text-[10px] text-slate-500 mt-1">
-                      For Park Avenue, ensure nearby temples, churches, and mosques are highlighted.
+                      Highlight key features such as entrance arch, 40ft blacktop roads, potable groundwater, park areas, and DTCP approvals.
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
                       Bullet Highlights (One per line)
                     </label>
                     <textarea
@@ -658,21 +702,37 @@ export default function AdminProjectsPage() {
                       placeholder="e.g.&#10;5.37 Acres Gated Community with 101 DTCP Plots&#10;Sweet Potable Groundwater with Individual Pipe Lines&#10;Grand Monumental Entrance Arch & Blacktop Roads"
                       value={formData.highlightsText}
                       onChange={(e) => setFormData({ ...formData, highlightsText: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500 font-mono text-xs leading-relaxed"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono text-xs leading-relaxed"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      Brochure Download Link or File Path
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">
+                        Project Brochure (PDF or Link)
+                      </label>
+                      <label className="cursor-pointer text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1">
+                        <Upload className="w-3 h-3" />
+                        <span>{uploadingBrochure ? 'Uploading...' : 'Upload Brochure File'}</span>
+                        <input
+                          type="file"
+                          accept=".pdf,image/*"
+                          onChange={handleBrochureFileUpload}
+                          className="hidden"
+                          disabled={uploadingBrochure}
+                        />
+                      </label>
+                    </div>
                     <input
                       type="text"
-                      placeholder="e.g. /brochure_aishwarya_nagar.jpg or https://..."
+                      placeholder="e.g. /brochure_park_avenue.pdf or upload file above"
                       value={formData.brochure_url}
                       onChange={(e) => setFormData({ ...formData, brochure_url: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                     />
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      When public visitors click &quot;Download Brochure&quot; on the website, this document will be provided.
+                    </p>
                   </div>
                 </div>
               )}
@@ -682,19 +742,19 @@ export default function AdminProjectsPage() {
                 <div className="space-y-4">
                   {/* Cover Image Upload / URL */}
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Cover / Banner Image *</label>
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Cover / Banner Image *</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="text"
                         required
-                        placeholder="/project_park_avenue_new.jpg or /uploads/..."
+                        placeholder="/images/hero-bg.jpg or upload file"
                         value={formData.hero_image}
                         onChange={(e) => setFormData({ ...formData, hero_image: e.target.value })}
-                        className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                        className="flex-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
-                      <label className="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2.5 rounded-xl font-semibold flex items-center gap-1.5 transition">
+                      <label className="cursor-pointer bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3.5 py-2.5 rounded-xl font-semibold flex items-center gap-1.5 transition">
                         <Upload className="w-3.5 h-3.5" />
-                        <span>{uploadingImage ? 'Uploading...' : 'Upload'}</span>
+                        <span>{uploadingImage ? 'Uploading...' : 'Upload Image'}</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -706,7 +766,7 @@ export default function AdminProjectsPage() {
                     </div>
 
                     {formData.hero_image && (
-                      <div className="mt-3 relative h-36 w-full max-w-sm rounded-xl overflow-hidden border border-slate-800">
+                      <div className="mt-3 relative h-36 w-full max-w-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
                         <img
                           src={formData.hero_image}
                           alt="Cover Preview"
@@ -721,15 +781,15 @@ export default function AdminProjectsPage() {
 
                   {/* Video URL */}
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
                       Project Video URL (YouTube, Vimeo, or MP4)
                     </label>
                     <input
                       type="url"
-                      placeholder="e.g. https://www.youtube.com/watch?v=... or https://..."
+                      placeholder="e.g. https://www.youtube.com/watch?v=... or direct MP4 link"
                       value={formData.video_url}
                       onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                     />
                     <p className="text-[10px] text-slate-500 mt-1">
                       When provided, a video showcase player will render on the public project detail page.
@@ -738,62 +798,79 @@ export default function AdminProjectsPage() {
                 </div>
               )}
 
-              {/* TAB 4: LOCATION ADVANTAGES & WORSHIP PLACES */}
+              {/* TAB 4: LOCATION ADVANTAGES & HUBS */}
               {activeTab === 'landmarks' && (
                 <div className="space-y-4">
-                  <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-                    <h4 className="font-bold text-white text-xs flex items-center gap-2">
-                      <Plus className="w-4 h-4 text-emerald-400" />
-                      <span>Add Verified Landmark or Place of Worship</span>
+                  <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                    <h4 className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-2">
+                      <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Add Verified Landmark, Transit Hub or Place of Worship</span>
                     </h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-slate-400 text-[11px] mb-1">Landmark Name *</label>
+                        <label className="block text-slate-600 dark:text-slate-400 text-[11px] mb-1">Landmark / Place Name *</label>
                         <input
                           type="text"
                           placeholder="e.g. Gundur Mathurakaliamman Temple"
                           value={newLandmark.landmark}
                           onChange={(e) => setNewLandmark({ ...newLandmark, landmark: e.target.value })}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-slate-400 text-[11px] mb-1">Category</label>
+                        <label className="block text-slate-600 dark:text-slate-400 text-[11px] mb-1">Category</label>
                         <select
                           value={newLandmark.category}
                           onChange={(e) => setNewLandmark({ ...newLandmark, category: e.target.value })}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white cursor-pointer"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white cursor-pointer"
                         >
-                          <option value="Worship">Places of Worship (Temple/Mosque/Church)</option>
+                          <option value="Worship">Places of Worship (Temple / Mosque / Church)</option>
                           <option value="Education">Education & Universities</option>
                           <option value="Transit">Transit, Airport & Bus Stand</option>
                           <option value="Healthcare">Healthcare & Hospitals</option>
                           <option value="Shopping">Shopping & Markets</option>
                           <option value="Workplace">Workplace & Industries</option>
+                          <option value="Entertainment">Entertainment, Theatre & Cinema</option>
+                          <option value="Other">Other (Custom Category)</option>
                         </select>
                       </div>
 
+                      {newLandmark.category === 'Other' && (
+                        <div className="sm:col-span-2">
+                          <label className="block text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold mb-1">
+                            Specify Custom Category Name *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Cinema / Theatre, Sports Stadium, Amusement Park"
+                            value={customCategory}
+                            onChange={(e) => setCustomCategory(e.target.value)}
+                            className="w-full bg-white dark:bg-slate-900 border border-emerald-400 dark:border-emerald-600 rounded-lg p-2 text-slate-900 dark:text-white"
+                          />
+                        </div>
+                      )}
+
                       <div>
-                        <label className="block text-slate-400 text-[11px] mb-1">Distance (e.g. 1.8 km)</label>
+                        <label className="block text-slate-600 dark:text-slate-400 text-[11px] mb-1">Distance (e.g. 1.8 km)</label>
                         <input
                           type="text"
                           placeholder="1.8 km"
                           value={newLandmark.distance}
                           onChange={(e) => setNewLandmark({ ...newLandmark, distance: e.target.value })}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-slate-400 text-[11px] mb-1">Commute Time (e.g. 4 mins)</label>
+                        <label className="block text-slate-600 dark:text-slate-400 text-[11px] mb-1">Commute Time (e.g. 4 mins)</label>
                         <input
                           type="text"
                           placeholder="4 mins"
                           value={newLandmark.time}
                           onChange={(e) => setNewLandmark({ ...newLandmark, time: e.target.value })}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white"
                         />
                       </div>
                     </div>
@@ -802,7 +879,7 @@ export default function AdminProjectsPage() {
                       <button
                         type="button"
                         onClick={handleAddLandmark}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg transition cursor-pointer text-xs flex items-center gap-1.5"
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg transition cursor-pointer text-xs flex items-center gap-1.5 shadow-sm"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Add Landmark</span>
@@ -812,43 +889,45 @@ export default function AdminProjectsPage() {
 
                   {/* List of current landmarks */}
                   <div className="space-y-2">
-                    <h5 className="font-semibold text-slate-300 text-xs">
+                    <h5 className="font-semibold text-slate-700 dark:text-slate-300 text-xs">
                       Configured Landmarks ({formData.nearby_landmarks.length})
                     </h5>
 
                     {formData.nearby_landmarks.length === 0 ? (
-                      <p className="text-slate-500 italic p-3 text-center bg-slate-950/40 rounded-xl">
-                        No landmarks added yet. Add verified nearby places of worship, colleges, or transit hubs above.
+                      <p className="text-slate-500 italic p-3 text-center bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-200 dark:border-slate-800">
+                        No landmarks added yet. Add verified nearby places of worship, colleges, theatres, or transit hubs above.
                       </p>
                     ) : (
                       <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
                         {formData.nearby_landmarks.map((item, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs"
+                            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs"
                           >
                             <div className="flex items-center gap-2">
                               <span
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                   item.category === 'Worship'
-                                    ? 'bg-amber-950 text-amber-300'
+                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                                     : item.category === 'Education'
-                                    ? 'bg-blue-950 text-blue-300'
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
                                     : item.category === 'Healthcare'
-                                    ? 'bg-rose-950 text-rose-300'
-                                    : 'bg-emerald-950 text-emerald-300'
+                                    ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                                    : item.category === 'Entertainment'
+                                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
+                                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                                 }`}
                               >
                                 {item.category || 'Transit'}
                               </span>
-                              <span className="font-semibold text-white">{item.landmark}</span>
-                              <span className="text-slate-400">({item.distance} • {item.time})</span>
+                              <span className="font-semibold text-slate-900 dark:text-white">{item.landmark || (item as any).name}</span>
+                              <span className="text-slate-500 dark:text-slate-400">({item.distance} • {item.time})</span>
                             </div>
 
                             <button
                               type="button"
                               onClick={() => handleRemoveLandmark(idx)}
-                              className="text-slate-400 hover:text-rose-400 p-1"
+                              className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
                               title="Remove"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -862,7 +941,7 @@ export default function AdminProjectsPage() {
               )}
 
               {/* Modal Footer Controls */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-800 flex-shrink-0">
+              <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800 flex-shrink-0">
                 <div className="text-[11px] text-slate-500">
                   {editingProject ? 'Updating existing project' : 'Creating new project'}
                 </div>
@@ -871,13 +950,13 @@ export default function AdminProjectsPage() {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition shadow-md shadow-emerald-950/50 cursor-pointer flex items-center gap-1.5"
+                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-md cursor-pointer flex items-center gap-1.5"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Save Project</span>

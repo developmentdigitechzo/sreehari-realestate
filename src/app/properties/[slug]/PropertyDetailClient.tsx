@@ -342,30 +342,19 @@ export default function PropertyDetailClient({ property }: { property: any }) {
         inlineForm.message || null
       ].filter(Boolean).join(' | ');
 
-      if (inlineForm.visitDate) {
-        await api.submitPublicSiteVisit({
-          customer_name: inlineForm.name,
-          customer_phone: inlineForm.phone,
-          customer_email: inlineForm.email,
-          project_name: currentProject.title,
-          visit_date: inlineForm.visitDate,
-          visit_time: inlineForm.visitTime,
-          preferred_plot_size: inlineForm.budget || inlineForm.preferredVariant,
-          notes: notesContent,
-          source: 'Property Detail Page',
-        });
-      } else {
-        await api.submitPublicLead({
-          name: inlineForm.name,
-          phone: inlineForm.phone,
-          email: inlineForm.email,
-          preferred_plot_size: inlineForm.budget || inlineForm.preferredVariant,
-          message: `[${currentProject.title}] ${notesContent}`.trim(),
-          source: 'Property Detail Page',
-          visit_date: inlineForm.visitDate,
-          visit_time: inlineForm.visitTime,
-        });
-      }
+      await api.submitPublicLead({
+        name: inlineForm.name,
+        phone: inlineForm.phone,
+        email: inlineForm.email,
+        project_id: currentProject.id,
+        project_interest: currentProject.title || currentProject.name,
+        budget: inlineForm.budget,
+        preferred_plot_size: inlineForm.preferredVariant || inlineForm.budget,
+        message: notesContent,
+        source: 'Property Detail Page',
+        visit_date: inlineForm.visitDate || undefined,
+        visit_time: inlineForm.visitTime || undefined,
+      });
 
       // Save to localStorage as backup
       try {
