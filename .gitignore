@@ -50,3 +50,5 @@ backend/.env.*
 backend/uploads/*
 !backend/uploads/.gitkeep
 backend/data/
+
+*.zip
