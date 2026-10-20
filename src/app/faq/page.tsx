@@ -14,10 +14,11 @@ export default function FAQPage() {
 
   const categories = [
     'All',
+    'Project Specific',
     'Legal & Approvals',
-    'Booking & Registration',
     'Bank Loans',
     'Infrastructure & Amenities',
+    'Booking & Site Visits',
   ];
 
   const filteredFaqs =

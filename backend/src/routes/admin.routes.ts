@@ -17,7 +17,7 @@ import { addGalleryItem, deleteGalleryItem } from '../controllers/gallery.contro
 import { getSettings, updateSettings } from '../controllers/settings.controller';
 import { getDashboardStats } from '../controllers/stats.controller';
 import { getAllBlogs, getBlogById, createBlog, updateBlog, deleteBlog } from '../controllers/blog.controller';
-import { uploadMedia, listUploadedMedia } from '../controllers/upload.controller';
+import { uploadMedia, listUploadedMedia, deleteUploadedMedia, updateUploadedMedia, addExternalMedia } from '../controllers/upload.controller';
 import {
   getAllSiteVisits,
   createSiteVisit,
@@ -105,7 +105,12 @@ router.delete('/popups/:id', deletePopup);
 router.post('/gallery', addGalleryItem);
 router.delete('/gallery/:id', deleteGalleryItem);
 router.post('/upload', uploadMedia);
+router.post('/upload/external', addExternalMedia);
 router.get('/upload/list', listUploadedMedia);
+router.delete('/upload/:filename', deleteUploadedMedia);
+router.post('/upload/delete', deleteUploadedMedia);
+router.put('/upload/:filename', updateUploadedMedia);
+router.post('/upload/update', updateUploadedMedia);
 
 // Settings & SEO
 router.get('/settings', getSettings);

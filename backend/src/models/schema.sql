@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS leads (
     site_visit_time VARCHAR(50),
     site_visit_pickup_needed BOOLEAN DEFAULT false,
     next_follow_up_date VARCHAR(50),
+    next_follow_up_time VARCHAR(50),
     notes JSONB DEFAULT '[]'::jsonb,
     admin_notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -224,6 +225,17 @@ CREATE TABLE IF NOT EXISTS blogs (
     meta_description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 13. MEDIA LIBRARY (ASSETS & PERSISTENT UPLOADS)
+CREATE TABLE IF NOT EXISTS media_library (
+    id VARCHAR(100) PRIMARY KEY,
+    title VARCHAR(255),
+    filename VARCHAR(255),
+    url TEXT NOT NULL,
+    type VARCHAR(20) NOT NULL DEFAULT 'image',
+    size_bytes BIGINT DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ==========================================

@@ -42,7 +42,7 @@ export interface Property {
 
 export const properties: Property[] = [
   {
-    id: '1',
+    id: 'proj-park-avenue',
     slug: 'park-avenue',
     title: 'Park Avenue',
     tagline: 'Premier Gated Plotted Community with Grand Entrance on Trichy-Pudukkottai Highway Corridor.',
@@ -131,7 +131,7 @@ export const properties: Property[] = [
     ],
   },
   {
-    id: '2',
+    id: 'proj-sri-amman-nagar',
     slug: 'sri-amman-nagar',
     title: 'Sri Amman Nagar',
     tagline: 'High-Growth Landmark Township in Thiruverumbur — 100% Sold Out in 60 Days.',
@@ -221,7 +221,7 @@ export const properties: Property[] = [
     ],
   },
   {
-    id: '3',
+    id: 'proj-aishwarya-nagar',
     slug: 'aishwarya-nagar',
     title: 'Aishwarya Nagar',
     tagline: 'Maiden Township near BHEL Thirumayam — 100% Completed & Delivered.',

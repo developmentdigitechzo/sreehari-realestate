@@ -130,7 +130,9 @@ export async function getCrmLeads(req: Request, res: Response): Promise<void> {
         budget: l.budget || '',
         facing_preference: l.facing_preference || 'Any',
         site_visit_date: l.site_visit_date || null,
+        site_visit_time: l.site_visit_time || null,
         next_follow_up_date: l.next_follow_up_date || null,
+        next_follow_up_time: l.next_follow_up_time || null,
         notes: leadNotes,
         project_name: proj ? proj.name : 'General Plot Enquiry',
         project_location: proj ? `${proj.location_area}, ${proj.location_city}` : ''
@@ -230,7 +232,9 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
       priority,
       assigned_to,
       site_visit_date,
+      site_visit_time,
       next_follow_up_date,
+      next_follow_up_time,
       initial_note
     } = req.body;
 
@@ -273,7 +277,9 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
       priority: priority || 'Warm',
       assigned_to: assigned_to || 'Sales Team',
       site_visit_date: site_visit_date || null,
+      site_visit_time: site_visit_time || null,
       next_follow_up_date: next_follow_up_date || null,
+      next_follow_up_time: next_follow_up_time || null,
       notes: initialNotes,
       admin_notes: initial_note || '',
       created_at: new Date().toISOString(),
@@ -284,8 +290,8 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
     if (db.isPostgres()) {
       try {
         await db.query(
-          `INSERT INTO leads (id, project_id, name, phone, email, preferred_plot_size, message, source, status, stage, priority, admin_notes, notes, plot_id, plot_name, plot_description, budget, facing_preference, assigned_to, site_visit_date)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20);`,
+          `INSERT INTO leads (id, project_id, name, phone, email, preferred_plot_size, message, source, status, stage, priority, admin_notes, notes, plot_id, plot_name, plot_description, budget, facing_preference, assigned_to, site_visit_date, site_visit_time, next_follow_up_date, next_follow_up_time)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23);`,
           [
             newLead.id,
             newLead.project_id || null,
@@ -306,7 +312,10 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
             newLead.budget,
             newLead.facing_preference,
             newLead.assigned_to,
-            newLead.site_visit_date || null
+            newLead.site_visit_date || null,
+            newLead.site_visit_time || null,
+            newLead.next_follow_up_date || null,
+            newLead.next_follow_up_time || null
           ]
         );
       } catch (pgErr: any) {
@@ -353,7 +362,9 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
       priority,
       assigned_to,
       site_visit_date,
+      site_visit_time,
       next_follow_up_date,
+      next_follow_up_time,
       message,
       admin_notes
     } = req.body;
@@ -380,7 +391,9 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
       priority: priority !== undefined ? priority : current.priority || 'Warm',
       assigned_to: assigned_to !== undefined ? assigned_to : current.assigned_to || 'Sales Team',
       site_visit_date: site_visit_date !== undefined ? site_visit_date : current.site_visit_date,
+      site_visit_time: site_visit_time !== undefined ? site_visit_time : current.site_visit_time,
       next_follow_up_date: next_follow_up_date !== undefined ? next_follow_up_date : current.next_follow_up_date,
+      next_follow_up_time: next_follow_up_time !== undefined ? next_follow_up_time : current.next_follow_up_time,
       message: message !== undefined ? message : current.message,
       admin_notes: admin_notes !== undefined ? admin_notes : current.admin_notes,
       updated_at: new Date().toISOString()
@@ -392,9 +405,10 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
           `UPDATE leads SET 
             name=$1, phone=$2, email=$3, source=$4, status=$5, stage=$6, priority=$7, 
             plot_id=$8, plot_name=$9, plot_description=$10, budget=$11, facing_preference=$12, 
-            assigned_to=$13, project_id=$14, site_visit_date=$15, message=$16, preferred_plot_size=$17, 
+            assigned_to=$13, project_id=$14, site_visit_date=$15, site_visit_time=$16, 
+            next_follow_up_date=$17, next_follow_up_time=$18, message=$19, preferred_plot_size=$20, 
             updated_at=CURRENT_TIMESTAMP 
-          WHERE id=$18;`,
+          WHERE id=$21;`,
           [
             updated.name,
             updated.phone,
@@ -411,6 +425,9 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
             updated.assigned_to,
             updated.project_id || null,
             updated.site_visit_date || null,
+            updated.site_visit_time || null,
+            updated.next_follow_up_date || null,
+            updated.next_follow_up_time || null,
             updated.message || '',
             updated.preferred_plot_size || '',
             id

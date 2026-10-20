@@ -7,7 +7,7 @@ import { properties as fallbackProperties, Property, TAMIL_NADU_DISTRICTS } from
 import PropertyCard from '@/components/PropertyCard';
 import EnquiryModal from '@/components/EnquiryModal';
 import { api } from '@/lib/api';
-import { ShieldCheck, Filter, Search, MapPin, Maximize2, Tag, X, RotateCcw } from 'lucide-react';
+import { ShieldCheck, Filter, Search, MapPin, Maximize2, Tag, Building2, X, RotateCcw } from 'lucide-react';
 
 export function mapProjectRecordToProperty(p: any): Property {
   const fallback = fallbackProperties.find((fp) => fp.slug === p.slug || fp.id === p.id);
@@ -53,6 +53,7 @@ export default function PropertiesClient({ initialProjects }: { initialProjects?
   const initialLocation = searchParams.get('location') || 'All';
   const initialSize = searchParams.get('size') || 'All';
   const initialStatus = searchParams.get('status') || 'All';
+  const initialProject = searchParams.get('project') || searchParams.get('slug') || 'All';
 
   const [allProperties, setAllProperties] = useState<Property[]>(() => {
     if (Array.isArray(initialProjects) && initialProjects.length > 0) {
@@ -66,9 +67,23 @@ export default function PropertiesClient({ initialProjects }: { initialProjects?
   const [selectedLocation, setSelectedLocation] = useState<string>(initialLocation);
   const [selectedSize, setSelectedSize] = useState<string>(initialSize);
   const [selectedStatus, setSelectedStatus] = useState<string>(initialStatus);
+  const [selectedProject, setSelectedProject] = useState<string>(initialProject);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
   const [activeProject, setActiveProject] = useState<string | undefined>(undefined);
+
+  // Dynamically extract any unique locations from newly added projects
+  const additionalProjectLocations = useMemo(() => {
+    const defaultKeys = new Set(['thiruverumbur', 'airport mathur', 'airport', 'mathur', 'thirumayam']);
+    const list: string[] = [];
+    allProperties.forEach((p) => {
+      const loc = (p.city || p.location || '').trim();
+      if (loc && !defaultKeys.has(loc.toLowerCase()) && !list.includes(loc)) {
+        list.push(loc);
+      }
+    });
+    return list;
+  }, [allProperties]);
 
   useEffect(() => {
     let isMounted = true;
@@ -102,16 +117,34 @@ export default function PropertiesClient({ initialProjects }: { initialProjects?
     if (searchParams.get('location')) setSelectedLocation(searchParams.get('location')!);
     if (searchParams.get('size')) setSelectedSize(searchParams.get('size')!);
     if (searchParams.get('status')) setSelectedStatus(searchParams.get('status')!);
+    if (searchParams.get('project')) setSelectedProject(searchParams.get('project')!);
+    else if (searchParams.get('slug')) setSelectedProject(searchParams.get('slug')!);
   }, [searchParams]);
 
   const filteredProperties = useMemo(() => {
     return allProperties.filter((p) => {
+      // Project Filter
+      const matchProject =
+        selectedProject === 'All' ||
+        p.id === selectedProject ||
+        p.slug === selectedProject;
+
       // Location Filter
-      const matchLocation =
-        selectedLocation === 'All' ||
-        p.city.toLowerCase().includes(selectedLocation.toLowerCase()) ||
-        p.location.toLowerCase().includes(selectedLocation.toLowerCase()) ||
-        selectedLocation.toLowerCase().includes(p.city.toLowerCase());
+      let matchLocation = true;
+      if (selectedLocation !== 'All') {
+        const sel = selectedLocation.toLowerCase();
+        const pCity = (p.city || '').toLowerCase();
+        const pLoc = (p.location || '').toLowerCase();
+        if (sel === 'thiruverumbur') {
+          matchLocation = pCity.includes('thiruverumbur') || pLoc.includes('thiruverumbur');
+        } else if (sel === 'airport mathur') {
+          matchLocation = pCity.includes('airport') || pCity.includes('mathur') || pLoc.includes('airport') || pLoc.includes('mathur');
+        } else if (sel === 'thirumayam') {
+          matchLocation = pCity.includes('thirumayam') || pLoc.includes('thirumayam');
+        } else {
+          matchLocation = pCity.includes(sel) || pLoc.includes(sel) || sel.includes(pCity);
+        }
+      }
 
       // Status Filter
       let matchStatus = true;
@@ -161,11 +194,12 @@ export default function PropertiesClient({ initialProjects }: { initialProjects?
         p.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.tagline.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchLocation && matchStatus && matchSize && matchSearch;
+      return matchProject && matchLocation && matchStatus && matchSize && matchSearch;
     });
-  }, [allProperties, selectedLocation, selectedStatus, selectedSize, searchQuery]);
+  }, [allProperties, selectedProject, selectedLocation, selectedStatus, selectedSize, searchQuery]);
 
   const handleReset = () => {
+    setSelectedProject('All');
     setSelectedLocation('All');
     setSelectedSize('All');
     setSelectedStatus('All');
@@ -178,6 +212,7 @@ export default function PropertiesClient({ initialProjects }: { initialProjects?
   };
 
   const hasActiveFilters =
+    selectedProject !== 'All' ||
     selectedLocation !== 'All' ||
     selectedSize !== 'All' ||
     selectedStatus !== 'All' ||
@@ -243,11 +278,22 @@ export default function PropertiesClient({ initialProjects }: { initialProjects?
                 className="w-full pl-8 pr-3 py-2 text-xs font-semibold text-gray-800 bg-[#fffdf8] border border-amber-200/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006452] cursor-pointer"
               >
                 <option value="All">All Locations</option>
-                {TAMIL_NADU_DISTRICTS.map((dist) => (
-                  <option key={dist} value={dist}>
-                    {dist}
-                  </option>
-                ))}
+                <optgroup label="Trichy">
+                  <option value="Thiruverumbur">1. Thiruverumbur</option>
+                  <option value="Airport Mathur">2. Airport Mathur</option>
+                </optgroup>
+                <optgroup label="Pudukkottai">
+                  <option value="Thirumayam">1. Thirumayam</option>
+                </optgroup>
+                {additionalProjectLocations.length > 0 && (
+                  <optgroup label="Other Locations">
+                    {additionalProjectLocations.map((loc) => (
+                      <option key={loc} value={loc}>
+                        {loc}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
 
@@ -267,17 +313,20 @@ export default function PropertiesClient({ initialProjects }: { initialProjects?
               </select>
             </div>
 
-            {/* Project Status Filter */}
+            {/* Project Filter */}
             <div className="relative">
-              <Tag className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-3 pointer-events-none" />
+              <Building2 className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-3 pointer-events-none" />
               <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
                 className="w-full pl-8 pr-3 py-2 text-xs font-semibold text-gray-800 bg-[#fffdf8] border border-amber-200/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#006452] cursor-pointer"
               >
                 <option value="All">All Projects</option>
-                <option value="available">Plots Available</option>
-                <option value="sold">Sold Out / Completed</option>
+                {allProperties.map((p) => (
+                  <option key={p.id} value={p.slug || p.id}>
+                    {p.title}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -300,6 +349,12 @@ export default function PropertiesClient({ initialProjects }: { initialProjects?
 
               {hasActiveFilters && (
                 <div className="flex flex-wrap items-center gap-1.5 pl-2">
+                  {selectedProject !== 'All' && (
+                    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-amber-200">
+                      Project: {allProperties.find((p) => p.slug === selectedProject || p.id === selectedProject)?.title || selectedProject}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedProject('All')} />
+                    </span>
+                  )}
                   {selectedLocation !== 'All' && (
                     <span className="inline-flex items-center gap-1 bg-pink-50 text-[#D61F69] px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-pink-200">
                       Location: {selectedLocation}

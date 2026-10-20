@@ -54,6 +54,7 @@ export interface CrmLead {
   pickup_needed?: boolean;
   pickup_location?: string;
   next_follow_up_date?: string | null;
+  next_follow_up_time?: string | null;
   notes: CrmNote[];
   created_at: string;
   updated_at: string;
