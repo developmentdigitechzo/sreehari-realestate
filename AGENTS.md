@@ -82,7 +82,7 @@ Every task—whether bug fix, feature request, refactor, database modification, 
 - **Environment Configuration**: Set in `.env` / `backend/.env`.
 
 ### Live Production Environment (cPanel):
-- **Domain**: `https://giving-amethyst-anteater.172-235-18-108.cpanel.site`
+- **Domain**: `https://sreeharirealty.com` (and `https://www.sreeharirealty.com`)
 - **Architecture**: cPanel Node.js Application Manager running Next.js standalone and Express backend.
 - **Database**: Remote PostgreSQL database (`sreeharirealty_db`) managed via cPanel / pgAdmin.
 - **Connection Rule**: In cPanel Linux hosting, use `127.0.0.1` rather than `localhost` to avoid unix socket ambiguity.
