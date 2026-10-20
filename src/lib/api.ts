@@ -160,6 +160,9 @@ export const api = {
     phone: string;
     email?: string;
     project_id?: string | null;
+    project_interest?: string;
+    budget?: string;
+    location?: string;
     preferred_plot_size?: string;
     message?: string;
     source?: string;
@@ -333,7 +336,12 @@ export const api = {
 
   // Gallery & Media
   async getGallery() {
-    return fetchWithAuth('/public/gallery');
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/public/gallery`);
+      return res.json();
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Failed to fetch gallery', data: [] };
+    }
   },
 
   async addGalleryItem(itemData: any) {

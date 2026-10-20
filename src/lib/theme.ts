@@ -26,12 +26,25 @@ export function getContrastTextColor(hexColor?: string): string {
   if (!hexColor) return '#ffffff';
   const { r, g, b } = hexToRgb(hexColor);
   const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 155 ? '#090d16' : '#ffffff';
+  // Use pure white for buttons except on extremely light yellow/white shades
+  return yiq >= 210 ? '#0f172a' : '#ffffff';
 }
 
-export function applyCrmTheme(colorHex?: string): void {
+export type CrmThemeMode = 'light' | 'dark';
+
+export const CRM_THEME_STORAGE_KEY = 'crm_theme_mode';
+
+export function getCrmThemeMode(): CrmThemeMode {
+  if (typeof window === 'undefined') return 'light';
+  const saved = localStorage.getItem(CRM_THEME_STORAGE_KEY);
+  if (saved === 'dark' || saved === 'light') return saved;
+  return 'light'; // Default Light Theme
+}
+
+export function applyCrmTheme(colorHex?: string, themeMode?: CrmThemeMode): void {
   if (typeof document === 'undefined') return;
-  const hex = colorHex || '#10b981';
+  const hex = colorHex || (typeof window !== 'undefined' ? localStorage.getItem('crm_primary_color') : null) || '#10b981';
+  const mode = themeMode || (document.documentElement.getAttribute('data-admin-theme-mode') as CrmThemeMode) || getCrmThemeMode();
   const { r, g, b } = hexToRgb(hex);
   const light = adjustLightness(hex, 25);
   const dark = adjustLightness(hex, -20);
@@ -49,30 +62,12 @@ export function applyCrmTheme(colorHex?: string): void {
   root.style.setProperty('--brand-primary-glow', glow);
   root.style.setProperty('--brand-primary-glow-border', glowBorder);
 
-  // Also directly override Tailwind emerald color variables inside document
-  root.style.setProperty('--color-emerald-400', light);
-  root.style.setProperty('--color-emerald-500', hex);
-  root.style.setProperty('--color-emerald-600', dark);
-  root.style.setProperty('--color-emerald-700', darker);
+  // In light mode, text accents must be dark/darker so they are sharp and readable against white!
+  // In dark mode, text accents must be bright/light so they pop against dark background!
+  const textAccent = mode === 'light' ? darker : light;
+  root.style.setProperty('--brand-text-accent', textAccent);
 }
 
-export type CrmThemeMode = 'light' | 'dark';
-
-export const CRM_THEME_STORAGE_KEY = 'crm_theme_mode';
-
-/**
- * Returns active CRM theme mode. Defaults to 'light' per requirement.
- */
-export function getCrmThemeMode(): CrmThemeMode {
-  if (typeof window === 'undefined') return 'light';
-  const saved = localStorage.getItem(CRM_THEME_STORAGE_KEY);
-  if (saved === 'dark' || saved === 'light') return saved;
-  return 'light'; // Default Light Theme
-}
-
-/**
- * Persists theme mode to localStorage, applies DOM attributes, and notifies listeners.
- */
 export function setCrmThemeMode(mode: CrmThemeMode): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(CRM_THEME_STORAGE_KEY, mode);
@@ -80,9 +75,6 @@ export function setCrmThemeMode(mode: CrmThemeMode): void {
   window.dispatchEvent(new CustomEvent('crmThemeModeChanged', { detail: { mode } }));
 }
 
-/**
- * Applies data-admin-theme attribute to DOM elements without altering public website styles.
- */
 export function applyCrmThemeMode(mode?: CrmThemeMode): void {
   if (typeof document === 'undefined') return;
   const currentMode = mode || getCrmThemeMode();
@@ -90,8 +82,16 @@ export function applyCrmThemeMode(mode?: CrmThemeMode): void {
   
   root.setAttribute('data-admin-theme-mode', currentMode);
 
+  if (currentMode === 'dark') {
+    root.classList.add('dark');
+  } else {
+    root.classList.remove('dark');
+  }
+
   const adminElements = document.querySelectorAll('[data-admin-theme]');
   adminElements.forEach((el) => {
     el.setAttribute('data-admin-theme', currentMode);
   });
+
+  applyCrmTheme(undefined, currentMode);
 }

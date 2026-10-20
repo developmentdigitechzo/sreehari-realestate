@@ -68,6 +68,7 @@ export default function AdminGalleryPage() {
   const [selectedMediaType, setSelectedMediaType] = useState<'all' | 'image' | 'video'>('all');
   const [selectedSource, setSelectedSource] = useState<'all' | 'Project' | 'Plot' | 'Site Photo'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'project_groups' | 'all_stream'>('project_groups');
 
   // Lightbox / Slider Modal state
   const [sliderIndex, setSliderIndex] = useState<number | null>(null);
@@ -319,6 +320,70 @@ export default function AdminGalleryPage() {
     });
   }, [unifiedMedia, selectedProjectId, selectedPlotId, selectedMediaType, selectedSource, searchQuery]);
 
+  // Group filteredMedia by project for project folder view
+  const projectGroups = useMemo(() => {
+    const groups: {
+      projectId: string;
+      projectName: string;
+      projectLocation?: string;
+      items: UnifiedMediaItem[];
+    }[] = [];
+
+    const map = new Map<string, UnifiedMediaItem[]>();
+    const standalone: UnifiedMediaItem[] = [];
+
+    filteredMedia.forEach((item) => {
+      if (item.projectId) {
+        if (!map.has(item.projectId)) {
+          map.set(item.projectId, []);
+        }
+        map.get(item.projectId)!.push(item);
+      } else {
+        standalone.push(item);
+      }
+    });
+
+    projects.forEach((proj) => {
+      const items = map.get(proj.id) || [];
+      if (items.length > 0) {
+        groups.push({
+          projectId: proj.id,
+          projectName: proj.name || 'Unnamed Project',
+          projectLocation: proj.location,
+          items
+        });
+      }
+    });
+
+    map.forEach((items, pId) => {
+      if (!projects.some((p) => p.id === pId)) {
+        groups.push({
+          projectId: pId,
+          projectName: items[0]?.projectName || 'Project Media',
+          items
+        });
+      }
+    });
+
+    if (standalone.length > 0) {
+      groups.push({
+        projectId: 'standalone_photos',
+        projectName: 'General Site & Infrastructure Photos',
+        projectLocation: 'Trichy Sites',
+        items: standalone
+      });
+    }
+
+    return groups;
+  }, [filteredMedia, projects]);
+
+  const openSliderForItem = useCallback((item: UnifiedMediaItem) => {
+    const idx = filteredMedia.findIndex((m) => m.id === item.id);
+    if (idx !== -1) {
+      setSliderIndex(idx);
+    }
+  }, [filteredMedia]);
+
   // Slider controls
   const activeSlide = sliderIndex !== null && filteredMedia[sliderIndex] ? filteredMedia[sliderIndex] : null;
 
@@ -434,19 +499,147 @@ export default function AdminGalleryPage() {
   const projectMediaCount = unifiedMedia.filter((m) => m.source === 'Project').length;
   const plotMediaCount = unifiedMedia.filter((m) => m.source === 'Plot').length;
 
+  const renderMediaCard = (item: UnifiedMediaItem) => {
+    const isVid = item.type === 'video';
+    const embed = isVid ? parseVideoEmbed(item.url) : null;
+
+    return (
+      <div
+        key={item.id}
+        onClick={() => openSliderForItem(item)}
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden group hover:border-emerald-500/50 hover:shadow-lg transition cursor-pointer flex flex-col justify-between shadow-xs"
+      >
+        {/* Thumbnail Container */}
+        <div className="h-44 bg-slate-100 dark:bg-slate-950 relative overflow-hidden flex items-center justify-center">
+          {isVid ? (
+            <div className="w-full h-full bg-slate-900 dark:bg-slate-950 flex flex-col items-center justify-center text-slate-400 relative">
+              {embed?.type === 'youtube' ? (
+                <div className="absolute inset-0 bg-slate-900 flex items-center justify-center">
+                  <Film className="w-10 h-10 text-amber-400/80" />
+                </div>
+              ) : (
+                <video
+                  src={item.url}
+                  className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition"
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+              )}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition">
+                <div className="w-12 h-12 rounded-full bg-amber-500/90 text-slate-950 flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                  <Play className="w-5 h-5 fill-slate-950 ml-0.5" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={item.url || '/project_park_avenue_new.jpg'}
+              alt={item.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.src = '/project_park_avenue_new.jpg';
+              }}
+            />
+          )}
+
+          {/* Top Badges */}
+          <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 max-w-[85%]">
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded-md shadow ${
+                item.source === 'Project'
+                  ? 'bg-indigo-600 text-white'
+                  : item.source === 'Plot'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-teal-600 text-white'
+              }`}
+            >
+              {item.source}
+            </span>
+
+            {item.plotNumber && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 shadow">
+                {item.plotNumber}
+              </span>
+            )}
+          </div>
+
+          {/* Type Badge */}
+          <div className="absolute top-2.5 right-2.5">
+            {isVid ? (
+              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-950/95 text-amber-300 border border-amber-500/50 shadow">
+                <Film className="w-3 h-3" />
+                <span>Video</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-950/95 text-emerald-300 border border-emerald-500/50 shadow">
+                <ImageIcon className="w-3 h-3" />
+                <span>Photo</span>
+              </span>
+            )}
+          </div>
+
+          {/* Category Label */}
+          <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-white bg-slate-950/90 px-2.5 py-1 rounded-md backdrop-blur-sm truncate max-w-[80%] border border-white/10 shadow">
+              {item.category}
+            </span>
+
+            {item.canDelete && item.galleryId && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteSitePhoto(item.galleryId!);
+                }}
+                className="p-1 rounded bg-rose-950/90 text-rose-300 hover:bg-rose-900 border border-rose-800/60 transition"
+                title="Delete Site Photo"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Card Info */}
+        <div className="p-3.5 space-y-1.5 flex-1 flex flex-col justify-between">
+          <div>
+            <h4 className="font-bold text-slate-900 dark:text-white text-xs line-clamp-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">
+              {item.title}
+            </h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1 mt-0.5">
+              <Building2 className="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0" />
+              <span>{item.projectName || 'Sree Hari Layout'}</span>
+            </p>
+          </div>
+
+          {item.source === 'Plot' && (item.dimensions || item.facing) && (
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+              <span>{item.dimensions || ''}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium">{item.facing || ''}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Top Header Card */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm dark:shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6 transition-colors">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-2">
             <Layers className="w-3.5 h-3.5" />
             <span>Unified Media & Gallery Manager</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-wide flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-wide flex items-center gap-3">
             <span>Project & Plot Media Library</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1 max-w-2xl leading-relaxed">
+          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 max-w-2xl leading-relaxed">
             Central repository connecting all project banners, layout photos, promotional walkthrough videos, and individual plot media in one searchable gallery.
           </p>
         </div>
@@ -455,16 +648,16 @@ export default function AdminGalleryPage() {
           <button
             onClick={() => loadAllMedia()}
             disabled={loading}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 transition"
+            className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 transition"
             title="Refresh All Media"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-600 dark:text-emerald-400' : ''}`} />
             <span>Refresh</span>
           </button>
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-950/60"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition shadow-md dark:shadow-lg dark:shadow-emerald-950/60"
           >
             <Plus className="w-4 h-4" />
             <span>Add Site Photo</span>
@@ -474,72 +667,72 @@ export default function AdminGalleryPage() {
 
       {/* Metrics Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
           <div>
-            <p className="text-[11px] font-medium text-slate-400">Total Media</p>
-            <p className="text-xl font-bold text-white mt-0.5">{totalCount}</p>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Total Media</p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{totalCount}</p>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">
+          <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300">
             <Layers className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
           <div>
-            <p className="text-[11px] font-medium text-slate-400">Photos & Layouts</p>
-            <p className="text-xl font-bold text-emerald-400 mt-0.5">{photoCount}</p>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Photos & Layouts</p>
+            <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{photoCount}</p>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-emerald-950/50 border border-emerald-800/40 flex items-center justify-center text-emerald-400">
+          <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <ImageIcon className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
           <div>
-            <p className="text-[11px] font-medium text-slate-400">Playable Videos</p>
-            <p className="text-xl font-bold text-amber-400 mt-0.5">{videoCount}</p>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Playable Videos</p>
+            <p className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-0.5">{videoCount}</p>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-amber-950/50 border border-amber-800/40 flex items-center justify-center text-amber-400">
+          <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/40 flex items-center justify-center text-amber-600 dark:text-amber-400">
             <Film className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
           <div>
-            <p className="text-[11px] font-medium text-slate-400">Project Assets</p>
-            <p className="text-xl font-bold text-indigo-400 mt-0.5">{projectMediaCount}</p>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Project Assets</p>
+            <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">{projectMediaCount}</p>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-indigo-950/50 border border-indigo-800/40 flex items-center justify-center text-indigo-400">
+          <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
             <Building2 className="w-4 h-4" />
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between col-span-2 sm:col-span-1">
+        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between col-span-2 sm:col-span-1 shadow-xs">
           <div>
-            <p className="text-[11px] font-medium text-slate-400">Plot Assets</p>
-            <p className="text-xl font-bold text-teal-400 mt-0.5">{plotMediaCount}</p>
+            <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Plot Assets</p>
+            <p className="text-xl font-bold text-teal-600 dark:text-teal-400 mt-0.5">{plotMediaCount}</p>
           </div>
-          <div className="w-9 h-9 rounded-lg bg-teal-950/50 border border-teal-800/40 flex items-center justify-center text-teal-400">
+          <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-800/40 flex items-center justify-center text-teal-600 dark:text-teal-400">
             <MapPin className="w-4 h-4" />
           </div>
         </div>
       </div>
 
       {/* Filter and Search Toolbar */}
-      <div className="bg-slate-900/95 border border-slate-800 p-4 rounded-2xl flex flex-col lg:flex-row gap-3.5 items-stretch lg:items-center justify-between">
+      <div className="bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex flex-col lg:flex-row gap-3.5 items-stretch lg:items-center justify-between shadow-xs">
         <div className="flex-1 relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by project name, plot number (e.g. Plot 01), category..."
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white"
             >
               <X className="w-4 h-4" />
             </button>
@@ -548,19 +741,19 @@ export default function AdminGalleryPage() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Project Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
-            <Building2 className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5">
+            <Building2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
             <select
               value={selectedProjectId}
               onChange={(e) => {
                 setSelectedProjectId(e.target.value);
                 setSelectedPlotId('all');
               }}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
-              <option value="all" className="bg-slate-900 text-white">All Projects ({projects.length})</option>
+              <option value="all" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Projects ({projects.length})</option>
               {projects.map((p) => (
-                <option key={p.id} value={p.id} className="bg-slate-900 text-white">
+                <option key={p.id} value={p.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                   {p.name}
                 </option>
               ))}
@@ -568,16 +761,16 @@ export default function AdminGalleryPage() {
           </div>
 
           {/* Plot Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
-            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5">
+            <MapPin className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
             <select
               value={selectedPlotId}
               onChange={(e) => setSelectedPlotId(e.target.value)}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
-              <option value="all" className="bg-slate-900 text-white">All Plots ({availablePlotsForFilter.length})</option>
+              <option value="all" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Plots ({availablePlotsForFilter.length})</option>
               {availablePlotsForFilter.map((p) => (
-                <option key={p.id} value={p.id} className="bg-slate-900 text-white">
+                <option key={p.id} value={p.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                   {p.plot_number} {p.dimension_str ? `(${p.dimension_str})` : ''}
                 </option>
               ))}
@@ -585,31 +778,31 @@ export default function AdminGalleryPage() {
           </div>
 
           {/* Media Type Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5">
+            <Filter className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
             <select
               value={selectedMediaType}
               onChange={(e) => setSelectedMediaType(e.target.value as any)}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
-              <option value="all" className="bg-slate-900 text-white">All Media</option>
-              <option value="image" className="bg-slate-900 text-white">Photos Only ({photoCount})</option>
-              <option value="video" className="bg-slate-900 text-white">Videos Only ({videoCount})</option>
+              <option value="all" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Media</option>
+              <option value="image" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Photos Only ({photoCount})</option>
+              <option value="video" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Videos Only ({videoCount})</option>
             </select>
           </div>
 
           {/* Source Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
-            <Compass className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5">
+            <Compass className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
             <select
               value={selectedSource}
               onChange={(e) => setSelectedSource(e.target.value as any)}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
-              <option value="all" className="bg-slate-900 text-white">All Sources</option>
-              <option value="Project" className="bg-slate-900 text-white">Project Level</option>
-              <option value="Plot" className="bg-slate-900 text-white">Plot Level</option>
-              <option value="Site Photo" className="bg-slate-900 text-white">Site Photos</option>
+              <option value="all" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">All Sources</option>
+              <option value="Project" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Project Level</option>
+              <option value="Plot" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Plot Level</option>
+              <option value="Site Photo" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Site Photos</option>
             </select>
           </div>
 
@@ -622,7 +815,7 @@ export default function AdminGalleryPage() {
                 setSelectedSource('all');
                 setSearchQuery('');
               }}
-              className="text-xs text-slate-400 hover:text-emerald-400 underline px-1.5 py-1"
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 underline px-1.5 py-1 transition"
             >
               Reset Filters
             </button>
@@ -632,157 +825,114 @@ export default function AdminGalleryPage() {
 
       {/* Media Grid Section */}
       {loading ? (
-        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-16 text-center">
-          <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto mb-3" />
-          <p className="text-white font-medium text-sm">Aggregating Project and Plot Media...</p>
-          <p className="text-slate-500 text-xs mt-1">Connecting database records, layout photos, and video tours</p>
+        <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-16 text-center shadow-xs">
+          <RefreshCw className="w-8 h-8 text-emerald-600 dark:text-emerald-400 animate-spin mx-auto mb-3" />
+          <p className="text-slate-900 dark:text-white font-medium text-sm">Aggregating Project and Plot Media...</p>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">Connecting database records, layout photos, and video tours</p>
         </div>
       ) : filteredMedia.length === 0 ? (
-        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-16 text-center">
-          <ImageIcon className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-white">No media items found</h3>
-          <p className="text-slate-400 text-xs mt-1 max-w-sm mx-auto">
+        <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-16 text-center shadow-xs">
+          <ImageIcon className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">No media items found</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 max-w-sm mx-auto">
             {searchQuery || selectedProjectId !== 'all' || selectedMediaType !== 'all'
               ? 'Try adjusting your search criteria or resetting the filters.'
               : 'Add site photos, project banners, or plot images to populate this library.'}
           </p>
         </div>
       ) : (
-        <div>
-          <div className="flex items-center justify-between mb-3 text-xs text-slate-400 px-1">
-            <span>
-              Showing <strong className="text-white">{filteredMedia.length}</strong> items
-            </span>
-            <span className="text-slate-500 text-[11px]">Click any card to launch interactive slider</span>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs px-1">
+            <div className="flex items-center gap-3">
+              <span className="text-slate-600 dark:text-slate-400">
+                Showing <strong className="text-slate-900 dark:text-white font-bold">{filteredMedia.length}</strong> items
+              </span>
+              <span className="hidden sm:inline text-slate-300 dark:text-slate-700">|</span>
+              <span className="text-slate-500 text-[11px]">Click any card to launch interactive slider</span>
+            </div>
+
+            {/* View Switcher: Grouped by Project vs All Media Stream */}
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl self-start sm:self-auto border border-slate-200 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setViewMode('project_groups')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                  viewMode === 'project_groups'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Grouped by Project</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('all_stream')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                  viewMode === 'all_stream'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>All Media Stream</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredMedia.map((item, index) => {
-              const isVid = item.type === 'video';
-              const embed = isVid ? parseVideoEmbed(item.url) : null;
-
-              return (
+          {viewMode === 'project_groups' ? (
+            <div className="space-y-6">
+              {projectGroups.map((grp) => (
                 <div
-                  key={item.id}
-                  onClick={() => setSliderIndex(index)}
-                  className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden group hover:border-emerald-500/50 transition cursor-pointer flex flex-col justify-between shadow-md"
+                  key={grp.projectId}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4"
                 >
-                  {/* Thumbnail Container */}
-                  <div className="h-44 bg-slate-950 relative overflow-hidden flex items-center justify-center">
-                    {isVid ? (
-                      <div className="w-full h-full bg-slate-950 flex flex-col items-center justify-center text-slate-400 relative">
-                        {embed?.type === 'youtube' ? (
-                          <div className="absolute inset-0 bg-slate-900 flex items-center justify-center">
-                            <Film className="w-10 h-10 text-amber-400/80" />
-                          </div>
-                        ) : (
-                          <video
-                            src={item.url}
-                            className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition"
-                            muted
-                            playsInline
-                            preload="metadata"
-                          />
-                        )}
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition">
-                          <div className="w-12 h-12 rounded-full bg-amber-500/90 text-slate-950 flex items-center justify-center shadow-lg group-hover:scale-110 transition">
-                            <Play className="w-5 h-5 fill-slate-950 ml-0.5" />
-                          </div>
-                        </div>
+                  {/* Project Header Bar */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0">
+                        <Building2 className="w-5 h-5" />
                       </div>
-                    ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.url}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
-                      />
-                    )}
-
-                    {/* Top Badges */}
-                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 max-w-[85%]">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md shadow ${
-                          item.source === 'Project'
-                            ? 'bg-indigo-600/90 text-white'
-                            : item.source === 'Plot'
-                            ? 'bg-emerald-600/90 text-white'
-                            : 'bg-teal-600/90 text-white'
-                        }`}
-                      >
-                        {item.source}
-                      </span>
-
-                      {item.plotNumber && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 shadow">
-                          {item.plotNumber}
-                        </span>
-                      )}
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                            {grp.projectName}
+                          </h3>
+                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                            {grp.items.length} {grp.items.length === 1 ? 'Media Item' : 'Media Items'}
+                          </span>
+                        </div>
+                        {grp.projectLocation && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{grp.projectLocation}</span>
+                          </p>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Type Badge */}
-                    <div className="absolute top-2.5 right-2.5">
-                      {isVid ? (
-                        <span className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-black/80 text-amber-300 border border-amber-500/40">
-                          <Film className="w-3 h-3" />
-                          <span>Video</span>
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-black/80 text-emerald-300 border border-emerald-500/40">
-                          <ImageIcon className="w-3 h-3" />
-                          <span>Photo</span>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Category Label */}
-                    <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-slate-200 bg-slate-950/80 px-2 py-0.5 rounded backdrop-blur-sm truncate max-w-[80%]">
-                        {item.category}
-                      </span>
-
-                      {item.canDelete && item.galleryId && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteSitePhoto(item.galleryId!);
-                          }}
-                          className="p-1 rounded bg-rose-950/90 text-rose-300 hover:bg-rose-900 border border-rose-800/60 transition"
-                          title="Delete Site Photo"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openSliderForItem(grp.items[0])}
+                      className="self-start sm:self-auto flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition cursor-pointer"
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                      <span>Launch Slideshow ({grp.items.length})</span>
+                    </button>
                   </div>
 
-                  {/* Card Info */}
-                  <div className="p-3.5 space-y-1.5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h4 className="font-bold text-white text-xs line-clamp-1 group-hover:text-emerald-400 transition">
-                        {item.title}
-                      </h4>
-                      <p className="text-[11px] text-slate-400 truncate flex items-center gap-1 mt-0.5">
-                        <Building2 className="w-3 h-3 text-slate-500 shrink-0" />
-                        <span>{item.projectName || 'Sree Hari Layout'}</span>
-                      </p>
-                    </div>
-
-                    {item.source === 'Plot' && (item.dimensions || item.facing) && (
-                      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-                        <span>{item.dimensions || ''}</span>
-                        <span className="text-emerald-400 font-medium">{item.facing || ''}</span>
-                      </div>
-                    )}
+                  {/* Media Grid for this Project */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {grp.items.map((item) => renderMediaCard(item))}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredMedia.map((item) => renderMediaCard(item))}
+            </div>
+          )}
         </div>
       )}
 
@@ -991,39 +1141,39 @@ export default function AdminGalleryPage() {
       {/* Add Custom Site Photo Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Upload className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Add Site / Infrastructure Photo</span>
                 </h3>
-                <p className="text-slate-400 text-xs mt-0.5">Upload a layout photo, blacktop road, or park view.</p>
+                <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Upload a layout photo, blacktop road, or park view.</p>
               </div>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleAddSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Photo Title *</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Photo Title *</label>
                 <input
                   type="text"
                   required
                   placeholder="30ft Blacktop Roads with Solar Streetlights"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Category</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Category</label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="Roads & Infrastructure">Roads & Infrastructure</option>
                   <option value="Entrance Gate">Entrance Gate & Arch</option>
@@ -1034,11 +1184,11 @@ export default function AdminGalleryPage() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Associate With Project (Optional)</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Associate With Project (Optional)</label>
                 <select
                   value={formData.project_id}
                   onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">General Sree Hari Realty Photo</option>
                   {projects.map((p) => (
@@ -1050,7 +1200,7 @@ export default function AdminGalleryPage() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Upload Photo File or Direct Image URL *</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Upload Photo File or Direct Image URL *</label>
                 
                 {/* File picker button */}
                 <div className="flex items-center gap-2 mb-2">
@@ -1065,7 +1215,7 @@ export default function AdminGalleryPage() {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingMedia}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-800/60 text-emerald-300 font-semibold text-xs transition"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 border border-emerald-300 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 font-semibold text-xs transition"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>{uploadingMedia ? 'Uploading...' : 'Choose Image File from Device'}</span>
@@ -1078,22 +1228,22 @@ export default function AdminGalleryPage() {
                   placeholder="https://... or upload above"
                   value={formData.image_url}
                   onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white text-xs font-mono"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white text-xs font-mono"
                 />
 
                 {formData.image_url && (
-                  <div className="mt-2 h-28 w-full rounded-lg overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center">
+                  <div className="mt-2 h-28 w-full rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={formData.image_url} alt="Preview" className="w-full h-full object-contain" />
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition"
                 >
                   Cancel
                 </button>

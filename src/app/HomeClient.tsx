@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -25,14 +25,116 @@ import {
   CalendarCheck,
   FileCheck,
   Home,
-  ChevronDown
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { properties, Property, COMPANY_PHONE, COMPANY_PHONE_RAW, TAMIL_NADU_DISTRICTS } from '@/data/properties';
 import PropertyCard from '@/components/PropertyCard';
 import EnquiryModal from '@/components/EnquiryModal';
 import LocationAdvantageMap from '@/components/LocationAdvantageMap';
+import HeroCarousel from '@/components/HeroCarousel';
+import { HeroBanner } from '@/lib/types';
 import { api } from '@/lib/api';
 import { mapProjectRecordToProperty } from './properties/PropertiesClient';
+
+function StatCounter({ end, suffix = '+' }: { end: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          const duration = 1800; // ms
+          const startTime = performance.now();
+
+          const updateCounter = (currentTime: number) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Smooth ease out cubic
+            const easeOutProgress = 1 - Math.pow(1 - progress, 3);
+            const currentVal = Math.floor(easeOutProgress * end);
+            setCount(currentVal);
+
+            if (progress < 1) {
+              requestAnimationFrame(updateCounter);
+            } else {
+              setCount(end);
+            }
+          };
+
+          requestAnimationFrame(updateCounter);
+        }
+      },
+      { threshold: 0.25 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [end]);
+
+  return (
+    <span ref={ref} className="tabular-nums">
+      {count}
+      {suffix}
+    </span>
+  );
+}
+
+const LIFESTYLE_ITEMS = [
+  {
+    id: 'family',
+    tag: 'Community',
+    title: 'Family-friendly Environment',
+    subtitle: 'Peaceful & secure avenues',
+    image: '/lifestyle_family.jpg',
+    alt: 'Family-friendly Environment in Sree Hari Gated Community',
+  },
+  {
+    id: 'parks',
+    tag: 'Nature',
+    title: 'Parks & Green Spaces',
+    subtitle: 'Lush greenery & gardens',
+    image: '/lifestyle_parks.jpg',
+    alt: 'Parks and Green Landscaped Spaces',
+  },
+  {
+    id: 'kids',
+    tag: 'Recreation',
+    title: "Children's Play Areas",
+    subtitle: 'Safe equipment & parks',
+    image: '/lifestyle_kids.jpg',
+    alt: "Children's Play Areas in Gated Community",
+  },
+  {
+    id: 'wellness',
+    tag: 'Fitness',
+    title: 'Wellness & Active Living',
+    subtitle: 'Jogging & walking tracks',
+    image: '/lifestyle_wellness.jpg',
+    alt: 'Wellness and Active Living Walking Tracks',
+  },
+  {
+    id: 'temple',
+    tag: 'Spirituality',
+    title: 'Community Temple',
+    subtitle: 'Sacred peace & daily blessings',
+    image: '/lifestyle_temple.jpg',
+    alt: 'Community Temple inside Gated Community',
+  },
+];
+
+const LOOPED_LIFESTYLE_ITEMS = [
+  ...LIFESTYLE_ITEMS,
+  ...LIFESTYLE_ITEMS,
+  ...LIFESTYLE_ITEMS,
+];
 
 export default function HomeClient({ initialProjects }: { initialProjects?: any[] }) {
   const [selectedLocation, setSelectedLocation] = useState('Trichy (Tiruchirappalli)');
@@ -40,6 +142,8 @@ export default function HomeClient({ initialProjects }: { initialProjects?: any[
   const [selectedBudget, setSelectedBudget] = useState('All');
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
   const [activeProject, setActiveProject] = useState<string | undefined>(undefined);
+  const [heroBanners, setHeroBanners] = useState<HeroBanner[]>([]);
+  const [autoplayInterval, setAutoplayInterval] = useState<number>(6);
 
   const [liveProperties, setLiveProperties] = useState<Property[]>(() => {
     if (Array.isArray(initialProjects) && initialProjects.length > 0) {
@@ -72,7 +176,25 @@ export default function HomeClient({ initialProjects }: { initialProjects?: any[
         setIsLoadingProjects(false);
       }
     }
+
+    async function loadSettings() {
+      try {
+        const res = await api.getPublicSettings();
+        if (res && res.success && res.data) {
+          if (Array.isArray(res.data.hero_banners)) {
+            setHeroBanners(res.data.hero_banners);
+          }
+          if (res.data.hero_autoplay_interval) {
+            setAutoplayInterval(Number(res.data.hero_autoplay_interval) || 6);
+          }
+        }
+      } catch {
+        // Silently keep default fallback
+      }
+    }
+
     loadProjects();
+    loadSettings();
   }, [initialProjects]);
 
   const featuredProperties = (liveProperties.length > 0 ? liveProperties : properties).slice(0, 3);
@@ -82,70 +204,103 @@ export default function HomeClient({ initialProjects }: { initialProjects?: any[
     setIsEnquiryOpen(true);
   };
 
+  const lifestyleScrollRef = useRef<HTMLDivElement>(null);
+  const [isLifestyleHovered, setIsLifestyleHovered] = useState(false);
+
+  const getCardStep = () => {
+    if (!lifestyleScrollRef.current) return 340;
+    const firstChild = lifestyleScrollRef.current.firstElementChild as HTMLElement | null;
+    return firstChild ? firstChild.offsetWidth + 20 : 340;
+  };
+
+  // On mount: start at middle set of cards for seamless bidirectional navigation
+  useEffect(() => {
+    const container = lifestyleScrollRef.current;
+    if (!container) return;
+    const step = getCardStep();
+    const singleSetWidth = LIFESTYLE_ITEMS.length * step;
+    container.scrollLeft = singleSetWidth;
+  }, []);
+
+  const scrollLifestyle = (direction: 'left' | 'right') => {
+    const container = lifestyleScrollRef.current;
+    if (!container) return;
+    const step = getCardStep();
+    const singleSetWidth = LIFESTYLE_ITEMS.length * step;
+
+    if (direction === 'right' && container.scrollLeft >= singleSetWidth * 2 - 10) {
+      container.scrollLeft -= singleSetWidth;
+    } else if (direction === 'left' && container.scrollLeft <= singleSetWidth / 2) {
+      container.scrollLeft += singleSetWidth;
+    }
+
+    container.scrollBy({
+      left: direction === 'left' ? -step : step,
+      behavior: 'smooth',
+    });
+  };
+
+  // Passive listener to silently reposition when user scrolls near track ends (e.g. mobile swipe)
+  useEffect(() => {
+    const container = lifestyleScrollRef.current;
+    if (!container) return;
+
+    let timeout: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        if (!container) return;
+        const step = getCardStep();
+        const singleSetWidth = LIFESTYLE_ITEMS.length * step;
+        if (container.scrollLeft >= singleSetWidth * 2 - 10) {
+          container.scrollLeft -= singleSetWidth;
+        } else if (container.scrollLeft <= 20) {
+          container.scrollLeft += singleSetWidth;
+        }
+      }, 150);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      clearTimeout(timeout);
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Smooth periodic auto-scroll that advances one card at a time and loops seamlessly forward forever
+  useEffect(() => {
+    if (isLifestyleHovered) return;
+
+    const interval = setInterval(() => {
+      const container = lifestyleScrollRef.current;
+      if (!container) return;
+
+      const step = getCardStep();
+      const singleSetWidth = LIFESTYLE_ITEMS.length * step;
+
+      // If at or past the end of the second set, seamlessly wrap back to identical first/second set position without animation
+      if (container.scrollLeft >= singleSetWidth * 2 - 10) {
+        container.scrollLeft -= singleSetWidth;
+      }
+
+      // Smoothly advance 1 card forward
+      container.scrollBy({ left: step, behavior: 'smooth' });
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [isLifestyleHovered]);
+
   return (
-    <div className="space-y-10 sm:space-y-14 pb-10 bg-[#fef9e6] font-sans">
-      {/* 1. HERO SECTION WITH ULTRA-HD PANORAMIC ENTRANCE & BALANCED CINEMATIC CONTRAST */}
-      <section className="relative min-h-[500px] sm:min-h-[620px] lg:min-h-[680px] flex items-center overflow-hidden bg-gray-950">
-        <Image
-          src="/hero_gate_entrance.png"
-          alt="Sree Hari Realty Promoters Gated Community Grand Entrance"
-          fill
-          priority
-          quality={100}
-          unoptimized
-          className="object-cover object-[64%_center] sm:object-center"
-        />
-
-        {/* Balanced Dual-Side Cinematic Dark Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-black/60 pointer-events-none z-0" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/35 pointer-events-none z-0" />
-
-        {/* Hero Content Positioned on Left Side */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20 relative z-10 w-full flex items-center justify-start">
-          <div className="max-w-xl lg:max-w-2xl text-left space-y-4 sm:space-y-5">
-            {/* Top Category Tag */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-[10.5px] sm:text-[11px] font-bold tracking-widest text-amber-300 uppercase border border-amber-300/30 shadow-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              <span>PREMIUM GATED COMMUNITY PLOTS</span>
-            </div>
-
-            {/* Headline */}
-            <div className="space-y-2">
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.12] drop-shadow-md">
-                A Better Place to <br />
-                <span className="animate-text-shine">
-                  Build Your Future
-                </span>
-              </h1>
-              <p className="text-white/90 text-sm sm:text-[15px] font-medium max-w-lg leading-relaxed pt-0.5 drop-shadow-sm">
-                Thoughtfully planned plots. A greener community. A place to call your own with 100% DTCP & RERA approved peace of mind.
-              </p>
-            </div>
-
-            {/* Action CTA Buttons */}
-            <div className="pt-2 flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3.5">
-              <Link
-                href="/properties"
-                className="bg-[#D61F69] hover:bg-[#BE185D] text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
-              >
-                <span>Explore Plots</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-
-              <button
-                onClick={() => setIsEnquiryOpen(true)}
-                className="bg-white/95 hover:bg-white text-gray-950 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all border border-white/40 shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
-              >
-                <Phone className="w-3.5 h-3.5 text-[#D61F69]" />
-                <span>Book Site Visit</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="space-y-6 sm:space-y-12 pb-10 bg-[#fef9e6] font-sans">
+      {/* 1. HERO SECTION CAROUSEL WITH DUAL-MODE SUPPORT (ZERO-CROP GRAPHIC FLYERS & DYNAMIC TEXT) */}
+      <HeroCarousel
+        banners={heroBanners}
+        autoplayInterval={autoplayInterval}
+        onOpenEnquiry={handleOpenEnquiry}
+      />
 
       {/* 2. FEATURED PROJECTS SECTION (RECENTLY CREATED 3 PROJECTS FROM DATABASE) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 sm:pt-2">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8">
           <div>
             <span className="text-[11px] font-bold text-[#D61F69] uppercase tracking-wider block mb-1">
@@ -333,9 +488,9 @@ export default function HomeClient({ initialProjects }: { initialProjects?: any[
           {/* Right Column: Seamless Masterplan */}
           <div className="lg:col-span-7 relative">
             {/* North Direction Compass Rose */}
-            <div className="absolute -top-7 sm:-top-9 lg:-top-10 right-[6%] sm:right-[8%] pointer-events-none z-10 select-none flex flex-col items-center">
-              <span className="text-[11px] font-black text-gray-800 tracking-tighter leading-none mb-0.5">N</span>
-              <svg width="26" height="30" viewBox="0 0 36 36" fill="none" className="drop-shadow-xs">
+            <div className="absolute -top-6 sm:-top-8 lg:-top-10 right-3 sm:right-6 lg:right-8 pointer-events-none z-10 select-none flex flex-col items-center">
+              <span className="text-[10px] sm:text-[11px] font-black text-gray-800 tracking-tighter leading-none mb-0.5">N</span>
+              <svg width="24" height="28" viewBox="0 0 36 36" fill="none" className="drop-shadow-xs sm:w-[26px] sm:h-[30px]">
                 <line x1="18" y1="2" x2="18" y2="34" stroke="#4b5563" strokeWidth="0.8" opacity="0.6" />
                 <line x1="2" y1="18" x2="34" y2="18" stroke="#4b5563" strokeWidth="0.8" opacity="0.6" />
                 <circle cx="18" cy="18" r="9" stroke="#6b7280" strokeWidth="0.7" strokeDasharray="1.5 2" opacity="0.5" />
@@ -351,26 +506,26 @@ export default function HomeClient({ initialProjects }: { initialProjects?: any[
               </svg>
             </div>
 
-            {/* Right Airspace */}
-            <div className="absolute top-[13%] sm:top-[14%] lg:top-[15%] right-[5%] sm:right-[6.5%] lg:right-[7%] w-[48px] sm:w-[54px] lg:w-[60px] z-20 pointer-events-none animate-crow-right select-none">
-              <div className="relative w-full aspect-[45/45]">
+            {/* Right Airspace (Soaring flock in the clear sky beside compass) */}
+            <div className="absolute -top-[4%] sm:-top-[6%] lg:-top-[8%] right-[20%] sm:right-[18%] lg:right-[15%] w-[38px] sm:w-[55px] lg:w-[72px] z-20 pointer-events-none animate-crow-right select-none">
+              <div className="relative w-full aspect-[463/525]">
                 <Image
                   src="/masterplan_birds_right.png"
-                  alt="Horizontal soaring birds string"
+                  alt="Soaring birds flock right"
                   fill
-                  className="object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]"
+                  className="object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
                 />
               </div>
             </div>
 
-            {/* Left Airspace */}
-            <div className="absolute top-[12%] sm:top-[13%] lg:top-[14%] left-[-4.5%] sm:left-[-3%] lg:left-[-3.5%] w-[76px] sm:w-[84px] lg:w-[90px] z-20 pointer-events-none animate-crow-left select-none">
-              <div className="relative w-full aspect-[75/95]">
+            {/* Left Airspace (Ascending flock in the clear sky beside layout) */}
+            <div className="absolute top-[0%] sm:top-[1%] lg:top-[2%] left-[1%] sm:left-[-4%] lg:left-[-7%] w-[48px] sm:w-[72px] lg:w-[86px] z-20 pointer-events-none animate-crow-left select-none">
+              <div className="relative w-full aspect-[459/646]">
                 <Image
                   src="/masterplan_birds_left.png"
-                  alt="Soaring birds flock"
+                  alt="Ascending crows flock left"
                   fill
-                  className="object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]"
+                  className="object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.18)]"
                 />
               </div>
             </div>
@@ -410,144 +565,83 @@ export default function HomeClient({ initialProjects }: { initialProjects?: any[
         </div>
       </section>
 
-      {/* 5. LIFESTYLE SECTION */}
+      {/* 5. LIFESTYLE SECTION WITH HORIZONTAL SNAP SCROLL & 5TH TEMPLE CARD */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="space-y-1.5 mb-6">
-          <span className="text-[11px] font-bold text-[#D61F69] uppercase tracking-wider block">
-            LIFESTYLE
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight">
-            Designed for Your Everyday
-          </h2>
-          <p className="text-[15px] text-gray-700 max-w-2xl leading-relaxed">
-            Open spaces, fresh air and a peaceful community — the perfect setting for a better life tomorrow.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-3">
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-bold text-[#D61F69] uppercase tracking-wider block">
+              LIFESTYLE
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight">
+              Designed for Your Everyday
+            </h2>
+            <p className="text-[15px] text-gray-700 max-w-2xl leading-relaxed">
+              Open spaces, fresh air and a peaceful community — the perfect setting for a better life tomorrow.
+            </p>
+          </div>
+
+          {/* Navigation Scroll Buttons */}
+          <div className="flex items-center gap-2 self-start sm:self-end">
+            <button
+              type="button"
+              onClick={() => scrollLifestyle('left')}
+              aria-label="Scroll left"
+              className="w-9 h-9 rounded-full bg-white border border-amber-200/90 text-[#006452] hover:bg-[#f7db49] shadow-xs flex items-center justify-center transition-all cursor-pointer hover:scale-105"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollLifestyle('right')}
+              aria-label="Scroll right"
+              className="w-9 h-9 rounded-full bg-white border border-amber-200/90 text-[#006452] hover:bg-[#f7db49] shadow-xs flex items-center justify-center transition-all cursor-pointer hover:scale-105"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-          {/* Card 1: Family-friendly Environment */}
-          <Link
-            href="/contact"
-            className="relative h-72 sm:h-80 md:h-[340px] rounded-3xl overflow-hidden shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out group cursor-pointer border border-amber-200/60 block"
-          >
-            <Image
-              src="/lifestyle_family.jpg"
-              alt="Family-friendly Environment in Sree Hari Gated Community"
-              fill
-              className="object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
-            />
-            <div className="absolute top-4 left-4 z-10">
-              <span className="bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-white/20">
-                Community
-              </span>
-            </div>
-            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform ease-in-out pointer-events-none z-10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
-            <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white z-10">
-              <div>
-                <span className="text-base sm:text-lg font-bold block leading-snug drop-shadow-sm">
-                  Family-friendly Environment
+        {/* Scrollable Track with Seamless Looping Cards */}
+        <div
+          ref={lifestyleScrollRef}
+          onMouseEnter={() => setIsLifestyleHovered(true)}
+          onMouseLeave={() => setIsLifestyleHovered(false)}
+          onTouchStart={() => setIsLifestyleHovered(true)}
+          onTouchEnd={() => setIsLifestyleHovered(false)}
+          className="flex overflow-x-auto gap-5 snap-x snap-mandatory scrollbar-none pb-4 pt-1"
+        >
+          {LOOPED_LIFESTYLE_ITEMS.map((item, idx) => (
+            <Link
+              key={`${item.id}-${idx}`}
+              href="/contact"
+              className="w-full sm:w-[calc(50%-10px)] lg:w-[calc((100%-2.5rem)/3)] flex-shrink-0 snap-center sm:snap-start relative h-72 sm:h-80 md:h-[340px] rounded-3xl overflow-hidden shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out group cursor-pointer border border-amber-200/60 block"
+            >
+              <Image
+                src={item.image}
+                alt={item.alt}
+                fill
+                className="object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
+              />
+              <div className="absolute top-4 left-4 z-10">
+                <span className="bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-white/20">
+                  {item.tag}
                 </span>
-                <span className="text-xs text-white/80 font-medium">Peaceful & secure avenues</span>
               </div>
-              <span className="w-8 h-8 rounded-full bg-[#f7db49] text-[#006452] group-hover:bg-[#f6d73c] flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-all duration-300 ml-2">
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-              </span>
-            </div>
-          </Link>
-
-          {/* Card 2: Parks & Green Spaces */}
-          <Link
-            href="/contact"
-            className="relative h-72 sm:h-80 md:h-[340px] rounded-3xl overflow-hidden shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out group cursor-pointer border border-amber-200/60 block"
-          >
-            <Image
-              src="/lifestyle_parks.jpg"
-              alt="Parks and Green Landscaped Spaces"
-              fill
-              className="object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
-            />
-            <div className="absolute top-4 left-4 z-10">
-              <span className="bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-white/20">
-                Nature
-              </span>
-            </div>
-            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform ease-in-out pointer-events-none z-10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
-            <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white z-10">
-              <div>
-                <span className="text-base sm:text-lg font-bold block leading-snug drop-shadow-sm">
-                  Parks & Green Spaces
+              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform ease-in-out pointer-events-none z-10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
+              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white z-10">
+                <div>
+                  <span className="text-base sm:text-lg font-bold block leading-snug drop-shadow-sm">
+                    {item.title}
+                  </span>
+                  <span className="text-xs text-white/80 font-medium">{item.subtitle}</span>
+                </div>
+                <span className="w-8 h-8 rounded-full bg-[#f7db49] text-[#006452] group-hover:bg-[#f6d73c] flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-all duration-300 ml-2">
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                 </span>
-                <span className="text-xs text-white/80 font-medium">Lush greenery & gardens</span>
               </div>
-              <span className="w-8 h-8 rounded-full bg-[#f7db49] text-[#006452] group-hover:bg-[#f6d73c] flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-all duration-300 ml-2">
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-              </span>
-            </div>
-          </Link>
-
-          {/* Card 3: Children's Play Areas */}
-          <Link
-            href="/contact"
-            className="relative h-72 sm:h-80 md:h-[340px] rounded-3xl overflow-hidden shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out group cursor-pointer border border-amber-200/60 block"
-          >
-            <Image
-              src="/lifestyle_kids.jpg"
-              alt="Children's Play Areas in Gated Community"
-              fill
-              className="object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
-            />
-            <div className="absolute top-4 left-4 z-10">
-              <span className="bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-white/20">
-                Recreation
-              </span>
-            </div>
-            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform ease-in-out pointer-events-none z-10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
-            <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white z-10">
-              <div>
-                <span className="text-base sm:text-lg font-bold block leading-snug drop-shadow-sm">
-                  Children&apos;s Play Areas
-                </span>
-                <span className="text-xs text-white/80 font-medium">Safe equipment & parks</span>
-              </div>
-              <span className="w-8 h-8 rounded-full bg-[#f7db49] text-[#006452] group-hover:bg-[#f6d73c] flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-all duration-300 ml-2">
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-              </span>
-            </div>
-          </Link>
-
-          {/* Card 4: Wellness & Active Living */}
-          <Link
-            href="/contact"
-            className="relative h-72 sm:h-80 md:h-[340px] rounded-3xl overflow-hidden shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out group cursor-pointer border border-amber-200/60 block"
-          >
-            <Image
-              src="/lifestyle_wellness.jpg"
-              alt="Wellness and Active Living Walking Tracks"
-              fill
-              className="object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
-            />
-            <div className="absolute top-4 left-4 z-10">
-              <span className="bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-white/20">
-                Fitness
-              </span>
-            </div>
-            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform ease-in-out pointer-events-none z-10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
-            <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white z-10">
-              <div>
-                <span className="text-base sm:text-lg font-bold block leading-snug drop-shadow-sm">
-                  Wellness & Active Living
-                </span>
-                <span className="text-xs text-white/80 font-medium">Jogging & walking tracks</span>
-              </div>
-              <span className="w-8 h-8 rounded-full bg-[#f7db49] text-[#006452] group-hover:bg-[#f6d73c] flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-all duration-300 ml-2">
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-              </span>
-            </div>
-          </Link>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -588,117 +682,205 @@ export default function HomeClient({ initialProjects }: { initialProjects?: any[
       </section>
 
       {/* 7. YOUR JOURNEY SECTION */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 relative overflow-hidden">
-        <div className="absolute -top-10 left-0 sm:left-4 md:left-8 w-64 h-64 sm:w-80 sm:h-80 opacity-[0.20] pointer-events-none z-0">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-10 relative overflow-hidden">
+        {/* Subtle Background Lotus */}
+        <div className="absolute -top-10 left-0 sm:left-4 md:left-8 w-64 h-64 sm:w-80 sm:h-80 opacity-[0.16] pointer-events-none z-0">
           <Image src="/lotus_icon.png" alt="" fill className="object-contain" />
         </div>
 
-        <div className="max-w-xl mx-auto space-y-1.5 relative z-10">
-          <span className="text-[11px] font-bold text-[#D61F69] uppercase tracking-wider block">
-            YOUR JOURNEY
+        {/* Section Header */}
+        <div className="max-w-xl mx-auto space-y-2 relative z-10">
+          <span className="text-[11px] font-bold text-[#D61F69] uppercase tracking-widest block">
+            YOUR BUYING ROADMAP
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#006452] tracking-tight">
             From Land to a Lifetime of Memories
           </h2>
-          <p className="text-xs text-gray-600">
-            A seamless 5-step journey towards owning your ideal plot in a secure gated community.
+          <p className="text-xs sm:text-[13px] text-gray-600 max-w-lg mx-auto leading-relaxed">
+            A seamless, guided 5-step journey towards owning DTCP & RERA approved land in prime growth corridors.
           </p>
         </div>
 
-        <div className="relative z-10">
-          <div className="hidden md:block absolute top-1/2 left-[8%] right-[8%] -translate-y-7 h-[2px] bg-gradient-to-r from-amber-200 via-pink-200 to-emerald-200 z-0 pointer-events-none" />
+        {/* Milestone Cards Grid with Connecting Visual Flow */}
+        <div className="relative z-10 pt-2 pb-4">
+          {/* Desktop Connecting Highway Bar */}
+          <div className="hidden lg:block absolute top-[28px] left-[10%] right-[10%] h-[3px] bg-gradient-to-r from-emerald-400 via-amber-400 via-[#D61F69] to-emerald-500 z-0 opacity-40 rounded-full" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 relative z-10">
-            {/* Step 01 */}
-            <div className="group relative p-5 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 shadow-2xs hover:shadow-[0_16px_32px_-12px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out text-center space-y-3 flex flex-col items-center">
-              <div className="relative">
-                <span className="w-9 h-9 rounded-full bg-white text-[#D61F69] group-hover:bg-[#D61F69] group-hover:text-white font-extrabold text-xs flex items-center justify-center mx-auto shadow-xs border border-pink-200 transition-colors duration-300">
-                  01
-                </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 relative z-10 items-stretch">
+            {/* Step 01: Discover */}
+            <div className="group relative rounded-3xl bg-gradient-to-b from-white via-white to-[#fffdf5] p-5 sm:p-6 border border-amber-200/80 shadow-xs hover:shadow-[0_20px_35px_-10px_rgba(0,100,82,0.18)] hover:border-emerald-300 hover:-translate-y-2 transition-all duration-500 ease-out flex flex-col justify-between overflow-hidden text-left">
+              {/* Background Number Watermark */}
+              <span className="absolute -bottom-3 -right-2 text-7xl font-black text-amber-100/40 select-none pointer-events-none group-hover:text-emerald-100/60 transition-colors">
+                01
+              </span>
+
+              <div className="space-y-4 relative z-10">
+                {/* Milestone Node */}
+                <div className="flex items-center justify-between">
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-[#006452] border border-emerald-100 flex items-center justify-center shadow-2xs group-hover:scale-110 group-hover:bg-[#f7db49] transition-all duration-300">
+                    <Search className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Step 01
+                  </span>
+                </div>
+
+                {/* Content */}
+                <div className="space-y-1">
+                  <h3 className="font-extrabold text-[15px] sm:text-base text-[#006452] group-hover:text-[#D61F69] transition-colors leading-snug">
+                    Explore Projects
+                  </h3>
+                  <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                    Browse prime DTCP & RERA approved communities across Trichy growth hubs.
+                  </p>
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-pink-50 text-gray-700 group-hover:text-[#D61F69] flex items-center justify-center transition-colors duration-300">
-                <Search className="w-5 h-5 transition-transform group-hover:scale-110 duration-300" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-[#006452] group-hover:text-[#D61F69] transition-colors">
-                  Explore
-                </h4>
-                <p className="text-xs text-gray-500 font-medium">Our Projects</p>
+
+              {/* Bottom Tag */}
+              <div className="pt-4 border-t border-amber-100/80 mt-4 relative z-10 flex items-center justify-between text-[11px] font-bold text-emerald-700">
+                <span>Clear Titles</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               </div>
             </div>
 
-            {/* Step 02 */}
-            <div className="group relative p-5 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 shadow-2xs hover:shadow-[0_16px_32px_-12px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out text-center space-y-3 flex flex-col items-center">
-              <div className="relative">
-                <span className="w-9 h-9 rounded-full bg-white text-[#D61F69] group-hover:bg-[#D61F69] group-hover:text-white font-extrabold text-xs flex items-center justify-center mx-auto shadow-xs border border-pink-200 transition-colors duration-300">
-                  02
-                </span>
+            {/* Step 02: Select */}
+            <div className="group relative rounded-3xl bg-gradient-to-b from-white via-white to-[#fffdf5] p-5 sm:p-6 border border-amber-200/80 shadow-xs hover:shadow-[0_20px_35px_-10px_rgba(0,100,82,0.18)] hover:border-emerald-300 hover:-translate-y-2 transition-all duration-500 ease-out flex flex-col justify-between overflow-hidden text-left">
+              <span className="absolute -bottom-3 -right-2 text-7xl font-black text-amber-100/40 select-none pointer-events-none group-hover:text-amber-100/70 transition-colors">
+                02
+              </span>
+
+              <div className="space-y-4 relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 border border-amber-100 flex items-center justify-center shadow-2xs group-hover:scale-110 group-hover:bg-[#f7db49] group-hover:text-[#006452] transition-all duration-300">
+                    <MapPin className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-100/80 px-2.5 py-0.5 rounded-full border border-amber-200">
+                    Step 02
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="font-extrabold text-[15px] sm:text-base text-[#006452] group-hover:text-[#D61F69] transition-colors leading-snug">
+                    Choose Your Plot
+                  </h3>
+                  <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                    Pick your ideal size, direction, and corner lot with transparent masterplan pricing.
+                  </p>
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-pink-50 text-gray-700 group-hover:text-[#D61F69] flex items-center justify-center transition-colors duration-300">
-                <MapPin className="w-5 h-5 transition-transform group-hover:scale-110 duration-300" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-[#006452] group-hover:text-[#D61F69] transition-colors">
-                  Choose
-                </h4>
-                <p className="text-xs text-gray-500 font-medium">Your Plot</p>
+
+              <div className="pt-4 border-t border-amber-100/80 mt-4 relative z-10 flex items-center justify-between text-[11px] font-bold text-amber-700">
+                <span>Custom Sizes</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
               </div>
             </div>
 
-            {/* Step 03 */}
+            {/* Step 03: VIP Experience (FEATURED HERO CARD) */}
             <div 
               onClick={() => handleOpenEnquiry('Site Visit Booking - Your Journey')}
-              className="group relative p-5 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border-2 border-amber-300/80 shadow-2xs hover:shadow-[0_16px_32px_-12px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out text-center space-y-3 flex flex-col items-center cursor-pointer"
+              className="group relative rounded-3xl bg-gradient-to-b from-[#fffef5] via-white to-[#fef6dc] p-5 sm:p-6 border-2 border-amber-400 shadow-md hover:shadow-[0_24px_45px_-10px_rgba(214,31,105,0.22)] hover:border-[#D61F69] hover:-translate-y-2.5 transition-all duration-500 ease-out flex flex-col justify-between overflow-hidden text-left cursor-pointer ring-4 ring-amber-300/20"
             >
-              <div className="relative">
-                <span className="w-9 h-9 rounded-full bg-[#f7db49] text-[#006452] font-extrabold text-xs flex items-center justify-center mx-auto shadow-sm border border-amber-300">
-                  03
-                </span>
+              {/* Highlight Ribbon */}
+              <div className="absolute top-0 right-0 bg-gradient-to-l from-[#D61F69] to-[#BE185D] text-white text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-bl-xl shadow-xs">
+                Guided Tour
               </div>
-              <div className="w-10 h-10 rounded-xl bg-amber-100/70 group-hover:bg-[#f7db49] text-[#006452] flex items-center justify-center transition-colors duration-300">
-                <CalendarCheck className="w-5 h-5 transition-transform group-hover:scale-110 duration-300" />
+
+              <span className="absolute -bottom-3 -right-2 text-7xl font-black text-pink-100/50 select-none pointer-events-none group-hover:text-pink-100/80 transition-colors">
+                03
+              </span>
+
+              <div className="space-y-4 relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="w-11 h-11 rounded-2xl bg-[#f7db49] text-[#006452] border border-amber-300 flex items-center justify-center shadow-xs group-hover:scale-110 group-hover:bg-[#D61F69] group-hover:text-white transition-all duration-300">
+                    <CalendarCheck className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#D61F69] bg-pink-100/90 px-2 py-0.5 rounded-full border border-pink-200 mr-14 sm:mr-0">
+                    Step 03
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="font-black text-[15px] sm:text-base text-[#006452] group-hover:text-[#D61F69] transition-colors leading-snug flex items-center gap-1.5">
+                    <span>Book Site Visit</span>
+                  </h3>
+                  <p className="text-xs text-gray-700 font-semibold leading-relaxed">
+                    Walk the community in person with our executive guided property tour.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-sm text-[#006452] group-hover:text-[#D61F69] transition-colors">
-                  Book
-                </h4>
-                <p className="text-xs text-gray-500 font-medium">A Site Visit</p>
+
+              <div className="pt-4 border-t border-amber-200 mt-4 relative z-10">
+                <button
+                  type="button"
+                  className="w-full bg-[#f7db49] hover:bg-[#f6d73c] group-hover:bg-[#D61F69] text-[#006452] group-hover:text-white text-xs font-black py-2 px-3 rounded-xl transition-all duration-300 shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <span>Book Site Visit</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 
-            {/* Step 04 */}
-            <div className="group relative p-5 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 shadow-2xs hover:shadow-[0_16px_32px_-12px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out text-center space-y-3 flex flex-col items-center">
-              <div className="relative">
-                <span className="w-9 h-9 rounded-full bg-white text-[#D61F69] group-hover:bg-[#D61F69] group-hover:text-white font-extrabold text-xs flex items-center justify-center mx-auto shadow-xs border border-pink-200 transition-colors duration-300">
-                  04
-                </span>
+            {/* Step 04: Secure */}
+            <div className="group relative rounded-3xl bg-gradient-to-b from-white via-white to-[#fffdf5] p-5 sm:p-6 border border-amber-200/80 shadow-xs hover:shadow-[0_20px_35px_-10px_rgba(0,100,82,0.18)] hover:border-emerald-300 hover:-translate-y-2 transition-all duration-500 ease-out flex flex-col justify-between overflow-hidden text-left">
+              <span className="absolute -bottom-3 -right-2 text-7xl font-black text-amber-100/40 select-none pointer-events-none group-hover:text-blue-100/70 transition-colors">
+                04
+              </span>
+
+              <div className="space-y-4 relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center shadow-2xs group-hover:scale-110 group-hover:bg-[#f7db49] group-hover:text-[#006452] transition-all duration-300">
+                    <FileCheck className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 bg-blue-100/80 px-2.5 py-0.5 rounded-full border border-blue-200">
+                    Step 04
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="font-extrabold text-[15px] sm:text-base text-[#006452] group-hover:text-[#D61F69] transition-colors leading-snug">
+                    Complete Purchase
+                  </h3>
+                  <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                    Transparent registration, bank loan clearance, and immediate deed handover.
+                  </p>
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-pink-50 text-gray-700 group-hover:text-[#D61F69] flex items-center justify-center transition-colors duration-300">
-                <FileCheck className="w-5 h-5 transition-transform group-hover:scale-110 duration-300" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-[#006452] group-hover:text-[#D61F69] transition-colors">
-                  Complete
-                </h4>
-                <p className="text-xs text-gray-500 font-medium">The Purchase</p>
+
+              <div className="pt-4 border-t border-amber-100/80 mt-4 relative z-10 flex items-center justify-between text-[11px] font-bold text-blue-700">
+                <span>Bank Loan Ready</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               </div>
             </div>
 
-            {/* Step 05 */}
-            <div className="group relative p-5 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 shadow-2xs hover:shadow-[0_16px_32px_-12px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-2 transition-all duration-500 ease-out text-center space-y-3 flex flex-col items-center">
-              <div className="relative">
-                <span className="w-9 h-9 rounded-full bg-white text-[#D61F69] group-hover:bg-[#D61F69] group-hover:text-white font-extrabold text-xs flex items-center justify-center mx-auto shadow-xs border border-pink-200 transition-colors duration-300">
-                  05
-                </span>
+            {/* Step 05: Build */}
+            <div className="group relative rounded-3xl bg-gradient-to-b from-white via-white to-[#fffdf5] p-5 sm:p-6 border border-amber-200/80 shadow-xs hover:shadow-[0_20px_35px_-10px_rgba(0,100,82,0.18)] hover:border-emerald-300 hover:-translate-y-2 transition-all duration-500 ease-out flex flex-col justify-between overflow-hidden text-left">
+              <span className="absolute -bottom-3 -right-2 text-7xl font-black text-amber-100/40 select-none pointer-events-none group-hover:text-emerald-100/70 transition-colors">
+                05
+              </span>
+
+              <div className="space-y-4 relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-[#006452] border border-emerald-100 flex items-center justify-center shadow-2xs group-hover:scale-110 group-hover:bg-[#f7db49] transition-all duration-300">
+                    <Home className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Step 05
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="font-extrabold text-[15px] sm:text-base text-[#006452] group-hover:text-[#D61F69] transition-colors leading-snug">
+                    Build Your Home
+                  </h3>
+                  <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                    Begin construction immediately with 24/7 security, blacktop roads & water.
+                  </p>
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-emerald-50 text-gray-700 group-hover:text-[#006452] flex items-center justify-center transition-colors duration-300">
-                <Home className="w-5 h-5 transition-transform group-hover:scale-110 duration-300" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-[#006452] group-hover:text-[#006452] transition-colors">
-                  Build
-                </h4>
-                <p className="text-xs text-gray-500 font-medium">Your Future Home</p>
+
+              <div className="pt-4 border-t border-amber-100/80 mt-4 relative z-10 flex items-center justify-between text-[11px] font-bold text-emerald-700">
+                <span>Immediate Handover</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               </div>
             </div>
           </div>
@@ -719,37 +901,66 @@ export default function HomeClient({ initialProjects }: { initialProjects?: any[
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-6 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 text-center space-y-2 shadow-2xs hover:shadow-[0_16px_32px_-12px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-1.5 transition-all duration-500 ease-out group">
-            <div className="w-10 h-10 rounded-full bg-pink-50 text-[#D61F69] flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-              <Users className="w-5 h-5" />
+        {/* Alternating Zigzag Cards with Smooth Scroll Count-Up */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 pt-4 pb-8 sm:py-10">
+          {/* Card 1: Happy Families (Base position / Lower) */}
+          <div className="translate-y-2 sm:translate-y-4 lg:translate-y-6 p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 text-center space-y-3 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-0.5 sm:hover:translate-y-2 lg:hover:translate-y-4 transition-all duration-500 ease-out group">
+            <div className="w-12 h-12 rounded-full bg-pink-50 text-[#D61F69] border border-pink-100/80 flex items-center justify-center mx-auto shadow-2xs group-hover:scale-110 group-hover:bg-[#f7db49] group-hover:text-[#006452] group-hover:border-amber-300 transition-all duration-300">
+              <Users className="w-5 h-5 stroke-[2.2]" />
             </div>
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#006452] block tracking-tight">100+</span>
-            <span className="text-xs text-gray-600 font-medium">Happy Families</span>
+            <div className="space-y-1">
+              <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#006452] block tracking-tight">
+                <StatCounter end={100} suffix="+" />
+              </span>
+              <span className="text-xs sm:text-sm text-gray-600 font-bold block">
+                Happy Families
+              </span>
+            </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 text-center space-y-2 shadow-2xs hover:shadow-[0_16px_32px_-12px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-1.5 transition-all duration-500 ease-out group">
-            <div className="w-10 h-10 rounded-full bg-pink-50 text-[#D61F69] flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-              <Building className="w-5 h-5" />
+          {/* Card 2: Ongoing Projects (Lifted / Upward) */}
+          <div className="-translate-y-2 sm:-translate-y-4 lg:-translate-y-6 p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 text-center space-y-3 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-4 sm:hover:-translate-y-6 lg:hover:-translate-y-8 transition-all duration-500 ease-out group">
+            <div className="w-12 h-12 rounded-full bg-pink-50 text-[#D61F69] border border-pink-100/80 flex items-center justify-center mx-auto shadow-2xs group-hover:scale-110 group-hover:bg-[#f7db49] group-hover:text-[#006452] group-hover:border-amber-300 transition-all duration-300">
+              <Building className="w-5 h-5 stroke-[2.2]" />
             </div>
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#006452] block tracking-tight">3+</span>
-            <span className="text-xs text-gray-600 font-medium">Ongoing Projects</span>
+            <div className="space-y-1">
+              <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#006452] block tracking-tight">
+                <StatCounter end={3} suffix="+" />
+              </span>
+              <span className="text-xs sm:text-sm text-gray-600 font-bold block">
+                Ongoing Projects
+              </span>
+            </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 text-center space-y-2 shadow-2xs hover:shadow-[0_16px_32px_-12px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-1.5 transition-all duration-500 ease-out group">
-            <div className="w-10 h-10 rounded-full bg-pink-50 text-[#D61F69] flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-              <ShieldCheck className="w-5 h-5" />
+          {/* Card 3: Years of Experience (Base position / Lower) */}
+          <div className="translate-y-2 sm:translate-y-4 lg:translate-y-6 p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 text-center space-y-3 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-0.5 sm:hover:translate-y-2 lg:hover:translate-y-4 transition-all duration-500 ease-out group">
+            <div className="w-12 h-12 rounded-full bg-pink-50 text-[#D61F69] border border-pink-100/80 flex items-center justify-center mx-auto shadow-2xs group-hover:scale-110 group-hover:bg-[#f7db49] group-hover:text-[#006452] group-hover:border-amber-300 transition-all duration-300">
+              <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
             </div>
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#006452] block tracking-tight">5+</span>
-            <span className="text-xs text-gray-600 font-medium">Years of Experience</span>
+            <div className="space-y-1">
+              <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#006452] block tracking-tight">
+                <StatCounter end={5} suffix="+" />
+              </span>
+              <span className="text-xs sm:text-sm text-gray-600 font-bold block">
+                Years of Experience
+              </span>
+            </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 text-center space-y-2 shadow-2xs hover:shadow-[0_16px_32px_-12px_rgba(0,100,82,0.18)] hover:border-emerald-300/80 hover:-translate-y-1.5 transition-all duration-500 ease-out group">
-            <div className="w-10 h-10 rounded-full bg-pink-50 text-[#D61F69] flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
-              <Compass className="w-5 h-5" />
+          {/* Card 4: Acres Planned (Lifted / Upward) */}
+          <div className="-translate-y-2 sm:-translate-y-4 lg:-translate-y-6 p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-white via-white to-[#fffdf5] border border-amber-100/90 text-center space-y-3 shadow-2xs hover:shadow-[0_20px_40px_-15px_rgba(0,100,82,0.22)] hover:border-emerald-300/80 hover:-translate-y-4 sm:hover:-translate-y-6 lg:hover:-translate-y-8 transition-all duration-500 ease-out group">
+            <div className="w-12 h-12 rounded-full bg-pink-50 text-[#D61F69] border border-pink-100/80 flex items-center justify-center mx-auto shadow-2xs group-hover:scale-110 group-hover:bg-[#f7db49] group-hover:text-[#006452] group-hover:border-amber-300 transition-all duration-300">
+              <Compass className="w-5 h-5 stroke-[2.2]" />
             </div>
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#006452] block tracking-tight">100+</span>
-            <span className="text-xs text-gray-600 font-medium">Acres Planned</span>
+            <div className="space-y-1">
+              <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#006452] block tracking-tight">
+                <StatCounter end={100} suffix="+" />
+              </span>
+              <span className="text-xs sm:text-sm text-gray-600 font-bold block">
+                Acres Planned
+              </span>
+            </div>
           </div>
         </div>
       </section>

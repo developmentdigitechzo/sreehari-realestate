@@ -18,19 +18,20 @@ export function WhatsAppSvgIcon({ className = 'w-8 h-8 fill-white' }: { classNam
 
 export default function FloatingCTA() {
   return (
-    <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 flex items-center group">
-      {/* Desktop Tooltip */}
-      <span className="hidden md:block mr-3 px-3 py-1.5 bg-gray-900/90 text-white text-xs font-semibold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-        Chat on WhatsApp
-      </span>
+    <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 pointer-events-none">
       {/* Single Clean Floating Circular WhatsApp Button for Both Mobile & Desktop */}
       <a
         href={`https://wa.me/${COMPANY_WHATSAPP}?text=Hi%20Sree%20Hari%20Realty%2C%20I%20am%20interested%20in%20your%20gated%20community%20plots.`}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center shadow-2xl border-2 border-white ring-4 ring-emerald-500/20 transition-all duration-200 hover:scale-105 active:scale-95"
+        className="relative group pointer-events-auto w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center shadow-2xl border-2 border-white ring-4 ring-emerald-500/20 transition-all duration-200 hover:scale-105 active:scale-95"
         aria-label="Chat on WhatsApp"
       >
+        {/* Desktop Tooltip - strictly absolute, triggers ONLY on hovering the anchor button itself */}
+        <span className="hidden md:block absolute right-full mr-3.5 px-3 py-1.5 bg-gray-900/90 text-white text-xs font-semibold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+          Chat on WhatsApp
+        </span>
+
         <WhatsAppSvgIcon className="w-6.5 h-6.5 sm:w-7 sm:h-7 fill-white" />
       </a>
     </div>

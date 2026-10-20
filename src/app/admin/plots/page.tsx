@@ -623,7 +623,7 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
 
                 <button
                   onClick={() => handleOpenCreate()}
-                  className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-950/50 cursor-pointer"
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Plot</span>
@@ -768,7 +768,7 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
                   <div>
                     <button
                       onClick={() => handleOpenCreate(projectFilter !== 'All Projects' ? projectFilter : undefined)}
-                      className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow-md shadow-emerald-950/50 cursor-pointer"
+                      className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow-md cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       <span>
@@ -1109,13 +1109,13 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
         const dimensionStr = viewingPlot.dimension || viewingPlot.dimension_str || (viewingPlot.length_ft && viewingPlot.width_ft ? `${viewingPlot.length_ft} x ${viewingPlot.width_ft} Ft` : 'N/A');
 
         return (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl my-6 flex flex-col max-h-[92vh] shadow-2xl overflow-hidden">
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl my-6 flex flex-col max-h-[92vh] shadow-2xl overflow-hidden">
               {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4 flex-shrink-0">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex-shrink-0 bg-white dark:bg-slate-950/80">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-black text-white">{cleanPlotNum}</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">{cleanPlotNum}</h3>
                     <span
                       className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow ${
                         viewingPlot.status === 'Available'
@@ -1129,10 +1129,10 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <Building2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <Link
                       href={`/admin/projects/${viewingPlot.project_id}?tab=plots`}
-                      className="text-xs font-bold text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1"
+                      className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline flex items-center gap-1"
                     >
                       <span>Project: {projectName}</span>
                       <ExternalLink className="w-2.5 h-2.5" />
@@ -1142,7 +1142,7 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
 
                 <button
                   onClick={() => setIsViewModalOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-white rounded-lg bg-slate-800 transition cursor-pointer"
+                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg bg-slate-100 dark:bg-slate-800 transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1365,13 +1365,13 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
               </div>
 
               {/* Modal Footer with Actions */}
-              <div className="flex items-center justify-between border-t border-slate-800 px-6 py-4 flex-shrink-0 bg-slate-950/60">
+              <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 px-6 py-4 flex-shrink-0 bg-slate-50 dark:bg-slate-950/60">
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400 text-xs font-medium">Quick Status:</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">Quick Status:</span>
                   <select
                     value={viewingPlot.status}
                     onChange={(e) => handleQuickStatusChange(viewingPlot.id, e.target.value)}
-                    className="bg-slate-900 border border-slate-800 text-xs text-white rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer"
+                    className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs text-slate-900 dark:text-white rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer"
                   >
                     <option value="Available">Available</option>
                     <option value="Few Left">Few Left</option>
@@ -1386,14 +1386,14 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
                       setIsViewModalOpen(false);
                       handleOpenEdit(viewingPlot);
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition cursor-pointer"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-semibold text-xs transition cursor-pointer"
                   >
-                    <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
+                    <Edit3 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span>Edit Plot</span>
                   </button>
                   <button
                     onClick={() => setIsViewModalOpen(false)}
-                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-bold text-xs hover:from-emerald-500 hover:to-teal-400 transition cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition cursor-pointer shadow-sm"
                   >
                     Close
                   </button>

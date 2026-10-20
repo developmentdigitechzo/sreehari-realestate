@@ -14,7 +14,13 @@ import {
   Globe,
   UserCheck,
   PhoneCall,
-  MessageSquare
+  MessageSquare,
+  Calendar,
+  Clock,
+  Building2,
+  MapPin,
+  IndianRupee,
+  Car
 } from 'lucide-react';
 
 const LEAD_STATUS_OPTIONS = [
@@ -67,6 +73,9 @@ export default function AdminLeadsPage() {
     stage: 'New Lead' as any,
     priority: 'Cold' as any,
     assigned_to: 'Sales Team',
+    site_visit_date: '',
+    site_visit_time: '',
+    message: '',
     initial_note: ''
   });
 
@@ -83,11 +92,31 @@ export default function AdminLeadsPage() {
     budget: '',
     facing_preference: 'Any',
     source: 'Manual',
-    stage: 'New Lead' as any
+    stage: 'New Lead' as any,
+    site_visit_date: '',
+    site_visit_time: '',
+    message: ''
   });
 
   // New Note Form
   const [newNoteContent, setNewNoteContent] = useState('');
+
+  const formatLeadDate = (isoStr?: string) => {
+    if (!isoStr) return '—';
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      return d.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return isoStr;
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -139,18 +168,18 @@ export default function AdminLeadsPage() {
   const getStatusSelectStyle = (stage: string) => {
     const s = (stage || '').toLowerCase().trim();
     if (s.includes('registration') || s.includes('booking') || s.includes('agreement') || s.includes('loan') || s.includes('converted')) {
-      return 'bg-emerald-950 text-emerald-300 border-emerald-800';
+      return 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800';
     }
     if (s.includes('site') || s.includes('visit') || s.includes('negotiation')) {
-      return 'bg-purple-950 text-purple-300 border-purple-800';
+      return 'bg-purple-50 text-purple-800 border-purple-300 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800';
     }
     if (s.includes('matching') || s.includes('partner') || s.includes('shared') || s.includes('follow')) {
-      return 'bg-amber-950 text-amber-300 border-amber-800';
+      return 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800';
     }
     if (s.includes('lost') || s.includes('closed')) {
-      return 'bg-rose-950 text-rose-300 border-rose-800';
+      return 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800';
     }
-    return 'bg-indigo-950 text-indigo-300 border-indigo-800';
+    return 'bg-indigo-50 text-indigo-800 border-indigo-300 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800';
   };
 
   const handleCreateLead = async (e: React.FormEvent) => {
@@ -174,6 +203,9 @@ export default function AdminLeadsPage() {
         stage: 'New Lead',
         priority: 'Cold',
         assigned_to: 'Sales Team',
+        site_visit_date: '',
+        site_visit_time: '',
+        message: '',
         initial_note: ''
       });
       loadData();
@@ -196,7 +228,10 @@ export default function AdminLeadsPage() {
       budget: lead.budget || '',
       facing_preference: lead.facing_preference || 'Any',
       source: lead.source || 'Manual',
-      stage: (lead.stage || lead.status || 'New') as any
+      stage: (lead.stage || lead.status || 'New Lead') as any,
+      site_visit_date: lead.site_visit_date || '',
+      site_visit_time: lead.site_visit_time || '',
+      message: lead.message || ''
     });
   };
 
@@ -318,26 +353,26 @@ export default function AdminLeadsPage() {
 
     if (src.toLowerCase() === 'contact form' || (src.toLowerCase().includes('contact') && src.toLowerCase().includes('form'))) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-950 text-amber-300 border border-amber-800/60">
-          <Globe className="w-3 h-3 text-amber-400" />
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800/60">
+          <Globe className="w-3 h-3 text-amber-500 dark:text-amber-400" />
           <span>Contact Form</span>
         </span>
       );
     }
 
-    if (src.toLowerCase() === 'property form' || (src.toLowerCase().includes('property') && src.toLowerCase().includes('form'))) {
+    if (src.toLowerCase() === 'property form' || (src.toLowerCase().includes('property') && src.toLowerCase().includes('form')) || src.toLowerCase().includes('property detail')) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800/60">
-          <Globe className="w-3 h-3 text-emerald-400" />
-          <span>Property Form</span>
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800/60">
+          <Globe className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
+          <span>Property Page</span>
         </span>
       );
     }
 
     if (src.toLowerCase() === 'blog form' || (src.toLowerCase().includes('blog') && src.toLowerCase().includes('form'))) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-950 text-purple-300 border border-purple-800/60">
-          <Globe className="w-3 h-3 text-purple-400" />
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800/60">
+          <Globe className="w-3 h-3 text-purple-500 dark:text-purple-400" />
           <span>Blog Form</span>
         </span>
       );
@@ -345,8 +380,8 @@ export default function AdminLeadsPage() {
 
     if (src.toLowerCase().includes('website') || src.toLowerCase().includes('form')) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/60">
-          <Globe className="w-3 h-3 text-indigo-400" />
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800/60">
+          <Globe className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
           <span>{src.toLowerCase().includes('modal') ? 'Website Form' : src}</span>
         </span>
       );
@@ -354,8 +389,8 @@ export default function AdminLeadsPage() {
 
     if (src.toLowerCase().includes('whatsapp')) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800/60">
-          <MessageSquare className="w-3 h-3 text-emerald-400" />
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800/60">
+          <MessageSquare className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
           <span>WhatsApp Inquiry</span>
         </span>
       );
@@ -363,16 +398,16 @@ export default function AdminLeadsPage() {
 
     if (src.toLowerCase().includes('call') || src.toLowerCase().includes('phone')) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-950 text-blue-300 border border-blue-800/60">
-          <PhoneCall className="w-3 h-3 text-blue-400" />
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800/60">
+          <PhoneCall className="w-3 h-3 text-blue-500 dark:text-blue-400" />
           <span>Direct Call</span>
         </span>
       );
     }
 
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-950 text-teal-300 border border-teal-800/60">
-        <UserCheck className="w-3 h-3 text-teal-400" />
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-950 dark:text-teal-300 dark:border-teal-800/60">
+        <UserCheck className="w-3 h-3 text-slate-500 dark:text-teal-400" />
         <span>{src}</span>
       </span>
     );
@@ -381,19 +416,19 @@ export default function AdminLeadsPage() {
   return (
     <div className="p-8 space-y-6">
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 shadow-sm p-6 rounded-2xl dark:bg-slate-900 dark:border-slate-800">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide flex items-center gap-3">
-            <Users className="w-7 h-7 text-emerald-400" />
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-3">
+            <Users className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             <span>CRM Buyer Leads Management</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             Track customer plot enquiries through 15 real estate sales pipeline stages.
           </p>
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-950/50"
+          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-600/20"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Buyer Lead</span>
@@ -401,15 +436,15 @@ export default function AdminLeadsPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center gap-4">
+      <div className="bg-white border border-slate-200 shadow-sm p-4 rounded-xl flex flex-wrap items-center gap-4 dark:bg-slate-900 dark:border-slate-800">
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+          <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-3" />
           <input
             type="text"
             placeholder="Search by name, phone, email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 font-medium dark:bg-slate-950 dark:border-slate-800 dark:text-white dark:placeholder-slate-500"
           />
         </div>
 
@@ -417,7 +452,7 @@ export default function AdminLeadsPage() {
           <select
             value={selectedStage}
             onChange={(e) => setSelectedStage(e.target.value)}
-            className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 font-medium"
+            className="bg-slate-50 border border-slate-200 text-xs text-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 font-medium dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300"
           >
             {stagesList.map((stg) => (
               <option key={stg} value={stg}>
@@ -429,9 +464,24 @@ export default function AdminLeadsPage() {
 
         <div>
           <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="bg-slate-50 border border-slate-200 text-xs text-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 font-medium dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300"
+          >
+            <option value="All">All Projects</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name || p.title}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <select
             value={selectedPriority}
             onChange={(e) => setSelectedPriority(e.target.value)}
-            className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 font-medium"
+            className="bg-slate-50 border border-slate-200 text-xs text-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 font-medium dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300"
           >
             <option value="All">Priority / State: All</option>
             <option value="HOT">HOT Priority</option>
@@ -444,28 +494,30 @@ export default function AdminLeadsPage() {
       </div>
 
       {/* Leads Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm dark:bg-slate-900 dark:border-slate-800 dark:shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800">
+            <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 dark:bg-slate-950/80 dark:text-slate-400 dark:border-slate-800">
               <tr>
                 <th className="px-6 py-4">Customer Details</th>
+                <th className="px-6 py-4">Project & Budget</th>
+                <th className="px-6 py-4">Created & Site Visit</th>
                 <th className="px-6 py-4">Lead Source</th>
                 <th className="px-6 py-4">Lead Status (15 Pipeline Stages)</th>
                 <th className="px-6 py-4">Auto Priority</th>
                 <th className="px-6 py-4 text-center">Actions (View / Edit / Delete)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-slate-500">
+                  <td colSpan={7} className="text-center py-8 text-slate-500">
                     Loading CRM leads from PostgreSQL database...
                   </td>
                 </tr>
               ) : leads.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-slate-500">
+                  <td colSpan={7} className="text-center py-8 text-slate-500">
                     No leads found matching criteria.
                   </td>
                 </tr>
@@ -473,17 +525,43 @@ export default function AdminLeadsPage() {
                 leads.map((lead) => {
                   const currentStage = normalizeFrontendStage(lead.stage || lead.status);
                   const currentPriority = getPriorityForStatus(currentStage);
+                  const matchedProject = projects.find((p) => p.id === lead.project_id);
+                  const projectName = matchedProject?.name || matchedProject?.title || (lead as any).project_name || lead.project_interest || '—';
 
                   return (
-                    <tr key={lead.id} className="hover:bg-slate-800/40 transition-colors">
+                    <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40">
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-white text-sm">{lead.name}</div>
-                        <div className="text-slate-400 mt-0.5">{lead.phone}</div>
+                        <div className="font-bold text-slate-900 dark:text-white text-sm">{lead.name}</div>
+                        <div className="text-slate-500 dark:text-slate-400 mt-0.5 font-medium">{lead.phone}</div>
+                        {lead.email && <div className="text-slate-500 text-[11px] truncate max-w-[180px]">{lead.email}</div>}
                         {(lead.plot_name || lead.plot_id) && (
                           <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                            <span className="px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-[10px] font-semibold">
+                            <span className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold dark:bg-emerald-950/80 dark:border-emerald-800/60 dark:text-emerald-300">
                               Plot: {lead.plot_name || lead.plot_id}
                             </span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
+                          <Building2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="truncate max-w-[160px]">{projectName}</span>
+                        </div>
+                        {lead.budget && (
+                          <div className="mt-1 flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-300">
+                            <IndianRupee className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                            <span>{lead.budget}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-slate-600 dark:text-slate-300 text-[11px] font-medium">
+                          {formatLeadDate(lead.created_at)}
+                        </div>
+                        {lead.site_visit_date && (
+                          <div className="mt-1 flex items-center gap-1 text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 w-fit dark:bg-purple-950/80 dark:text-purple-300 dark:border-purple-800/60">
+                            <Calendar className="w-3 h-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                            <span>{lead.site_visit_date} {lead.site_visit_time ? `(${lead.site_visit_time})` : ''}</span>
                           </div>
                         )}
                       </td>
@@ -507,14 +585,14 @@ export default function AdminLeadsPage() {
                         <span
                           className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
                             currentPriority === 'COMPLETED'
-                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800/60'
                               : currentPriority.includes('CLOSED') || currentPriority.includes('LOST')
-                              ? 'bg-rose-950 text-rose-300 border border-rose-800/60'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800/60'
                               : currentPriority === 'HOT'
-                              ? 'bg-rose-950 text-rose-300 border border-rose-800/60'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800/60'
                               : currentPriority === 'WARM'
-                              ? 'bg-amber-950 text-amber-300 border border-amber-800/60'
-                              : 'bg-slate-800 text-slate-400 border border-slate-700'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800/60'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
                           }`}
                         >
                           {currentPriority}
@@ -524,7 +602,7 @@ export default function AdminLeadsPage() {
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => setSelectedLeadForDetail(lead)}
-                            className="p-2 rounded-lg bg-blue-950 text-blue-300 border border-blue-800/60 hover:bg-blue-900 transition-colors flex items-center gap-1 text-xs font-semibold"
+                            className="p-2 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800/60 dark:hover:bg-blue-900 transition-colors flex items-center gap-1 text-xs font-bold shadow-sm"
                             title="View Lead Details & Notes"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -533,7 +611,7 @@ export default function AdminLeadsPage() {
 
                           <button
                             onClick={() => handleOpenEdit(lead)}
-                            className="p-2 rounded-lg bg-amber-950 text-amber-300 border border-amber-800/60 hover:bg-amber-900 transition-colors flex items-center gap-1 text-xs font-semibold"
+                            className="p-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800/60 dark:hover:bg-amber-900 transition-colors flex items-center gap-1 text-xs font-bold shadow-sm"
                             title="Edit Lead Information"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -542,7 +620,7 @@ export default function AdminLeadsPage() {
 
                           <button
                             onClick={() => handleDeleteLead(lead.id, lead.name)}
-                            className="p-2 rounded-lg bg-rose-950 text-rose-300 border border-rose-800/60 hover:bg-rose-900 transition-colors flex items-center gap-1 text-xs font-semibold"
+                            className="p-2 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800/60 dark:hover:bg-rose-900 transition-colors flex items-center gap-1 text-xs font-bold shadow-sm"
                             title="Delete Lead from PostgreSQL"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -562,10 +640,10 @@ export default function AdminLeadsPage() {
       {/* Add Lead Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-lg font-bold text-white">Add New Buyer Lead</h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-white">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Add New Buyer Lead</h3>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -573,17 +651,17 @@ export default function AdminLeadsPage() {
             <form onSubmit={handleCreateLead} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Customer Name *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Customer Name *</label>
                   <input
                     type="text"
                     required
                     value={newLead.name}
                     onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Phone Number * (10 Digits)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Phone Number * (10 Digits)</label>
                   <input
                     type="tel"
                     required
@@ -591,32 +669,88 @@ export default function AdminLeadsPage() {
                     placeholder="10-digit number"
                     value={newLead.phone}
                     onChange={(e) => setNewLead({ ...newLead, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Lead Source</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="customer@example.com"
+                    value={newLead.email}
+                    onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Project Name</label>
+                  <select
+                    value={newLead.project_id}
+                    onChange={(e) => setNewLead({ ...newLead, project_id: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 dark:bg-slate-950 dark:border-slate-800 dark:text-white font-medium"
+                  >
+                    <option value="">Select Project</option>
+                    {projects.map((p) => {
+                      const pName = p.name || p.title || 'Project';
+                      const pLoc = p.location_area || p.location_city || p.location;
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {pName} {pLoc ? `(${pLoc})` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Preferred Budget</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. ₹25 Lakhs - ₹40 Lakhs"
+                    value={newLead.budget}
+                    onChange={(e) => setNewLead({ ...newLead, budget: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Preferred Plot Size</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 1200 sq.ft / 1500 sq.ft"
+                    value={newLead.preferred_plot_size}
+                    onChange={(e) => setNewLead({ ...newLead, preferred_plot_size: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Lead Source</label>
                   <select
                     value={newLead.source}
                     onChange={(e) => setNewLead({ ...newLead, source: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-semibold text-emerald-400"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 font-semibold dark:bg-slate-950 dark:border-slate-800 dark:text-emerald-400"
                   >
                     <option value="Manual">Manual (Added from CRM)</option>
                     <option value="Website Contact Form">Website Contact Form</option>
+                    <option value="Property Detail Page">Property Detail Page</option>
                     <option value="Direct Call">Direct Call</option>
                     <option value="WhatsApp Click">WhatsApp Click</option>
                     <option value="Referral">Referral</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Lead Status</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Lead Status</label>
                   <select
                     value={newLead.stage}
                     onChange={(e) => setNewLead({ ...newLead, stage: e.target.value as any })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 font-semibold dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                   >
                     {LEAD_STATUS_OPTIONS.map((stg, idx) => (
                       <option key={stg} value={stg}>
@@ -627,16 +761,48 @@ export default function AdminLeadsPage() {
                 </div>
               </div>
 
+              {/* Site Visit Scheduling */}
+              <div className="p-3.5 bg-purple-50/60 border border-purple-200/80 rounded-xl space-y-3 dark:bg-slate-950/80 dark:border-slate-800">
+                <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Site Visit & Cab Pickup Details</span>
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1 text-[11px]">Visit Date</label>
+                    <input
+                      type="date"
+                      value={newLead.site_visit_date}
+                      onChange={(e) => setNewLead({ ...newLead, site_visit_date: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1 text-[11px]">Time Slot</label>
+                    <select
+                      value={newLead.site_visit_time}
+                      onChange={(e) => setNewLead({ ...newLead, site_visit_time: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
+                    >
+                      <option value="">Select Time Slot</option>
+                      <option value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</option>
+                      <option value="Afternoon (12 PM - 3 PM)">Afternoon (12 PM - 3 PM)</option>
+                      <option value="Evening (3 PM - 6 PM)">Evening (3 PM - 6 PM)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               {/* Plot Information */}
-              <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Plot Details</span>
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3 dark:bg-slate-950/80 dark:border-slate-800">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2">
+                  <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Plot Details</span>
                   <span className="text-[10px] text-slate-500 font-medium">Plot Info</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1 text-[11px]">
                       Plot ID
                     </label>
                     <input
@@ -644,11 +810,11 @@ export default function AdminLeadsPage() {
                       placeholder="e.g. plot-104 or #04"
                       value={newLead.plot_id}
                       onChange={(e) => setNewLead({ ...newLead, plot_id: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white placeholder-slate-600 text-xs"
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1 text-[11px]">
                       Plot Name
                     </label>
                     <input
@@ -656,13 +822,13 @@ export default function AdminLeadsPage() {
                       placeholder="e.g. Plot #04 - East Corner"
                       value={newLead.plot_name}
                       onChange={(e) => setNewLead({ ...newLead, plot_name: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white placeholder-slate-600 text-xs"
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1 text-[11px]">
                     Plot Description
                   </label>
                   <input
@@ -670,33 +836,44 @@ export default function AdminLeadsPage() {
                     placeholder="e.g. 40x60 Ft South facing corner plot near park entrance"
                     value={newLead.plot_description}
                     onChange={(e) => setNewLead({ ...newLead, plot_description: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white placeholder-slate-600 text-xs"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Initial Note</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Customer Requirements / Message</label>
                 <textarea
-                  rows={3}
-                  value={newLead.initial_note}
-                  onChange={(e) => setNewLead({ ...newLead, initial_note: e.target.value })}
-                  placeholder="Notes about customer plot requirements..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                  rows={2}
+                  value={newLead.message}
+                  onChange={(e) => setNewLead({ ...newLead, message: e.target.value })}
+                  placeholder="Customer requirements or specific needs..."
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Initial Note</label>
+                <textarea
+                  rows={2}
+                  value={newLead.initial_note}
+                  onChange={(e) => setNewLead({ ...newLead, initial_note: e.target.value })}
+                  placeholder="Internal notes about lead..."
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-500"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-500 shadow-md shadow-emerald-600/20"
                 >
                   Save Lead to PostgreSQL
                 </button>
@@ -709,13 +886,13 @@ export default function AdminLeadsPage() {
       {/* EDIT LEAD MODAL */}
       {editingLead && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-amber-400" />
+          <div className="bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-amber-500 dark:text-amber-400" />
                 <span>Edit Lead Details</span>
               </h3>
-              <button onClick={() => setEditingLead(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setEditingLead(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -723,17 +900,17 @@ export default function AdminLeadsPage() {
             <form onSubmit={handleUpdateEdit} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Customer Name *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Customer Name *</label>
                   <input
                     type="text"
                     required
                     value={editForm.name}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Phone Number * (10 Digits)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Phone Number * (10 Digits)</label>
                   <input
                     type="tel"
                     required
@@ -741,18 +918,73 @@ export default function AdminLeadsPage() {
                     placeholder="10-digit number"
                     value={editForm.phone}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Lead Source</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="customer@example.com"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Project Name</label>
+                  <select
+                    value={editForm.project_id}
+                    onChange={(e) => setEditForm({ ...editForm, project_id: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white font-medium"
+                  >
+                    <option value="">Select Project</option>
+                    {projects.map((p) => {
+                      const pName = p.name || p.title || 'Project';
+                      const pLoc = p.location_area || p.location_city || p.location;
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {pName} {pLoc ? `(${pLoc})` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Preferred Budget</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. ₹25 Lakhs - ₹40 Lakhs"
+                    value={editForm.budget}
+                    onChange={(e) => setEditForm({ ...editForm, budget: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Preferred Plot Size</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 1200 sq.ft / 1500 sq.ft"
+                    value={editForm.preferred_plot_size}
+                    onChange={(e) => setEditForm({ ...editForm, preferred_plot_size: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Lead Source</label>
                   <select
                     value={editForm.source}
                     onChange={(e) => setEditForm({ ...editForm, source: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-semibold text-emerald-400"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 text-emerald-600 dark:text-emerald-400 dark:bg-slate-950 dark:border-slate-800 font-semibold"
                   >
                     <option value="Manual">Manual (Added from CRM)</option>
                     <option value="Website Contact Form">Website Contact Form</option>
@@ -762,11 +994,11 @@ export default function AdminLeadsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Status</label>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Status</label>
                   <select
                     value={editForm.stage}
                     onChange={(e) => setEditForm({ ...editForm, stage: e.target.value as any })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-semibold"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white font-semibold"
                   >
                     {LEAD_STATUS_OPTIONS.map((stg, idx) => (
                       <option key={stg} value={stg}>
@@ -777,16 +1009,48 @@ export default function AdminLeadsPage() {
                 </div>
               </div>
 
+              {/* Site Visit Scheduling */}
+              <div className="p-3 bg-purple-50/70 border border-purple-200 dark:bg-purple-950/40 dark:border-purple-800/60 rounded-xl space-y-2">
+                <span className="text-[11px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Site Visit Scheduling</span>
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1 text-[11px]">Visit Date</label>
+                    <input
+                      type="date"
+                      value={editForm.site_visit_date}
+                      onChange={(e) => setEditForm({ ...editForm, site_visit_date: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1 text-[11px]">Time Slot</label>
+                    <select
+                      value={editForm.site_visit_time}
+                      onChange={(e) => setEditForm({ ...editForm, site_visit_time: e.target.value })}
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
+                    >
+                      <option value="">Select Time Slot</option>
+                      <option value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</option>
+                      <option value="Afternoon (12 PM - 3 PM)">Afternoon (12 PM - 3 PM)</option>
+                      <option value="Evening (3 PM - 6 PM)">Evening (3 PM - 6 PM)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               {/* Plot Information */}
-              <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                  <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Plot Details</span>
+              <div className="p-3.5 bg-slate-50 border border-slate-200 dark:bg-slate-950/80 dark:border-slate-800 rounded-xl space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-2">
+                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Plot Details</span>
                   <span className="text-[10px] text-slate-500 font-medium">Plot Info</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1 text-[11px]">
                       Plot ID
                     </label>
                     <input
@@ -794,11 +1058,11 @@ export default function AdminLeadsPage() {
                       placeholder="e.g. plot-104 or #04"
                       value={editForm.plot_id}
                       onChange={(e) => setEditForm({ ...editForm, plot_id: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white placeholder-slate-600 text-xs"
+                      className="w-full bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1 text-[11px]">
                       Plot Name
                     </label>
                     <input
@@ -806,13 +1070,13 @@ export default function AdminLeadsPage() {
                       placeholder="e.g. Plot #04 - East Corner"
                       value={editForm.plot_name}
                       onChange={(e) => setEditForm({ ...editForm, plot_name: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white placeholder-slate-600 text-xs"
+                      className="w-full bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-xs"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1 text-[11px]">
                     Plot Description
                   </label>
                   <input
@@ -820,22 +1084,33 @@ export default function AdminLeadsPage() {
                     placeholder="e.g. 40x60 Ft South facing corner plot near park entrance"
                     value={editForm.plot_description}
                     onChange={(e) => setEditForm({ ...editForm, plot_description: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-white placeholder-slate-600 text-xs"
+                    className="w-full bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 text-xs"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3">
+              <div>
+                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Customer Requirements / Message</label>
+                <textarea
+                  rows={2}
+                  value={editForm.message}
+                  onChange={(e) => setEditForm({ ...editForm, message: e.target.value })}
+                  placeholder="Customer requirements or specific needs..."
+                  className="w-full bg-white border border-slate-200 dark:bg-slate-950 dark:border-slate-800 rounded-lg p-2 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setEditingLead(null)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-500"
+                  className="px-4 py-2 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-500 shadow-md shadow-amber-600/20"
                 >
                   Save Changes
                 </button>
@@ -848,36 +1123,113 @@ export default function AdminLeadsPage() {
       {/* VIEW LEAD DETAILS MODAL */}
       {selectedLeadForDetail && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="bg-white border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
               <div>
-                <h3 className="text-xl font-bold text-white">{selectedLeadForDetail.name}</h3>
-                <p className="text-xs text-slate-400 mt-1">{selectedLeadForDetail.phone} • {selectedLeadForDetail.email || 'No Email'}</p>
-                <div className="mt-2">{renderSourceBadge(selectedLeadForDetail.source)}</div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedLeadForDetail.name}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{selectedLeadForDetail.phone} • {selectedLeadForDetail.email || 'No Email'}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {renderSourceBadge(selectedLeadForDetail.source)}
+                  <span className="text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:text-slate-400 dark:bg-slate-950 dark:border-slate-800">
+                    Created: <strong className="text-slate-800 dark:text-slate-200">{formatLeadDate(selectedLeadForDetail.created_at)}</strong>
+                  </span>
+                </div>
               </div>
-              <button onClick={() => setSelectedLeadForDetail(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setSelectedLeadForDetail(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
+            {/* Project & Budget Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="p-3.5 bg-slate-50 border border-slate-200 dark:bg-slate-950 dark:border-slate-800 rounded-xl text-xs space-y-1.5">
+                <div className="font-bold text-emerald-700 dark:text-emerald-400 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>Project & Location</span>
+                </div>
+                <p className="text-slate-900 dark:text-white font-medium text-sm">
+                  {(() => {
+                    const mp = projects.find((p) => p.id === selectedLeadForDetail.project_id);
+                    return mp?.name || mp?.title || (selectedLeadForDetail as any).project_name || selectedLeadForDetail.project_interest || 'General Real Estate Enquiry';
+                  })()}
+                </p>
+                {(() => {
+                  const mp = projects.find((p) => p.id === selectedLeadForDetail.project_id);
+                  const loc = mp?.location_area || mp?.location_city || mp?.location;
+                  return loc ? (
+                    <p className="text-slate-600 dark:text-slate-400 flex items-center gap-1 text-[11px]">
+                      <MapPin className="w-3 h-3 text-slate-400 dark:text-slate-500" />
+                      <span>{loc}</span>
+                    </p>
+                  ) : null;
+                })()}
+              </div>
+
+              <div className="p-3.5 bg-slate-50 border border-slate-200 dark:bg-slate-950 dark:border-slate-800 rounded-xl text-xs space-y-1.5">
+                <div className="font-bold text-amber-700 dark:text-amber-400 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                  <IndianRupee className="w-3.5 h-3.5" />
+                  <span>Budget & Preferences</span>
+                </div>
+                <p className="text-slate-700 dark:text-slate-200">
+                  <span className="text-slate-500 font-semibold">Budget: </span>
+                  <strong className="text-amber-600 dark:text-amber-300 font-bold">{selectedLeadForDetail.budget || 'Not specified'}</strong>
+                </p>
+                <p className="text-slate-700 dark:text-slate-200">
+                  <span className="text-slate-500 font-semibold">Preferred Size: </span>
+                  <span>{selectedLeadForDetail.preferred_plot_size || 'Not specified'}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Scheduled Site Visit */}
+            {selectedLeadForDetail.site_visit_date && (
+              <div className="p-3.5 bg-purple-50 border border-purple-200 dark:bg-purple-950/40 dark:border-purple-800/60 rounded-xl text-xs space-y-2">
+                <div className="font-bold text-purple-700 dark:text-purple-300 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>Scheduled Site Visit</span>
+                </div>
+                <p className="text-slate-900 dark:text-white text-sm font-semibold flex items-center gap-2">
+                  <span>Date: {selectedLeadForDetail.site_visit_date}</span>
+                  {selectedLeadForDetail.site_visit_time && (
+                    <span className="text-purple-700 dark:text-purple-300 font-normal flex items-center gap-1 text-xs">
+                      <Clock className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      <span>{selectedLeadForDetail.site_visit_time}</span>
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {/* Customer Message / Requirements */}
+            {selectedLeadForDetail.message && (
+              <div className="p-3.5 bg-slate-50 border border-slate-200 dark:bg-slate-950 dark:border-slate-800 rounded-xl text-xs space-y-1">
+                <div className="font-bold text-slate-700 dark:text-slate-400 text-[11px] uppercase tracking-wider">
+                  Customer Requirements / Message
+                </div>
+                <p className="text-slate-800 dark:text-slate-200 leading-relaxed italic bg-white dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800/80">
+                  &ldquo;{selectedLeadForDetail.message}&rdquo;
+                </p>
+              </div>
+            )}
+
             {(selectedLeadForDetail.plot_id || selectedLeadForDetail.plot_name || selectedLeadForDetail.plot_description) && (
-              <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs space-y-1.5">
-                <div className="font-bold text-emerald-400 text-[11px] uppercase tracking-wider">Associated Plot Details</div>
+              <div className="p-3.5 bg-slate-50 border border-slate-200 dark:bg-slate-950 dark:border-slate-800 rounded-xl text-xs space-y-1.5">
+                <div className="font-bold text-emerald-700 dark:text-emerald-400 text-[11px] uppercase tracking-wider">Associated Plot Details</div>
                 {selectedLeadForDetail.plot_id && (
-                  <p className="text-slate-300"><span className="text-slate-500 font-semibold">Plot ID:</span> {selectedLeadForDetail.plot_id}</p>
+                  <p className="text-slate-700 dark:text-slate-300"><span className="text-slate-500 font-semibold">Plot ID:</span> {selectedLeadForDetail.plot_id}</p>
                 )}
                 {selectedLeadForDetail.plot_name && (
-                  <p className="text-slate-300"><span className="text-slate-500 font-semibold">Plot Name:</span> {selectedLeadForDetail.plot_name}</p>
+                  <p className="text-slate-700 dark:text-slate-300"><span className="text-slate-500 font-semibold">Plot Name:</span> {selectedLeadForDetail.plot_name}</p>
                 )}
                 {selectedLeadForDetail.plot_description && (
-                  <p className="text-slate-400 text-[11px]"><span className="text-slate-500 font-semibold">Plot Description:</span> {selectedLeadForDetail.plot_description}</p>
+                  <p className="text-slate-600 dark:text-slate-400 text-[11px]"><span className="text-slate-500 font-semibold">Plot Description:</span> {selectedLeadForDetail.plot_description}</p>
                 )}
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Change Lead Status (15 Stages)</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs max-h-52 overflow-y-auto p-2 border border-slate-800/80 rounded-xl bg-slate-950/60">
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Change Lead Status (15 Stages)</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-xs max-h-52 overflow-y-auto p-2 border border-slate-200 dark:border-slate-800/80 rounded-xl bg-slate-50 dark:bg-slate-950/60">
                 {LEAD_STATUS_OPTIONS.map((stg, idx) => {
                   const isActive = (selectedLeadForDetail.stage || selectedLeadForDetail.status) === stg;
                   return (
@@ -887,7 +1239,7 @@ export default function AdminLeadsPage() {
                       className={`p-2 rounded-lg border font-bold text-center text-[10px] transition-all ${
                         isActive
                           ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
+                          : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
                       }`}
                     >
                       {idx + 1}. {stg}
@@ -898,8 +1250,8 @@ export default function AdminLeadsPage() {
             </div>
 
             {/* Timeline Notes */}
-            <div className="space-y-4 pt-4 border-t border-slate-800">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Follow-up Notes</h4>
+            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Follow-up Notes</h4>
 
               <div className="flex gap-2">
                 <input
@@ -907,7 +1259,7 @@ export default function AdminLeadsPage() {
                   placeholder="Type follow-up note..."
                   value={newNoteContent}
                   onChange={(e) => setNewNoteContent(e.target.value)}
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white"
+                  className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 dark:bg-slate-950 dark:border-slate-800 dark:text-white"
                 />
                 <button
                   onClick={() => handleAddNote(selectedLeadForDetail.id)}
@@ -919,18 +1271,18 @@ export default function AdminLeadsPage() {
 
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {selectedLeadForDetail.notes?.map((n) => (
-                  <div key={n.id} className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
-                    <p className="text-slate-200">{n.content}</p>
+                  <div key={n.id} className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs dark:bg-slate-950 dark:border-slate-800">
+                    <p className="text-slate-800 dark:text-slate-200">{n.content}</p>
                     <p className="text-[10px] text-slate-500 mt-1">{new Date(n.created_at).toLocaleString('en-IN')} by {n.created_by}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800 flex justify-end">
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end">
               <button
                 onClick={() => handleDeleteLead(selectedLeadForDetail.id, selectedLeadForDetail.name)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-950 text-rose-300 border border-rose-800 text-xs font-semibold"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800 text-xs font-semibold"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>Delete Lead</span>

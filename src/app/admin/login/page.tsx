@@ -14,9 +14,17 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
+  const [brandLogo, setBrandLogo] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState('Sree Hari Realty Promoters');
 
   useEffect(() => {
     setThemeMode(getCrmThemeMode());
+    api.getSettings()
+      .then((res) => {
+        if (res?.data?.logo_url) setBrandLogo(res.data.logo_url);
+        if (res?.data?.company_name) setCompanyName(res.data.company_name);
+      })
+      .catch(() => null);
   }, []);
 
   useEffect(() => {
@@ -61,11 +69,23 @@ export default function AdminLoginPage() {
     <div data-admin-theme={themeMode} className="flex min-h-screen items-center justify-center bg-slate-950 p-6 transition-colors duration-200">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-xl shadow-emerald-950/60 mb-4">
-            S
-          </div>
+          {brandLogo ? (
+            <div className="w-16 h-16 rounded-2xl bg-white border border-slate-700/60 p-2 flex items-center justify-center mx-auto shadow-xl shadow-emerald-950/40 mb-4 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={brandLogo}
+                alt="Brand Logo"
+                className="max-h-full max-w-full object-contain"
+                onError={() => setBrandLogo(null)}
+              />
+            </div>
+          ) : (
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-3xl mx-auto shadow-xl shadow-emerald-950/60 mb-4">
+              {companyName.charAt(0) || 'S'}
+            </div>
+          )}
           <h1 className="text-2xl font-bold text-white tracking-wide">
-            Sree Hari Realty Promoters
+            {companyName}
           </h1>
           <p className="text-xs text-emerald-400 font-semibold uppercase tracking-widest mt-1">
             Staff CRM Executive Portal

@@ -284,11 +284,11 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
     if (db.isPostgres()) {
       try {
         await db.query(
-          `INSERT INTO leads (id, project_id, name, phone, email, preferred_plot_size, message, source, status, stage, priority, admin_notes, notes, plot_id, plot_name, plot_description, budget, facing_preference, assigned_to)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);`,
+          `INSERT INTO leads (id, project_id, name, phone, email, preferred_plot_size, message, source, status, stage, priority, admin_notes, notes, plot_id, plot_name, plot_description, budget, facing_preference, assigned_to, site_visit_date)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20);`,
           [
             newLead.id,
-            newLead.project_id,
+            newLead.project_id || null,
             newLead.name,
             newLead.phone,
             newLead.email,
@@ -305,7 +305,8 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
             newLead.plot_description,
             newLead.budget,
             newLead.facing_preference,
-            newLead.assigned_to
+            newLead.assigned_to,
+            newLead.site_visit_date || null
           ]
         );
       } catch (pgErr: any) {
@@ -388,7 +389,12 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
     if (db.isPostgres()) {
       try {
         await db.query(
-          `UPDATE leads SET name=$1, phone=$2, email=$3, source=$4, status=$5, stage=$6, priority=$7, plot_id=$8, plot_name=$9, plot_description=$10, budget=$11, facing_preference=$12, assigned_to=$13, updated_at=CURRENT_TIMESTAMP WHERE id=$14;`,
+          `UPDATE leads SET 
+            name=$1, phone=$2, email=$3, source=$4, status=$5, stage=$6, priority=$7, 
+            plot_id=$8, plot_name=$9, plot_description=$10, budget=$11, facing_preference=$12, 
+            assigned_to=$13, project_id=$14, site_visit_date=$15, message=$16, preferred_plot_size=$17, 
+            updated_at=CURRENT_TIMESTAMP 
+          WHERE id=$18;`,
           [
             updated.name,
             updated.phone,
@@ -403,6 +409,10 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
             updated.budget,
             updated.facing_preference,
             updated.assigned_to,
+            updated.project_id || null,
+            updated.site_visit_date || null,
+            updated.message || '',
+            updated.preferred_plot_size || '',
             id
           ]
         );

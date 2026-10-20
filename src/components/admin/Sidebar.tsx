@@ -16,19 +16,18 @@ import {
   Newspaper,
   Megaphone,
   ShieldCheck,
-  Sun,
-  Moon
+  X
 } from 'lucide-react';
 
-import { applyCrmTheme, getContrastTextColor, CrmThemeMode, getCrmThemeMode, setCrmThemeMode } from '@/lib/theme';
+import { applyCrmTheme, getContrastTextColor } from '@/lib/theme';
 
 interface SidebarProps {
   userEmail?: string;
   username?: string;
   role?: string;
   permissions?: string[];
-  currentThemeMode?: CrmThemeMode;
-  onToggleThemeMode?: (mode: CrmThemeMode) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export default function Sidebar({
@@ -36,8 +35,8 @@ export default function Sidebar({
   username,
   role,
   permissions = ['ALL'],
-  currentThemeMode,
-  onToggleThemeMode
+  isOpen = false,
+  onClose
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -45,30 +44,6 @@ export default function Sidebar({
   const [brandLogo, setBrandLogo] = useState<string | null>(null);
   const [brandName, setBrandName] = useState<string>('Sree Hari Realty');
   const [primaryColor, setPrimaryColor] = useState<string>('#10b981');
-  const [themeMode, setThemeMode] = useState<CrmThemeMode>(currentThemeMode || getCrmThemeMode());
-
-  useEffect(() => {
-    if (currentThemeMode) setThemeMode(currentThemeMode);
-  }, [currentThemeMode]);
-
-  useEffect(() => {
-    const handleThemeChange = (e: any) => {
-      if (e.detail?.mode) setThemeMode(e.detail.mode);
-    };
-    window.addEventListener('crmThemeModeChanged', handleThemeChange);
-    return () => window.removeEventListener('crmThemeModeChanged', handleThemeChange);
-  }, []);
-
-  const handleToggleTheme = () => {
-    const nextMode: CrmThemeMode = themeMode === 'light' ? 'dark' : 'light';
-    setThemeMode(nextMode);
-    if (onToggleThemeMode) {
-      onToggleThemeMode(nextMode);
-    } else {
-      setCrmThemeMode(nextMode);
-      api.updateSettings({ theme_mode: nextMode }).catch(() => null);
-    }
-  };
 
   useEffect(() => {
     loadBrandSettings();
@@ -151,41 +126,69 @@ export default function Sidebar({
   const contrastText = getContrastTextColor(primaryColor);
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 text-slate-300 flex flex-col justify-between shrink-0 h-screen sticky top-0">
-      <div>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Main Responsive Sidebar Drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 text-slate-300 flex flex-col justify-between shrink-0 h-screen lg:h-full lg:sticky lg:top-0 transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        }`}
+      >
         {/* Header with Dynamic Logo & Brand Name */}
-        <div className="p-6 border-b border-slate-800/80 flex items-center gap-3">
-          {brandLogo ? (
-            <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-lg">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={brandLogo}
-                alt="Brand Logo"
-                className="max-h-full max-w-full object-contain"
-                onError={() => setBrandLogo(null)}
-              />
+        <div className="p-5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            {brandLogo ? (
+              <div className="w-10 h-10 rounded-xl bg-white border border-slate-700/60 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-md">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={brandLogo}
+                  alt="Brand Logo"
+                  className="max-h-full max-w-full object-contain"
+                  onError={() => setBrandLogo(null)}
+                />
+              </div>
+            ) : (
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg shrink-0 transition-all duration-200"
+                style={{ backgroundColor: primaryColor, color: contrastText }}
+              >
+                {brandName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="truncate">
+              <h1 className="font-bold text-white text-base leading-tight tracking-wide truncate">
+                {brandName}
+              </h1>
+              <p className="text-xs font-semibold tracking-wider uppercase mt-0.5 transition-colors duration-200" style={{ color: primaryColor }}>
+                Admin CRM Suite
+              </p>
             </div>
-          ) : (
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg shrink-0 transition-all duration-200"
-              style={{ backgroundColor: primaryColor, color: contrastText }}
-            >
-              {brandName.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div className="truncate">
-            <h1 className="font-bold text-white text-base leading-tight tracking-wide truncate">
-              {brandName}
-            </h1>
-            <p className="text-xs font-semibold tracking-wider uppercase mt-0.5 transition-colors duration-200" style={{ color: primaryColor }}>
-              Admin CRM Suite
-            </p>
           </div>
+
+          {/* Close button for mobile drawer */}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 lg:hidden transition-colors cursor-pointer"
+              aria-label="Close navigation"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-1.5">
-          <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        {/* Scrollable Navigation Area (Hidden scrollbar) */}
+        <nav className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden min-h-0 p-3 space-y-1">
+          <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Staff CRM Navigation ({visibleNavItems.length} Modules)
           </div>
           {visibleNavItems.map((item) => {
@@ -195,8 +198,11 @@ export default function Sidebar({
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => {
+                  if (onClose) onClose();
+                }}
                 style={isActive ? { backgroundColor: primaryColor, color: contrastText } : {}}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? 'shadow-md shadow-slate-950/40 font-bold'
                     : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
@@ -208,50 +214,34 @@ export default function Sidebar({
             );
           })}
         </nav>
-      </div>
 
-      {/* Footer Theme Toggle, Profile & Logout */}
-      <div className="p-4 border-t border-slate-800/80 bg-slate-950/40 space-y-2.5">
-        {/* Quick Theme Mode Toggle Button */}
-        <button
-          type="button"
-          onClick={handleToggleTheme}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border border-slate-800 bg-slate-900/80 hover:bg-slate-800/80 transition-all text-slate-300 group cursor-pointer"
-          title={`Currently ${themeMode === 'light' ? 'Light Theme (Default)' : 'Dark Theme'}. Click to toggle.`}
-        >
-          <div className="flex items-center gap-2">
-            {themeMode === 'light' ? (
-              <Sun className="w-4 h-4 text-amber-500 shrink-0" />
-            ) : (
-              <Moon className="w-4 h-4 text-indigo-400 shrink-0" />
-            )}
-            <span className="font-semibold text-xs">
-              {themeMode === 'light' ? 'Light Theme' : 'Dark Theme'}
-            </span>
-          </div>
-          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 group-hover:text-slate-200 transition-colors">
-            {themeMode === 'light' ? 'Dark' : 'Light'}
-          </span>
-        </button>
-
-        <div className="flex items-center justify-between gap-2 px-1">
-          <div className="truncate">
-            <p className="text-xs font-semibold text-slate-200 truncate">
-              {username || userEmail || 'Staff Member'}
-            </p>
-            <p className="text-[10px] font-mono truncate transition-colors duration-200" style={{ color: primaryColor }}>
-              {role || 'Verified Staff Account'}
-            </p>
+        {/* Footer Profile & Logout - Matching User Reference Image */}
+        <div className="p-3 border-t border-slate-800/80 shrink-0 bg-slate-950/40">
+          <div className="flex items-center justify-between gap-2.5 p-2 rounded-2xl bg-slate-950/90 border border-slate-800/80 shadow-md">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center font-black text-white text-base shrink-0 shadow-sm">
+                {(username || 'A').charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 truncate">
+                <p className="text-sm font-bold text-white truncate leading-tight">
+                  {username || 'Admin'}
+                </p>
+                <p className="text-[11px] text-slate-400 truncate leading-tight mt-0.5 font-medium">
+                  {userEmail || 'admin@sreeharirealty.com'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              title="Logout from CRM"
+              className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:bg-rose-950/70 hover:border-rose-800/80 text-rose-400 hover:text-rose-200 transition-all flex items-center justify-center shrink-0 cursor-pointer shadow-sm"
+              aria-label="Logout CRM"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-rose-400 bg-rose-950/30 border border-rose-900/40 hover:bg-rose-900/40 hover:text-rose-200 transition-colors"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          <span>Logout CRM</span>
-        </button>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

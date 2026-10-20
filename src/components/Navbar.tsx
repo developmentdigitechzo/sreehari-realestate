@@ -175,7 +175,7 @@ export default function Navbar() {
     </div>
 
     {/* Header spacer to prevent content underneath fixed header */}
-    <div className="h-[96px] sm:h-[105px] w-full" aria-hidden="true" />
+    <div className="h-[120px] sm:h-[132px] md:h-[138px] w-full" aria-hidden="true" />
 
     <EnquiryModal
       isOpen={isEnquiryOpen}
