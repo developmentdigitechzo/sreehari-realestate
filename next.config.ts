@@ -13,12 +13,12 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "giving-amethyst-anteater.172-235-18-108.cpanel.site",
+        hostname: "sreeharirealty.com",
         pathname: "/**",
       },
       {
-        protocol: "http",
-        hostname: "giving-amethyst-anteater.172-235-18-108.cpanel.site",
+        protocol: "https",
+        hostname: "www.sreeharirealty.com",
         pathname: "/**",
       },
       {

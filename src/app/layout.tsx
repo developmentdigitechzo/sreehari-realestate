@@ -3,7 +3,7 @@ import React from 'react';
 import './globals.css';
 import LayoutWrapper from '@/components/LayoutWrapper';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://giving-amethyst-anteater.172-235-18-108.cpanel.site';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://sreeharirealty.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

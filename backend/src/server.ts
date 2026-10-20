@@ -29,8 +29,10 @@ const envOrigins = (process.env.CORS_ORIGIN || '')
   .filter(Boolean);
 
 const defaultAllowedOrigins = [
-  'https://giving-amethyst-anteater.172-235-18-108.cpanel.site',
-  'http://giving-amethyst-anteater.172-235-18-108.cpanel.site',
+  'https://sreeharirealty.com',
+  'http://sreeharirealty.com',
+  'https://www.sreeharirealty.com',
+  'http://www.sreeharirealty.com',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:5000',
@@ -43,8 +45,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     if (
       defaultAllowedOrigins.includes(origin) ||
-      origin.includes('giving-amethyst-anteater.172-235-18-108.cpanel.site') ||
-      origin.includes('cpanel.site') ||
+      origin.includes('sreeharirealty.com') ||
       origin.includes('localhost') ||
       origin.includes('127.0.0.1')
     ) {

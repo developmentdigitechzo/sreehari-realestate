@@ -11,7 +11,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 5000,
-        CORS_ORIGIN: 'https://giving-amethyst-anteater.172-235-18-108.cpanel.site,http://giving-amethyst-anteater.172-235-18-108.cpanel.site,http://localhost:3000,http://127.0.0.1:3000'
+        CORS_ORIGIN: 'https://sreeharirealty.com,http://sreeharirealty.com,https://www.sreeharirealty.com,http://www.sreeharirealty.com,http://localhost:3000,http://127.0.0.1:3000'
       }
     },
     {
@@ -26,8 +26,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
-        NEXT_PUBLIC_API_URL: 'https://giving-amethyst-anteater.172-235-18-108.cpanel.site/api',
-        NEXT_PUBLIC_SITE_URL: 'https://giving-amethyst-anteater.172-235-18-108.cpanel.site',
+        NEXT_PUBLIC_API_URL: 'https://sreeharirealty.com/api',
+        NEXT_PUBLIC_SITE_URL: 'https://sreeharirealty.com',
         BACKEND_URL: 'http://127.0.0.1:5000'
       }
     }
