@@ -14,7 +14,7 @@ export default function LayoutWrapper({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isAdminRoute = pathname?.startsWith('/admin');
+  const isAdminRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/nimda');
 
   if (isAdminRoute) {
     return <main className="flex-grow">{children}</main>;

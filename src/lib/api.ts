@@ -39,12 +39,12 @@ function handleAuthFailure() {
   removeAuthToken();
   if (
     typeof window !== 'undefined' &&
-    window.location.pathname.startsWith('/admin') &&
-    window.location.pathname !== '/admin/login' &&
+    (window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/nimda')) &&
+    window.location.pathname !== '/admin/login' && window.location.pathname !== '/nimda/login' &&
     !isRedirectingToLogin
   ) {
     isRedirectingToLogin = true;
-    window.location.replace('/admin/login');
+    window.location.replace('/nimda/login');
   }
 }
 
@@ -403,6 +403,27 @@ export const api = {
 
   async getUploadedMedia() {
     return fetchWithAuth('/admin/upload/list');
+  },
+
+  async addExternalMedia(data: { url: string; title?: string; type?: 'video' | 'image' }) {
+    return fetchWithAuth('/admin/upload/external', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteMedia(filename: string) {
+    return fetchWithAuth('/admin/upload/delete', {
+      method: 'POST',
+      body: JSON.stringify({ filename }),
+    });
+  },
+
+  async updateMedia(filename: string, data: { title?: string; newName?: string }) {
+    return fetchWithAuth('/admin/upload/update', {
+      method: 'POST',
+      body: JSON.stringify({ filename, ...data }),
+    });
   },
 
   // Site Visits

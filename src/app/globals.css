@@ -419,17 +419,32 @@ p {
 }
 
 /* Prevent text-white from washing out on white background, EXCEPT for buttons/badges/pills and image overlays */
-[data-admin-theme="light"] p.text-white:not(.project-cover-text),
-[data-admin-theme="light"] h1.text-white:not(.project-cover-title),
-[data-admin-theme="light"] h2.text-white:not(.project-cover-title),
-[data-admin-theme="light"] h3.text-white:not(.project-cover-title),
-[data-admin-theme="light"] a.text-white:not([class*="bg-"]):not([class*="from-"]),
-[data-admin-theme="light"] div.text-white:not([class*="bg-"]):not([class*="from-"]):not(.project-cover-overlay) {
+[data-admin-theme="light"] span.text-white:not([class*="bg-"]):not([class*="from-"]):not(.poster-text-white):not([data-poster-preview="true"] *):not(.image-overlay-text *),
+[data-admin-theme="light"] p.text-white:not(.project-cover-text):not(.poster-text-white):not([data-poster-preview="true"] *):not(.image-overlay-text *),
+[data-admin-theme="light"] h1.text-white:not(.project-cover-title):not(.poster-text-white):not([data-poster-preview="true"] *):not(.image-overlay-text *),
+[data-admin-theme="light"] h2.text-white:not(.project-cover-title):not(.poster-text-white):not([data-poster-preview="true"] *):not(.image-overlay-text *),
+[data-admin-theme="light"] h3.text-white:not(.project-cover-title):not(.poster-text-white):not([data-poster-preview="true"] *):not(.image-overlay-text *),
+[data-admin-theme="light"] a.text-white:not([class*="bg-"]):not([class*="from-"]):not(.poster-text-white):not([data-poster-preview="true"] *):not(.image-overlay-text *),
+[data-admin-theme="light"] div.text-white:not([class*="bg-"]):not([class*="from-"]):not(.project-cover-overlay):not(.poster-text-white):not([data-poster-preview="true"] *):not(.image-overlay-text *) {
   color: #0f172a !important;
 }
 
 [data-admin-theme="light"] .project-cover-title,
-[data-admin-theme="light"] .project-cover-title * {
+[data-admin-theme="light"] .project-cover-title *,
+[data-admin-theme="light"] [data-poster-preview="true"] .text-white,
+[data-admin-theme="light"] [data-poster-preview="true"] h1,
+[data-admin-theme="light"] [data-poster-preview="true"] h2,
+[data-admin-theme="light"] [data-poster-preview="true"] h3,
+[data-admin-theme="light"] [data-poster-preview="true"] p,
+[data-admin-theme="light"] [data-poster-preview="true"] span:not([class*="bg-"]),
+[data-admin-theme="light"] .poster-text-white,
+[data-admin-theme="light"] .image-overlay-text,
+[data-admin-theme="light"] .image-overlay-text h1,
+[data-admin-theme="light"] .image-overlay-text h2,
+[data-admin-theme="light"] .image-overlay-text h3,
+[data-admin-theme="light"] .image-overlay-text p,
+[data-admin-theme="light"] .image-overlay-text span:not([class*="bg-"]),
+[data-admin-theme="light"] .image-overlay-text * {
   color: #ffffff !important;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9) !important;
 }

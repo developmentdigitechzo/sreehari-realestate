@@ -380,7 +380,7 @@ export default function HeroCarousel({
               prevSlide();
             }}
             aria-label="Previous Slide"
-            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md text-white border border-white/20 flex items-center justify-center transition-all opacity-70 hover:opacity-100 shadow-lg cursor-pointer"
+            className="hidden lg:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md text-white border border-white/20 items-center justify-center transition-all opacity-70 hover:opacity-100 shadow-lg cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
           </button>
@@ -392,7 +392,7 @@ export default function HeroCarousel({
               nextSlide();
             }}
             aria-label="Next Slide"
-            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md text-white border border-white/20 flex items-center justify-center transition-all opacity-70 hover:opacity-100 shadow-lg cursor-pointer"
+            className="hidden lg:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md text-white border border-white/20 items-center justify-center transition-all opacity-70 hover:opacity-100 shadow-lg cursor-pointer"
           >
             <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
           </button>

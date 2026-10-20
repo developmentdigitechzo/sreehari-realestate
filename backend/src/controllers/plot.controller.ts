@@ -235,6 +235,23 @@ export async function createPlot(req: Request, res: Response): Promise<void> {
 
     const store = db.getFallbackData();
 
+    // Resolve project_id to canonical PostgreSQL projects(id) to ensure foreign key safety
+    let resolvedProjectId = project_id;
+    if (db.isPostgres()) {
+      try {
+        const cleanProjKey = (project_id || '').toLowerCase().replace(/\s+/g, '-');
+        const pCheck = await db.query(
+          'SELECT id FROM projects WHERE id = $1 OR slug = $1 OR slug = $2 OR name ILIKE $1 LIMIT 1;',
+          [project_id, cleanProjKey]
+        );
+        if (pCheck.rows && pCheck.rows.length > 0) {
+          resolvedProjectId = pCheck.rows[0].id;
+        }
+      } catch (err: any) {
+        console.warn('Project ID resolution note:', err.message);
+      }
+    }
+
     let plotId = req.body.id;
     if (!plotId) {
       plotId = `plot-${uuidv4().substring(0, 8)}`;
@@ -249,7 +266,7 @@ export async function createPlot(req: Request, res: Response): Promise<void> {
 
     const newPlot = {
       id: plotId,
-      project_id,
+      project_id: resolvedProjectId,
       title: title || formattedPlotNum,
       slug: computedSlug,
       type: type || 'Plot',

@@ -39,7 +39,7 @@ export default function PromotionalPopupModal() {
 
   useEffect(() => {
     // Don't show promotional popups inside admin CRM pages
-    if (pathname?.startsWith('/admin')) {
+    if (pathname?.startsWith('/admin') || pathname?.startsWith('/nimda')) {
       setIsOpen(false);
       return;
     }

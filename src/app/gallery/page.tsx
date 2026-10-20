@@ -194,21 +194,6 @@ export default function GalleryPage() {
                   caption: `${proj.name} — Infrastructure Development Photo #${idx + 1}`,
                   category: 'Project'
                 });
-
-                if (!seenCarouselUrls.has(img)) {
-                  seenCarouselUrls.add(img);
-                  carouselList.push({
-                    id: `c-proj-gal-${proj.id}-${idx}`,
-                    title: `${proj.name} — Infrastructure Phase #${idx + 1}`,
-                    project: proj.name,
-                    category: 'Development',
-                    url: img,
-                    type: 'image',
-                    badge: 'Project Asset',
-                    subbadge: proj.location_area || 'Trichy',
-                    tag: 'Approved Layout'
-                  });
-                }
               }
             });
 
@@ -253,21 +238,6 @@ export default function GalleryPage() {
                   category: 'Plots',
                   plotNumber: plotNum
                 });
-
-                if (!seenCarouselUrls.has(pl.primary_image_url)) {
-                  seenCarouselUrls.add(pl.primary_image_url);
-                  carouselList.push({
-                    id: `c-plot-${pl.id}`,
-                    title: `${proj.name} • ${plotNum}`,
-                    project: proj.name,
-                    category: cleanTitle,
-                    url: pl.primary_image_url,
-                    type: 'image',
-                    badge: 'Plot Asset',
-                    subbadge: plotNum,
-                    tag: 'Ready to Build'
-                  });
-                }
               }
             });
 
@@ -355,11 +325,11 @@ export default function GalleryPage() {
     setActiveMediaIndex((prev) => (prev + 1) % currentProjectMedia.length);
   }, [currentProjectMedia.length]);
 
-  const [carouselLightboxIndex, setCarouselLightboxIndex] = useState<number | null>(null);
+  const [singleViewingImage, setSingleViewingImage] = useState<CarouselItem | null>(null);
 
   // Lock body scroll when either lightbox is open
   useEffect(() => {
-    const isAnyModalOpen = activeProject !== null || carouselLightboxIndex !== null;
+    const isAnyModalOpen = activeProject !== null || singleViewingImage !== null;
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -368,19 +338,13 @@ export default function GalleryPage() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [activeProject, carouselLightboxIndex]);
+  }, [activeProject, singleViewingImage]);
 
-  // Keyboard navigation for both lightboxes
+  // Keyboard navigation for lightboxes
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (carouselLightboxIndex !== null) {
-        if (e.key === 'Escape') setCarouselLightboxIndex(null);
-        if (e.key === 'ArrowLeft') {
-          setCarouselLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : carouselItems.length - 1));
-        }
-        if (e.key === 'ArrowRight') {
-          setCarouselLightboxIndex((prev) => (prev !== null && prev < carouselItems.length - 1 ? prev + 1 : 0));
-        }
+      if (singleViewingImage !== null) {
+        if (e.key === 'Escape') setSingleViewingImage(null);
         return;
       }
 
@@ -392,7 +356,7 @@ export default function GalleryPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeProject, carouselLightboxIndex, carouselItems.length, handleNextMedia, handlePrevMedia]);
+  }, [activeProject, singleViewingImage, handleNextMedia, handlePrevMedia]);
 
   const openProjectLightbox = (project: ProjectGalleryCard, initialCategory: 'All' | 'Project' | 'Plots' | 'Videos' | 'General' = 'All') => {
     setActiveProject(project);
@@ -525,7 +489,7 @@ export default function GalleryPage() {
           {/* Marquee Outer Container */}
           <div
             ref={carouselContainerRef}
-            className="w-full overflow-x-hidden py-3 cursor-grab active:cursor-grabbing"
+            className="w-full overflow-x-hidden py-3"
           >
             <div
               className="gallery-continuous-track px-4"
@@ -536,7 +500,7 @@ export default function GalleryPage() {
               {[...carouselItems, ...carouselItems].map((item, idx) => (
                 <div
                   key={`${item.id}-${idx}`}
-                  onClick={() => setCarouselLightboxIndex(idx % carouselItems.length)}
+                  onClick={() => setSingleViewingImage(item)}
                   className="w-72 sm:w-80 h-[360px] rounded-2xl bg-white border border-amber-200/90 hover:border-[#006452] shadow-sm hover:shadow-[0_15px_35px_-10px_rgba(0,100,82,0.22)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden group shrink-0 relative"
                 >
                   {/* Top Image Thumbnail Container */}
@@ -738,108 +702,50 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      {/* 5. Carousel Single-Image Showcase Lightbox (Full Stream Across All Projects) */}
-      {carouselLightboxIndex !== null && carouselItems[carouselLightboxIndex] && (
+      {/* 5. Carousel Single-Image Viewer (Strictly Shows Only the Clicked Image, No Multi-Image Continuation) */}
+      {singleViewingImage && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-6 animate-fadeIn select-none overflow-hidden h-screen w-screen">
-          {/* Top Bar */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/10 gap-3 shrink-0">
-            <div>
-              <span className="text-[10px] font-bold text-[#f7db49] uppercase tracking-widest block">
-                {carouselItems[carouselLightboxIndex].project} • SHOWCASE GALLERY
+          {/* Top Bar with Correct Wording and Clean Metadata */}
+          <div className="flex items-center justify-between pb-3.5 border-b border-white/10 gap-3 shrink-0">
+            <div className="min-w-0 pr-3">
+              <span className="text-[10px] font-extrabold text-[#f7db49] uppercase tracking-widest block truncate">
+                {singleViewingImage.project} • {singleViewingImage.subbadge || 'DEVELOPMENT ASSET'}
               </span>
-              <h3 className="text-base sm:text-xl font-black text-white line-clamp-1">
-                {carouselItems[carouselLightboxIndex].title}
+              <h3 className="text-base sm:text-xl font-black text-white line-clamp-1 mt-0.5">
+                {singleViewingImage.title}
               </h3>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="text-white/80 text-xs font-mono font-bold bg-white/10 px-3 py-1 rounded-lg border border-white/10">
-                {carouselLightboxIndex + 1} / {carouselItems.length}
-              </span>
-
-              <button
-                type="button"
-                onClick={() => setCarouselLightboxIndex(null)}
-                className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition border border-white/20 cursor-pointer"
-                title="Close Lightbox (Esc)"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Main Viewport */}
-          <div className="relative flex-1 flex items-center justify-center my-2 min-h-0 overflow-hidden">
-            <div className="relative w-full h-full max-w-5xl flex items-center justify-center">
-              <div className="relative w-full h-full flex items-center justify-center">
-                <Image
-                  src={carouselItems[carouselLightboxIndex].url}
-                  alt={carouselItems[carouselLightboxIndex].title}
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              </div>
-
-              {/* Badge Overlay */}
-              <div className="absolute bottom-4 left-4 z-20 pointer-events-none flex flex-col gap-1 max-w-[85%]">
-                <div className="flex items-center gap-2">
-                  <span className="bg-[#006452]/90 backdrop-blur-md text-white text-xs font-black uppercase px-3 py-1 rounded-full shadow-md border border-emerald-400/40">
-                    {carouselItems[carouselLightboxIndex].badge}
-                  </span>
-                  <span className="bg-[#f7db49] text-gray-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                    ★ {carouselItems[carouselLightboxIndex].tag}
-                  </span>
-                </div>
-                <span className="bg-black/75 backdrop-blur-md text-slate-200 text-xs font-medium px-3 py-1 rounded-xl shadow-md border border-white/10 w-fit">
-                  {carouselItems[carouselLightboxIndex].project} — {carouselItems[carouselLightboxIndex].category}
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span className="bg-[#006452] text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-emerald-400/30">
+                  {singleViewingImage.badge}
+                </span>
+                <span className="bg-[#f7db49] text-gray-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                  ★ {singleViewingImage.tag}
                 </span>
               </div>
-
-              {/* Left/Right Prev/Next Buttons */}
-              {carouselItems.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setCarouselLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : carouselItems.length - 1))}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/20 cursor-pointer shadow-lg z-30"
-                    title="Previous (Left Arrow)"
-                  >
-                    <ChevronLeft className="w-6 h-6" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCarouselLightboxIndex((prev) => (prev !== null && prev < carouselItems.length - 1 ? prev + 1 : 0))}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/20 cursor-pointer shadow-lg z-30"
-                    title="Next (Right Arrow)"
-                  >
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
-                </>
-              )}
             </div>
+
+            <button
+              type="button"
+              onClick={() => setSingleViewingImage(null)}
+              className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition border border-white/20 cursor-pointer shrink-0"
+              title="Close (Esc)"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          {/* Bottom Thumbnails */}
-          {carouselItems.length > 1 && (
-            <div className="pt-2 border-t border-white/10 flex items-center justify-center gap-2 overflow-x-auto max-w-4xl mx-auto w-full px-2 scrollbar-none shrink-0">
-              {carouselItems.map((item, idx) => {
-                const isSelected = carouselLightboxIndex === idx;
-                return (
-                  <button
-                    key={`${item.id}-${idx}`}
-                    type="button"
-                    onClick={() => setCarouselLightboxIndex(idx)}
-                    className={`relative w-16 h-12 rounded-xl overflow-hidden flex-shrink-0 border-2 transition cursor-pointer ${
-                      isSelected ? 'border-[#f7db49] scale-105 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <Image src={item.url} alt="" fill className="object-cover" />
-                  </button>
-                );
-              })}
+          {/* Main Viewport: 100% Clean Image, NO Text Overlaid On Top */}
+          <div className="relative flex-1 flex items-center justify-center my-3 min-h-0 overflow-hidden">
+            <div className="relative w-full h-full max-w-5xl flex items-center justify-center">
+              <Image
+                src={singleViewingImage.url}
+                alt={singleViewingImage.title}
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -946,23 +852,6 @@ export default function GalleryPage() {
                   </div>
                 )}
 
-                {/* Badge Overlay */}
-                <div className="absolute bottom-4 left-4 z-20 pointer-events-none flex flex-col gap-1 max-w-[85%]">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-[#006452]/90 backdrop-blur-md text-white text-xs font-black uppercase px-3 py-1 rounded-full shadow-md border border-emerald-400/40">
-                      {activeMediaItem.badge}
-                    </span>
-                    {activeMediaItem.type === 'video' && (
-                      <span className="bg-[#D61F69] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                        <Play className="w-3 h-3 fill-white" /> Video
-                      </span>
-                    )}
-                  </div>
-                  <span className="bg-black/75 backdrop-blur-md text-slate-200 text-xs font-medium px-3 py-1 rounded-xl shadow-md border border-white/10 w-fit">
-                    {activeMediaItem.caption}
-                  </span>
-                </div>
-
                 {/* Left/Right Prev/Next Buttons */}
                 {currentProjectMedia.length > 1 && (
                   <>
@@ -990,9 +879,21 @@ export default function GalleryPage() {
             )}
           </div>
 
+          {/* Active Item Caption Strip (Outside Image, Never Laying On Top of Photos) */}
+          {activeMediaItem && (
+            <div className="py-1 px-4 text-center shrink-0 flex items-center justify-center gap-2 flex-wrap">
+              <span className="bg-[#006452] text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-emerald-400/30">
+                {activeMediaItem.badge}
+              </span>
+              <span className="text-white/80 text-xs font-medium truncate max-w-xl">
+                {activeMediaItem.caption}
+              </span>
+            </div>
+          )}
+
           {/* Bottom Thumbnail Strip */}
           {currentProjectMedia.length > 1 && (
-            <div className="pt-2 border-t border-white/10 flex items-center justify-center gap-2 overflow-x-auto max-w-4xl mx-auto w-full px-2 scrollbar-none shrink-0">
+            <div className="pt-2 border-t border-white/10 flex items-center justify-start sm:justify-center gap-2.5 overflow-x-auto max-w-4xl mx-auto w-full px-4 py-2 scroll-smooth shrink-0 scrollbar-thin">
               {currentProjectMedia.map((m, idx) => {
                 const isSelected = activeMediaIndex === idx;
                 return (

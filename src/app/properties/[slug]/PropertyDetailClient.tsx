@@ -1568,7 +1568,7 @@ export default function PropertyDetailClient({ property }: { property: any }) {
 
           {/* Bottom Thumbnails */}
           {filteredGallery.length > 1 && (
-            <div className="flex items-center justify-center gap-2 overflow-x-auto py-2 border-t border-white/10 max-w-full">
+            <div className="flex items-center justify-start sm:justify-center gap-2.5 overflow-x-auto px-4 py-2 border-t border-white/10 max-w-full scroll-smooth">
               {filteredGallery.map((item, idx) => (
                 <button
                   key={item.id || idx}

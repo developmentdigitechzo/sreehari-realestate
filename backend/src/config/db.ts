@@ -79,8 +79,82 @@ interface FallbackDB {
   blogs?: any[];
   site_visits?: any[];
   popups?: any[];
+  media_library?: any[];
   settings: Record<string, any>;
 }
+
+export const DEFAULT_MEDIA_LIBRARY = [
+  {
+    id: 'media-park-avenue-aerial-walkthrough',
+    fileName: 'park-avenue-aerial-walkthrough.mp4',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-a-residential-suburb-with-houses-and-gardens-41551-large.mp4',
+    type: 'video',
+    title: 'Park Avenue Aerial Walkthrough Drone Video',
+    size_bytes: 4890000,
+    created_at: '2026-10-15T10:00:00.000Z'
+  },
+  {
+    id: 'media-youtube-sreehari-promo',
+    fileName: 'youtube-sreehari-promo.url',
+    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    type: 'video',
+    title: 'Sree Hari Realty Showcase (YouTube)',
+    size_bytes: 0,
+    created_at: '2026-10-15T10:00:00.000Z'
+  },
+  {
+    id: 'media-hero-banner-park-avenue',
+    fileName: 'hero-banner-park-avenue.jpg',
+    url: '/project_park_avenue_new.jpg',
+    type: 'image',
+    title: 'Park Avenue Master Layout Banner',
+    size_bytes: 350000,
+    created_at: '2026-10-15T10:00:00.000Z'
+  },
+  {
+    id: 'media-site-infrastructure-blacktop',
+    fileName: 'site-infrastructure-blacktop.jpg',
+    url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
+    type: 'image',
+    title: 'Avenue Blacktop Road & Tree Plantation',
+    size_bytes: 520000,
+    created_at: '2026-10-15T10:00:00.000Z'
+  },
+  {
+    id: 'media-villa-plots-development',
+    fileName: 'villa-plots-development.jpg',
+    url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80',
+    type: 'image',
+    title: 'Individual Villa Plot Boundary Demarcation',
+    size_bytes: 610000,
+    created_at: '2026-10-15T10:00:00.000Z'
+  }
+];
+
+export const DEFAULT_PROJECT_AMENITIES: Record<string, any[]> = {
+  'proj-park-avenue': [
+    { icon: 'ShieldCheck', title: 'Grand Entrance & Security', desc: 'Monumental arch entrance with manned security, CCTV provision, and gated boundary.' },
+    { icon: 'Milestone', title: 'Wide Blacktop Tar Roads', desc: 'Engineered heavy-duty asphalt roads designed for seamless two-way vehicular flow.' },
+    { icon: 'Droplets', title: 'Sweet Groundwater', desc: 'Natural sweet potable water source with individual pipe provisions to plot boundaries.' },
+    { icon: 'Trees', title: "Landscaped Children's Park", desc: 'Dedicated open space reserve with children play equipment and green avenue plantations.' },
+    { icon: 'Sun', title: 'Electricity & Streetlights', desc: 'High-voltage electric lines and bright LED streetlighting across all layout avenues.' },
+    { icon: 'Award', title: 'Instant Spot Registration', desc: '100% clear parent title deeds with DTCP & TNRERA compliance and fast spot registration.' }
+  ],
+  'proj-sri-amman-nagar': [
+    { icon: 'ShieldCheck', title: '5-Year Maintenance & Security', desc: 'Unmatched 5-year maintenance and round-the-clock safety guarantee provided for all residents.' },
+    { icon: 'Milestone', title: '33 Ft & 24 Ft Wide Tar Roads', desc: 'Paved high-grade tar roads with proper road camber and stormwater channel drains.' },
+    { icon: 'Droplets', title: 'Cauvery Sweet Drinking Water', desc: 'Direct piped Cauvery potable drinking water connection provided throughout the layout.' },
+    { icon: 'Fence', title: 'Compound Wall & Entrance Gate', desc: 'Secured peripheral compound wall with a welcoming gate for complete township protection.' },
+    { icon: 'Sun', title: 'EB Power & Bright Streetlights', desc: 'Underground electricity connections and LED street lighting illuminating all avenues.' },
+    { icon: 'Award', title: 'ISO 9001:2008 & Corporation Limits', desc: 'Inside Trichy City Corporation with ISO 9001:2008 quality certified layout execution.' }
+  ],
+  'proj-aishwarya-nagar': [
+    { icon: 'Droplets', title: 'Sweet Potable Water', desc: 'Sweet groundwater available throughout all seasons at shallow depth.' },
+    { icon: 'Fence', title: 'Protective Boundary Walls', desc: 'Sturdy perimeter fencing and concrete boundary posts securing every plot.' },
+    { icon: 'Award', title: 'Bank Loan Eligible', desc: 'Clear legal title certificates accepted by all major nationalized banks.' },
+    { icon: 'Milestone', title: 'Direct Road Access', desc: 'Direct connectivity to Thirumayam and Pudukkottai Highway corridors.' }
+  ]
+};
 
 function ensureFallbackDB(): FallbackDB {
   const dir = path.dirname(FALLBACK_DB_PATH);
@@ -100,6 +174,7 @@ function ensureFallbackDB(): FallbackDB {
       blogs: [],
       site_visits: [],
       popups: [],
+      media_library: [...DEFAULT_MEDIA_LIBRARY],
       settings: {}
     };
     fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(initial, null, 2));
@@ -111,6 +186,31 @@ function ensureFallbackDB(): FallbackDB {
     if (!parsed.blogs) parsed.blogs = [];
     if (!parsed.site_visits) parsed.site_visits = [];
     if (!parsed.popups) parsed.popups = [];
+    if (parsed.media_library === undefined) {
+      parsed.media_library = [...DEFAULT_MEDIA_LIBRARY];
+      try {
+        fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(parsed, null, 2));
+      } catch {}
+    }
+
+    // Ensure fallback projects have amenities populated
+    if (Array.isArray(parsed.projects)) {
+      let projectsUpdated = false;
+      for (const p of parsed.projects) {
+        if (!p.amenities || !Array.isArray(p.amenities) || p.amenities.length === 0) {
+          const defaults = DEFAULT_PROJECT_AMENITIES[p.id] || DEFAULT_PROJECT_AMENITIES[`proj-${p.slug}`];
+          if (defaults) {
+            p.amenities = defaults;
+            projectsUpdated = true;
+          }
+        }
+      }
+      if (projectsUpdated) {
+        try {
+          fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(parsed, null, 2));
+        } catch {}
+      }
+    }
     return parsed;
   } catch {
     return {
@@ -214,6 +314,7 @@ export async function initDatabase() {
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS site_visit_time VARCHAR(50);`,
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS site_visit_pickup_needed BOOLEAN DEFAULT false;`,
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_follow_up_date VARCHAR(50);`,
+        `ALTER TABLE leads ADD COLUMN IF NOT EXISTS next_follow_up_time VARCHAR(50);`,
         `ALTER TABLE leads ADD COLUMN IF NOT EXISTS notes JSONB DEFAULT '[]'::jsonb;`,
 
         // Site Visits Table
@@ -273,6 +374,7 @@ export async function initDatabase() {
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS gallery_images JSONB DEFAULT '[]'::jsonb;`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS highlights JSONB DEFAULT '[]'::jsonb;`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS amenities JSONB DEFAULT '[]'::jsonb;`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS nearby_landmarks JSONB DEFAULT '[]'::jsonb;`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS dtcp_number VARCHAR(255);`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS rera_number VARCHAR(255);`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS available_plots_count INT DEFAULT 0;`,
@@ -281,10 +383,36 @@ export async function initDatabase() {
 
         // Plots extra fields
         `ALTER TABLE plots ADD COLUMN IF NOT EXISTS dimension VARCHAR(100);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS dimension_str VARCHAR(100);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS length_ft DECIMAL(10, 2);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS width_ft DECIMAL(10, 2);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS total_price_lakhs DECIMAL(14, 2);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS price_per_sqft DECIMAL(10, 2);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS price DECIMAL(14, 2);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'INR';`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS listing_visibility VARCHAR(100) DEFAULT 'Publish to Website & CRM';`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS locality VARCHAR(255);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS road_corridor VARCHAR(255);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS taluk VARCHAR(100) DEFAULT 'Central';`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS district VARCHAR(100) DEFAULT 'City';`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS meta_title VARCHAR(255);`,
+        `ALTER TABLE plots ADD COLUMN IF NOT EXISTS meta_description TEXT;`,
         `ALTER TABLE plots ADD COLUMN IF NOT EXISTS gallery_images JSONB DEFAULT '[]'::jsonb;`,
         `ALTER TABLE plots ADD COLUMN IF NOT EXISTS video_urls JSONB DEFAULT '[]'::jsonb;`,
         `ALTER TABLE plots ADD COLUMN IF NOT EXISTS latitude VARCHAR(50);`,
         `ALTER TABLE plots ADD COLUMN IF NOT EXISTS longitude VARCHAR(50);`,
+
+        // Media Library Table
+        `CREATE TABLE IF NOT EXISTS media_library (
+            id VARCHAR(100) PRIMARY KEY,
+            title VARCHAR(255),
+            filename VARCHAR(255),
+            url TEXT NOT NULL,
+            type VARCHAR(20) NOT NULL DEFAULT 'image',
+            size_bytes BIGINT DEFAULT 0,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );`,
+        `CREATE INDEX IF NOT EXISTS idx_media_library_filename ON media_library(filename);`,
 
         // High Performance Production Indexes
         `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`,
@@ -543,6 +671,27 @@ export async function initDatabase() {
         }
       }
 
+      // Non-destructive: populate amenities for existing projects if empty in PostgreSQL
+      try {
+        const existingProjectsRes = await client.query('SELECT id, slug, amenities FROM projects;');
+        for (const row of existingProjectsRes.rows) {
+          const am = row.amenities;
+          const isAmEmpty = !am || (Array.isArray(am) && am.length === 0) || am === '[]' || (typeof am === 'string' && am.trim() === '[]');
+          if (isAmEmpty) {
+            const defaults = DEFAULT_PROJECT_AMENITIES[row.id] || DEFAULT_PROJECT_AMENITIES[`proj-${row.slug}`];
+            if (defaults && defaults.length > 0) {
+              await client.query('UPDATE projects SET amenities = $1::jsonb WHERE id = $2;', [
+                JSON.stringify(defaults),
+                row.id
+              ]);
+              console.log(`✓ Backfilled default amenities for project in PostgreSQL: ${row.slug}`);
+            }
+          }
+        }
+      } catch (backfillErr: any) {
+        console.warn('Backfill amenities error:', backfillErr.message);
+      }
+
       // Record verified table counts
       const counts: Record<string, number> = {};
       for (const tbl of ['projects', 'plots', 'leads', 'site_visits', 'popups', 'blogs', 'gallery', 'users']) {
@@ -685,6 +834,17 @@ export const db = {
 
       if (upper.includes('FROM AMENITIES')) {
         return { rows: store.amenities, rowCount: store.amenities.length };
+      }
+
+      if (upper.includes('FROM MEDIA_LIBRARY')) {
+        let rows = [...(store.media_library || [])];
+        if (params.length > 0 && upper.includes('WHERE ID = $1')) {
+          rows = rows.filter(m => m.id === params[0]);
+        } else if (params.length > 0 && (upper.includes('WHERE FILENAME = $1') || upper.includes('WHERE URL = $1'))) {
+          rows = rows.filter(m => m.fileName === params[0] || m.filename === params[0] || m.url === params[0]);
+        }
+        rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        return { rows, rowCount: rows.length };
       }
     }
 

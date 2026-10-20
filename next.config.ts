@@ -39,6 +39,20 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async redirects() {
+    return [
+      {
+        source: '/admin',
+        destination: '/nimda/dashboard',
+        permanent: false,
+      },
+      {
+        source: '/admin/:path*',
+        destination: '/nimda/:path*',
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     const backendPort = process.env.BACKEND_PORT || '5000';
     const backendHost = process.env.BACKEND_HOST || 'http://127.0.0.1';

@@ -41,7 +41,7 @@ export default function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
 
-  const [brandLogo, setBrandLogo] = useState<string | null>(null);
+  const [brandLogo, setBrandLogo] = useState<string>('/logo_transparent.png');
   const [brandName, setBrandName] = useState<string>('Sree Hari Realty');
   const [primaryColor, setPrimaryColor] = useState<string>('#10b981');
 
@@ -80,7 +80,6 @@ export default function Sidebar({
       const res = await api.getSettings().catch(() => null);
       if (res?.data) {
         if (res.data.logo_url) setBrandLogo(res.data.logo_url);
-        else setBrandLogo(null);
         if (res.data.company_name) setBrandName(res.data.company_name);
         if (res.data.primary_color) {
           setPrimaryColor(res.data.primary_color);
@@ -101,27 +100,30 @@ export default function Sidebar({
       localStorage.removeItem('crm_user');
       localStorage.removeItem('crm_primary_color');
     }
-    router.push('/admin/login');
+    router.push('/nimda/login');
   };
 
   const navItems = [
-    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'CRM Leads & Pipeline', href: '/admin/leads', icon: Users },
-    { name: 'Site Visit Manager', href: '/admin/site-visits', icon: CalendarCheck },
-    { name: 'Projects', href: '/admin/projects', icon: FolderKanban },
-    { name: 'Plots Inventory', href: '/admin/plots', icon: Grid },
-    { name: 'Blog Manager', href: '/admin/blogs', icon: Newspaper },
-    { name: 'Ad & Seasonal Popups', href: '/admin/popups', icon: Megaphone },
-    { name: 'Media Gallery', href: '/admin/gallery', icon: ImageIcon },
-    { name: 'Settings & Office', href: '/admin/settings', icon: Settings },
-    { name: 'Staff & Permissions', href: '/admin/staff', icon: ShieldCheck },
+    { name: 'Dashboard', href: '/nimda/dashboard', icon: LayoutDashboard },
+    { name: 'CRM Leads & Pipeline', href: '/nimda/leads', icon: Users },
+    { name: 'Site Visit Manager', href: '/nimda/site-visits', icon: CalendarCheck },
+    { name: 'Projects', href: '/nimda/projects', icon: FolderKanban },
+    { name: 'Plots Inventory', href: '/nimda/plots', icon: Grid },
+    { name: 'Blog Manager', href: '/nimda/blogs', icon: Newspaper },
+    { name: 'Ad & Seasonal Popups', href: '/nimda/popups', icon: Megaphone },
+    { name: 'Media Gallery', href: '/nimda/gallery', icon: ImageIcon },
+    { name: 'Settings & Office', href: '/nimda/settings', icon: Settings },
+    { name: 'Staff & Permissions', href: '/nimda/staff', icon: ShieldCheck },
   ];
 
-  // Filter items based on staff module access permissions
+  // Filter items based on staff module access permissions (supports both /nimda and legacy /admin stored perms)
   const hasFullAccess = !permissions || permissions.includes('ALL') || role === 'super_admin' || role === 'admin';
   const visibleNavItems = hasFullAccess
     ? navItems
-    : navItems.filter(item => permissions.includes(item.href));
+    : navItems.filter((item) => {
+        const legacyHref = item.href.replace(/^\/nimda/, '/admin');
+        return permissions.includes(item.href) || permissions.includes(legacyHref);
+      });
 
   const contrastText = getContrastTextColor(primaryColor);
 
@@ -145,24 +147,15 @@ export default function Sidebar({
         {/* Header with Dynamic Logo & Brand Name */}
         <div className="p-5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            {brandLogo ? (
-              <div className="w-10 h-10 rounded-xl bg-white border border-slate-700/60 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-md">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={brandLogo}
-                  alt="Brand Logo"
-                  className="max-h-full max-w-full object-contain"
-                  onError={() => setBrandLogo(null)}
-                />
-              </div>
-            ) : (
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg shrink-0 transition-all duration-200"
-                style={{ backgroundColor: primaryColor, color: contrastText }}
-              >
-                {brandName.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <div className="w-10 h-10 rounded-xl bg-white border border-slate-700/60 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-md">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={brandLogo || '/logo_transparent.png'}
+                alt="Brand Logo"
+                className="max-h-full max-w-full object-contain"
+                onError={() => setBrandLogo('/logo_transparent.png')}
+              />
+            </div>
             <div className="truncate">
               <h1 className="font-bold text-white text-base leading-tight tracking-wide truncate">
                 {brandName}
@@ -192,7 +185,11 @@ export default function Sidebar({
             Staff CRM Navigation ({visibleNavItems.length} Modules)
           </div>
           {visibleNavItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
+            const legacyHref = item.href.replace(/^\/nimda/, '/admin');
+            const isActive =
+              pathname === item.href ||
+              pathname === legacyHref ||
+              (item.href !== '/nimda/dashboard' && (pathname.startsWith(item.href) || pathname.startsWith(legacyHref)));
             const Icon = item.icon;
             return (
               <Link
