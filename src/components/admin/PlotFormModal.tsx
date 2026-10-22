@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
 import { Plot, Project } from '@/lib/types';
-import MediaLibraryModal from './MediaLibraryModal';
 import GpsLocationPicker from './GpsLocationPicker';
 import {
   X,
@@ -65,14 +64,18 @@ const CATEGORY_OPTIONS = [
 ];
 
 export function formatPlotNumber(plotNumber?: string, title?: string, id?: string): string {
-  if (plotNumber && plotNumber.trim()) {
-    const clean = plotNumber.replace(/^(?:plot\s*#*|#\s*)+/gi, '').trim();
-    if (clean) return `Plot ${clean}`;
+  const pNum = (plotNumber || '').trim();
+  const cleanTitle = (title || '').trim();
+
+  if (pNum && cleanTitle && pNum.toLowerCase() !== cleanTitle.toLowerCase()) {
+    if (cleanTitle.toLowerCase().startsWith(pNum.toLowerCase())) {
+      return cleanTitle;
+    }
+    return `${pNum} - ${cleanTitle}`;
   }
-  if (title && title.trim()) {
-    const clean = title.replace(/^(?:plot\s*#*|#\s*)+/gi, '').trim();
-    if (clean) return `Plot ${clean}`;
-  }
+
+  if (pNum) return pNum;
+  if (cleanTitle) return cleanTitle;
   if (id && id.trim()) {
     const num = id.replace(/^[^\d]*/, '');
     if (num) return `Plot ${num}`;
@@ -107,8 +110,6 @@ export default function PlotFormModal({
   const [activeTab, setActiveTab] = useState<'basic' | 'dimensions' | 'media' | 'location'>('basic');
 
   // Media Library state
-  const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
-  const [mediaTarget, setMediaTarget] = useState<'image' | 'video'>('image');
 
   // Form Data State
   const [formData, setFormData] = useState<Partial<Plot>>({
@@ -448,29 +449,6 @@ export default function PlotFormModal({
     });
   };
 
-  const handleMediaLibrarySelect = (url: string, type: 'video' | 'image') => {
-    if (type === 'video' || mediaTarget === 'video') {
-      setFormData((prev) => {
-        const vUrls = Array.isArray(prev.video_urls) ? [...prev.video_urls] : [];
-        if (!vUrls.includes(url)) vUrls.push(url);
-        return {
-          ...prev,
-          video_urls: vUrls,
-          video_url: vUrls[0] || url
-        };
-      });
-    } else {
-      setFormData((prev) => {
-        const currentGallery = Array.isArray(prev.gallery_images) ? [...prev.gallery_images] : [];
-        if (!currentGallery.includes(url)) currentGallery.push(url);
-        return {
-          ...prev,
-          gallery_images: currentGallery,
-          primary_image_url: prev.primary_image_url || url
-        };
-      });
-    }
-  };
 
   // Form Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
@@ -494,7 +472,7 @@ export default function PlotFormModal({
       const payload: any = {
         ...formData,
         plot_number: canonicalPlotNumber,
-        title: formData.title || canonicalPlotNumber,
+        title: formData.title ? formData.title.trim() : '',
         facing: resolvedFacing,
         type: resolvedType,
         approval_status: resolvedApproval,
@@ -1350,14 +1328,6 @@ export default function PlotFormModal({
         </div>
       </div>
 
-      {/* Embedded Media Library Modal */}
-      <MediaLibraryModal
-        isOpen={isMediaLibraryOpen}
-        onClose={() => setIsMediaLibraryOpen(false)}
-        onSelect={handleMediaLibrarySelect}
-        filterType={mediaTarget === 'video' ? 'video' : 'image'}
-        title={mediaTarget === 'video' ? 'Select Video from Media Library' : 'Select Image from Media Library'}
-      />
     </>
   );
 }

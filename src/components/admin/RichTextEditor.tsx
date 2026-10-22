@@ -18,7 +18,8 @@ import {
   Maximize2,
   X,
   Upload,
-  Sparkles
+  Sparkles,
+  Table
 } from 'lucide-react';
 
 interface RichTextEditorProps {
@@ -121,6 +122,40 @@ export default function RichTextEditor({
     const url = prompt('Enter destination URL (e.g. https://sreeharirealty.com):');
     if (url && url.trim()) {
       applyFormat('createLink', url.trim());
+    }
+  }
+
+  // Insert Table
+  function insertTable() {
+    if (mode === 'source') return;
+    const tableHtml = `
+<table class="border-collapse border border-slate-300 w-full my-4 text-xs">
+  <thead>
+    <tr class="bg-slate-100">
+      <th class="border border-slate-300 p-2.5 font-bold text-left">Header 1</th>
+      <th class="border border-slate-300 p-2.5 font-bold text-left">Header 2</th>
+      <th class="border border-slate-300 p-2.5 font-bold text-left">Header 3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="border border-slate-300 p-2.5">Data Cell 1</td>
+      <td class="border border-slate-300 p-2.5">Data Cell 2</td>
+      <td class="border border-slate-300 p-2.5">Data Cell 3</td>
+    </tr>
+    <tr>
+      <td class="border border-slate-300 p-2.5">Data Cell 4</td>
+      <td class="border border-slate-300 p-2.5">Data Cell 5</td>
+      <td class="border border-slate-300 p-2.5">Data Cell 6</td>
+    </tr>
+  </tbody>
+</table>
+<p></p>
+`;
+    if (visualRef.current) {
+      visualRef.current.focus();
+      document.execCommand('insertHTML', false, tableHtml);
+      triggerSync();
     }
   }
 
@@ -242,12 +277,15 @@ export default function RichTextEditor({
           <select
             onChange={(e) => handleFormatBlockSelect(e.target.value)}
             disabled={mode === 'source'}
-            className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500/50 disabled:opacity-50"
+            className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500/50 disabled:opacity-50 font-medium"
           >
             <option value="p">Paragraph</option>
             <option value="h1">Heading 1</option>
             <option value="h2">Heading 2</option>
             <option value="h3">Heading 3</option>
+            <option value="h4">Heading 4</option>
+            <option value="h5">Heading 5</option>
+            <option value="h6">Heading 6</option>
             <option value="blockquote">Quote Block</option>
           </select>
 
@@ -313,6 +351,15 @@ export default function RichTextEditor({
             className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
           >
             <LinkIcon className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={insertTable}
+            disabled={mode === 'source'}
+            title="Insert Table"
+            className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+          >
+            <Table className="w-4 h-4" />
           </button>
 
           {/* Add Media Button */}

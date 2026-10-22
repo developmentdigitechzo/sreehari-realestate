@@ -49,7 +49,7 @@ export default function BlogDetailClient({
                   ? new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
                   : b.date || 'Oct 2026',
                 author: b.author || 'Sree Hari Realty Editorial',
-                image: b.image_url || b.banner_image || b.image || '/hero_blog.jpg',
+                image: b.image_url || b.banner_image || b.image || '',
                 content: b.content || ''
               });
             }
@@ -188,12 +188,32 @@ export default function BlogDetailClient({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Main Article Body */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="relative h-[320px] sm:h-[400px] rounded-3xl overflow-hidden shadow-md">
-              <Image src={post.image} alt={post.title} fill priority className="object-cover" />
-            </div>
+            {post.image && post.image.trim() !== '' && (
+              <div className="relative h-[320px] sm:h-[400px] rounded-3xl overflow-hidden shadow-md">
+                <Image src={post.image} alt={post.title} fill priority className="object-cover" />
+              </div>
+            )}
 
             <div
-              className="prose max-w-none text-gray-700 text-xs sm:text-sm leading-relaxed space-y-4 [&>h2]:font-heading-sc [&>h2]:text-2xl [&>h2]:font-extrabold [&>h2]:text-[#006452] [&>h3]:font-heading-sc [&>h3]:text-lg [&>h3]:font-bold [&>h3]:text-[#006452] [&>p]:leading-relaxed"
+              className="prose max-w-none text-gray-800 text-xs sm:text-sm leading-relaxed space-y-4
+                [&>h1]:text-3xl [&>h1]:font-extrabold [&>h1]:text-[#006452] [&>h1]:tracking-tight [&>h1]:mt-6 [&>h1]:mb-3
+                [&>h2]:text-2xl [&>h2]:font-extrabold [&>h2]:text-[#006452] [&>h2]:tracking-tight [&>h2]:mt-5 [&>h2]:mb-2.5
+                [&>h3]:text-xl [&>h3]:font-bold [&>h3]:text-[#006452] [&>h3]:mt-4 [&>h3]:mb-2
+                [&>h4]:text-lg [&>h4]:font-bold [&>h4]:text-slate-900 [&>h4]:mt-3.5 [&>h4]:mb-1.5
+                [&>h5]:text-base [&>h5]:font-bold [&>h5]:text-slate-900 [&>h5]:mt-3 [&>h5]:mb-1
+                [&>h6]:text-sm [&>h6]:font-bold [&>h6]:text-slate-900 [&>h6]:mt-2.5 [&>h6]:mb-1
+                [&>p]:leading-relaxed [&>p]:text-slate-700
+                [&>blockquote]:border-l-4 [&>blockquote]:border-[#006452] [&>blockquote]:bg-[#006452]/5 [&>blockquote]:py-3 [&>blockquote]:px-4 [&>blockquote]:italic [&>blockquote]:rounded-r-xl [&>blockquote]:my-4 [&>blockquote]:text-slate-800
+                [&_strong]:font-bold [&_strong]:text-slate-900
+                [&_b]:font-bold [&_b]:text-slate-900
+                [&_table]:w-full [&_table]:border-collapse [&_table]:border [&_table]:border-slate-300 [&_table]:my-4 [&_table]:text-xs sm:[&_table]:text-sm
+                [&_thead]:bg-slate-100
+                [&_th]:border [&_th]:border-slate-300 [&_th]:p-3 [&_th]:font-bold [&_th]:text-[#006452] [&_th]:text-left
+                [&_td]:border [&_td]:border-slate-300 [&_td]:p-3 [&_td]:text-slate-700
+                [&_tr:nth-child(even)]:bg-slate-50/60
+                [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5 [&_ul]:my-3
+                [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1.5 [&_ol]:my-3
+                [&_li]:text-slate-700"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 

@@ -31,7 +31,7 @@ export async function getAllSiteVisits(req: Request, res: Response): Promise<voi
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM site_visits ORDER BY created_at DESC;');
-        if (pgRes.rows.length > 0) visits = pgRes.rows;
+        visits = pgRes.rows;
       } catch (err: any) {
         console.error('PostgreSQL site_visits SELECT error:', err.message);
       }
@@ -383,7 +383,7 @@ export async function getSiteVisitStats(req: Request, res: Response): Promise<vo
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM site_visits;');
-        if (pgRes.rows.length > 0) visits = pgRes.rows;
+        visits = pgRes.rows;
       } catch {}
     }
 

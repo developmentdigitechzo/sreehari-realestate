@@ -9,11 +9,11 @@ import adminRoutes from './routes/admin.routes';
 import { errorHandler } from './middleware/errorHandler';
 
 // Load environment variables from cwd, backend/, or root directory
-dotenv.config();
-dotenv.config({ path: path.join(__dirname, '../../.env') });
-dotenv.config({ path: path.join(__dirname, '../.env') });
-dotenv.config({ path: path.join(process.cwd(), '.env') });
-dotenv.config({ path: path.join(process.cwd(), 'backend/.env') });
+dotenv.config({ override: true });
+dotenv.config({ path: path.join(__dirname, '../../.env'), override: true });
+dotenv.config({ path: path.join(__dirname, '../.env'), override: true });
+dotenv.config({ path: path.join(process.cwd(), '.env'), override: true });
+dotenv.config({ path: path.join(process.cwd(), 'backend/.env'), override: true });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -78,7 +78,8 @@ app.get('/api/health', (req, res) => {
       database_name: diag.activeConfig?.database || 'configured',
       error: diag.connectionError,
       connected_at: diag.connectedAt,
-      table_rows: diag.tableCounts
+      table_rows: diag.tableCounts,
+      attempts: diag.connectionAttempts || []
     },
     business_focus: 'Land & Plots Gated Communities',
     timestamp: new Date().toISOString()

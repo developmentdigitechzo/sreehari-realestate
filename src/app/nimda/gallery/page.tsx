@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Project, Plot, GalleryItem } from '@/lib/types';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 import {
   Image as ImageIcon,
   Video as VideoIcon,
@@ -77,6 +78,8 @@ export default function AdminGalleryPage() {
   // Add Site Photo Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     category: 'Roads & Infrastructure',
@@ -421,7 +424,7 @@ export default function AdminGalleryPage() {
     if (!file) return;
 
     if (file.size > 25 * 1024 * 1024) {
-      alert('File exceeds 25MB limit. Please upload an optimized image.');
+      setToastMessage('File exceeds 25MB limit. Please upload an optimized image.');
       return;
     }
 
@@ -439,10 +442,10 @@ export default function AdminGalleryPage() {
               title: prev.title || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
             }));
           } else {
-            alert('Upload failed: ' + (uploadRes?.message || 'Unknown error'));
+            setToastMessage('Upload failed: ' + (uploadRes?.message || 'Unknown error'));
           }
         } catch (err: any) {
-          alert('Upload failed: ' + err.message);
+          setToastMessage('Upload failed: ' + err.message);
         } finally {
           setUploadingMedia(false);
           if (fileInputRef.current) fileInputRef.current.value = '';
@@ -450,7 +453,7 @@ export default function AdminGalleryPage() {
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
-      alert('Error reading file: ' + err.message);
+      setToastMessage('Error reading file: ' + err.message);
       setUploadingMedia(false);
     }
   };
@@ -458,7 +461,7 @@ export default function AdminGalleryPage() {
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.image_url.trim()) {
-      alert('Please provide or upload an image file first.');
+      setToastMessage('Please provide or upload an image file first.');
       return;
     }
     try {
@@ -477,18 +480,25 @@ export default function AdminGalleryPage() {
       });
       loadAllMedia();
     } catch (err: any) {
-      alert(err.message || 'Failed to add media item');
+      setToastMessage(err.message || 'Failed to add media item');
     }
   };
 
-  const handleDeleteSitePhoto = async (galleryId: string) => {
-    if (!confirm('Are you sure you want to delete this custom site photo?')) return;
+  const handleDeleteSitePhoto = (galleryId: string) => {
+    setDeletingPhotoId(galleryId);
+  };
+
+  const confirmDeletePhoto = async () => {
+    if (!deletingPhotoId) return;
     try {
-      await api.deleteGalleryItem(galleryId);
+      await api.deleteGalleryItem(deletingPhotoId);
       loadAllMedia();
       if (sliderIndex !== null) setSliderIndex(null);
+      setToastMessage('Custom site photo deleted successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to delete gallery item');
+      setToastMessage(err.message || 'Failed to delete gallery item');
+    } finally {
+      setDeletingPhotoId(null);
     }
   };
 
@@ -1259,6 +1269,25 @@ export default function AdminGalleryPage() {
           </div>
         </div>
       )}
+          {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl animate-fade-in">
+          <span className="text-sm font-medium">{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-200">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Styled Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deletingPhotoId)}
+        title="Delete Custom Site Photo?"
+        description="This action will permanently delete this site photo from the gallery."
+        confirmLabel="Delete Photo"
+        onConfirm={confirmDeletePhoto}
+        onCancel={() => setDeletingPhotoId(null)}
+      />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { X, CheckCircle2, MessageSquare, Phone, Send, Sparkles } from 'lucide-react';
+import { X, CheckCircle2, MessageSquare, Phone, Send, Sparkles, ExternalLink } from 'lucide-react';
 import { api } from '@/lib/api';
 import EnquiryModal from '@/components/EnquiryModal';
 
@@ -17,8 +17,9 @@ export interface PromotionalPopupData {
   banner_image?: string;
   highlights?: string;
   cta_text?: string;
-  cta_action?: 'whatsapp' | 'lead_form' | 'call' | string;
+  cta_action?: 'whatsapp' | 'lead_form' | 'call' | 'custom_url' | 'none' | string;
   whatsapp_number?: string;
+  custom_url?: string;
   start_date?: string | null;
   end_date?: string | null;
   layout_style?: string;
@@ -120,16 +121,21 @@ export default function PromotionalPopupModal() {
     if (!activePopup) return;
 
     const action = activePopup.cta_action || 'whatsapp';
-    const rawPhone = (activePopup.whatsapp_number || '+91 98424 01991').replace(/\D/g, '');
-    const cleanPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
+    const rawPhone = (activePopup.whatsapp_number || '+91 73737 13559').replace(/\D/g, '');
+    const cleanPhone = rawPhone.length === 10 ? `91${rawPhone}` : (rawPhone || '917373713559');
 
     handleDismiss();
 
-    if (action === 'lead_form') {
+    if (action === 'none') {
+      return;
+    } else if (action === 'lead_form') {
       setLeadFormTitle(`Special Offer: ${activePopup.title}`);
       setIsLeadFormOpen(true);
     } else if (action === 'call') {
       window.location.href = `tel:${cleanPhone}`;
+    } else if (action === 'custom_url') {
+      const targetUrl = (activePopup.custom_url || activePopup.whatsapp_number || '/properties').trim();
+      window.open(targetUrl, targetUrl.startsWith('http') ? '_blank' : '_self');
     } else {
       // Default: WhatsApp Direct Chat
       const message = encodeURIComponent(
@@ -158,6 +164,7 @@ export default function PromotionalPopupModal() {
   const renderCtaIcon = () => {
     if (activePopup?.cta_action === 'lead_form') return <Send className="w-4 h-4 shrink-0" />;
     if (activePopup?.cta_action === 'call') return <Phone className="w-4 h-4 shrink-0" />;
+    if (activePopup?.cta_action === 'custom_url') return <ExternalLink className="w-4 h-4 shrink-0" />;
     return <MessageSquare className="w-4 h-4 shrink-0" />;
   };
 
@@ -188,12 +195,14 @@ export default function PromotionalPopupModal() {
               </button>
 
               {/* Badge Tag Top Left */}
-              <div className="absolute top-3.5 left-3.5 z-20">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#D61F69] to-pink-600 text-white text-[11px] font-extrabold uppercase tracking-wider shadow-lg border border-pink-300/30">
-                  <Sparkles className="w-3 h-3" />
-                  {activePopup.badge_tag || 'FESTIVE OFFER'}
-                </span>
-              </div>
+              {activePopup.badge_tag && activePopup.badge_tag.trim() !== '' && (
+                <div className="absolute top-3.5 left-3.5 z-20">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-[#D61F69] to-pink-600 text-white text-[11px] font-extrabold uppercase tracking-wider shadow-lg border border-pink-300/30">
+                    <Sparkles className="w-3 h-3" />
+                    {activePopup.badge_tag}
+                  </span>
+                </div>
+              )}
 
               {/* Full Height Poster Image */}
               <div className="relative w-full h-[460px] sm:h-[520px]">
@@ -207,9 +216,11 @@ export default function PromotionalPopupModal() {
                 {/* Dark Gradient Overlay for bottom text readibility */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/75 to-transparent flex flex-col justify-end p-6 z-10 space-y-3.5">
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-amber-300">
-                      {activePopup.category || 'Special Promotion'}
-                    </span>
+                    {Boolean(activePopup.category && activePopup.category.trim()) && (
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-amber-300">
+                        {activePopup.category}
+                      </span>
+                    )}
                     <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight font-serif drop-shadow-md">
                       {activePopup.title}
                     </h3>
@@ -222,7 +233,7 @@ export default function PromotionalPopupModal() {
 
                   {highlightsList.length > 0 && (
                     <div className="space-y-1.5 py-1">
-                      {highlightsList.slice(0, 3).map((hl, i) => (
+                      {highlightsList.slice(0, 6).map((hl, i) => (
                         <div key={i} className="flex items-center gap-2 text-xs text-white/95 font-medium">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                           <span className="truncate">{hl}</span>
@@ -232,14 +243,16 @@ export default function PromotionalPopupModal() {
                   )}
 
                   {/* CTA Button */}
-                  <button
-                    type="button"
-                    onClick={handleCtaAction}
-                    className="w-full py-3.5 px-5 bg-gradient-to-r from-[#D61F69] via-pink-600 to-[#006452] hover:opacity-95 text-white font-extrabold text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2 border border-white/20 transition-all hover:scale-[1.02] cursor-pointer"
-                  >
-                    {renderCtaIcon()}
-                    <span>{activePopup.cta_text || 'Claim Festive Offer'}</span>
-                  </button>
+                  {activePopup.cta_action !== 'none' && (
+                    <button
+                      type="button"
+                      onClick={handleCtaAction}
+                      className="w-full py-3.5 px-5 bg-gradient-to-r from-[#D61F69] via-pink-600 to-[#006452] hover:opacity-95 text-white font-extrabold text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2 border border-white/20 transition-all hover:scale-[1.02] cursor-pointer"
+                    >
+                      {renderCtaIcon()}
+                      <span>{activePopup.cta_text || 'Claim Festive Offer'}</span>
+                    </button>
+                  )}
 
                   <div className="text-center pt-0.5">
                     <button
@@ -281,20 +294,24 @@ export default function PromotionalPopupModal() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30 pointer-events-none" />
 
                 {/* Badge Tag */}
-                <div className="absolute top-3.5 left-3.5 z-10">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#006452] text-emerald-200 text-[11px] font-extrabold uppercase tracking-wider shadow-md border border-emerald-400/30">
-                    <Sparkles className="w-3 h-3 text-amber-300" />
-                    {activePopup.badge_tag || 'FESTIVE OFFER'}
-                  </span>
-                </div>
+                {activePopup.badge_tag && activePopup.badge_tag.trim() !== '' && (
+                  <div className="absolute top-3.5 left-3.5 z-10">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#006452] text-emerald-200 text-[11px] font-extrabold uppercase tracking-wider shadow-md border border-emerald-400/30">
+                      <Sparkles className="w-3 h-3 text-amber-300" />
+                      {activePopup.badge_tag}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Content Card Body */}
               <div className="p-6 sm:p-7 space-y-4 text-gray-900 bg-[#fef9e6]/50">
                 <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold text-[#D61F69] uppercase tracking-wider block">
-                    {activePopup.category || 'Special Opportunity'}
-                  </span>
+                  {Boolean(activePopup.category && activePopup.category.trim()) && (
+                    <span className="text-[11px] font-bold text-[#D61F69] uppercase tracking-wider block">
+                      {activePopup.category}
+                    </span>
+                  )}
                   <h3 className="text-xl sm:text-2xl font-extrabold text-gray-950 leading-snug font-serif">
                     {activePopup.title}
                   </h3>
@@ -317,26 +334,28 @@ export default function PromotionalPopupModal() {
                 )}
 
                 {/* CTA Button */}
-                <div className="pt-2 space-y-2">
-                  <button
-                    type="button"
-                    onClick={handleCtaAction}
-                    className="w-full py-3.5 px-5 bg-[#006452] hover:bg-[#004f41] text-white font-bold text-sm rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all hover:shadow-emerald-900/20 hover:-translate-y-0.5 cursor-pointer"
-                  >
-                    {renderCtaIcon()}
-                    <span>{activePopup.cta_text || 'Claim Festive Offer'}</span>
-                  </button>
-
-                  <div className="text-center">
+                {activePopup.cta_action !== 'none' && (
+                  <div className="pt-2 space-y-2">
                     <button
                       type="button"
-                      onClick={handleDismiss}
-                      className="text-[11px] text-gray-500 hover:text-gray-800 transition cursor-pointer"
+                      onClick={handleCtaAction}
+                      className="w-full py-3.5 px-5 bg-[#006452] hover:bg-[#004f41] text-white font-bold text-sm rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all hover:shadow-emerald-900/20 hover:-translate-y-0.5 cursor-pointer"
                     >
-                      Remind me later
+                      {renderCtaIcon()}
+                      <span>{activePopup.cta_text || 'Claim Festive Offer'}</span>
                     </button>
+
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={handleDismiss}
+                        className="text-[11px] text-gray-500 hover:text-gray-800 transition cursor-pointer"
+                      >
+                        Remind me later
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -367,21 +386,25 @@ export default function PromotionalPopupModal() {
                 <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/60 via-transparent to-transparent pointer-events-none" />
 
                 {/* Badge Tag */}
-                <div className="absolute top-4 left-4 z-10">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D61F69] text-white text-[11px] font-extrabold uppercase tracking-wider shadow-md border border-pink-300/30">
-                    <Sparkles className="w-3 h-3" />
-                    {activePopup.badge_tag || 'FESTIVE OFFER'}
-                  </span>
-                </div>
+                {activePopup.badge_tag && activePopup.badge_tag.trim() !== '' && (
+                  <div className="absolute top-4 left-4 z-10">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D61F69] text-white text-[11px] font-extrabold uppercase tracking-wider shadow-md border border-pink-300/30">
+                      <Sparkles className="w-3 h-3" />
+                      {activePopup.badge_tag}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Right Column: Detailed Content Area */}
               <div className="md:col-span-7 p-6 sm:p-8 flex flex-col justify-between space-y-5 bg-[#fef9e6]/60">
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-[#006452] uppercase tracking-wider block">
-                      {activePopup.category || 'Festival Deals & Plots'}
-                    </span>
+                    {Boolean(activePopup.category && activePopup.category.trim()) && (
+                      <span className="text-xs font-bold text-[#006452] uppercase tracking-wider block">
+                        {activePopup.category}
+                      </span>
+                    )}
                     <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-950 leading-tight font-serif">
                       {activePopup.title}
                     </h3>
@@ -405,26 +428,28 @@ export default function PromotionalPopupModal() {
                 </div>
 
                 {/* CTA Action Area */}
-                <div className="pt-3 space-y-2.5 border-t border-amber-200/80">
-                  <button
-                    type="button"
-                    onClick={handleCtaAction}
-                    className="w-full py-3.5 px-6 bg-gradient-to-r from-[#006452] to-[#004f41] hover:from-[#005243] hover:to-[#004135] text-white font-extrabold text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2.5 transition-all hover:-translate-y-0.5 cursor-pointer border border-emerald-700"
-                  >
-                    {renderCtaIcon()}
-                    <span>{activePopup.cta_text || 'Claim Festive Offer'}</span>
-                  </button>
-
-                  <div className="text-center">
+                {activePopup.cta_action !== 'none' && (
+                  <div className="pt-3 space-y-2.5 border-t border-amber-200/80">
                     <button
                       type="button"
-                      onClick={handleDismiss}
-                      className="text-xs text-gray-500 hover:text-gray-900 transition underline cursor-pointer"
+                      onClick={handleCtaAction}
+                      className="w-full py-3.5 px-6 bg-gradient-to-r from-[#006452] to-[#004f41] hover:from-[#005243] hover:to-[#004135] text-white font-extrabold text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2.5 transition-all hover:-translate-y-0.5 cursor-pointer border border-emerald-700"
                     >
-                      Remind me later
+                      {renderCtaIcon()}
+                      <span>{activePopup.cta_text || 'Claim Festive Offer'}</span>
                     </button>
+
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={handleDismiss}
+                        className="text-xs text-gray-500 hover:text-gray-900 transition underline cursor-pointer"
+                      >
+                        Remind me later
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}

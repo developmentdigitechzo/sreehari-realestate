@@ -846,7 +846,9 @@ export default function PropertyDetailClient({ property }: { property: any }) {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="font-extrabold text-sm text-[#006452] group-hover:text-[#D61F69] transition">
-                              {plot.plot_number}
+                              {plot.title && plot.title.toLowerCase() !== plot.plot_number?.toLowerCase()
+                                ? `${plot.plot_number} - ${plot.title}`
+                                : plot.plot_number}
                             </span>
                             <span
                               className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -1174,7 +1176,9 @@ export default function PropertyDetailClient({ property }: { property: any }) {
                   {currentProject.title}
                 </span>
                 <h3 className="text-xl font-extrabold text-[#006452]">
-                  {selectedPlot.plot_number}
+                  {selectedPlot.title && selectedPlot.title.toLowerCase() !== selectedPlot.plot_number?.toLowerCase()
+                    ? `${selectedPlot.plot_number} - ${selectedPlot.title}`
+                    : selectedPlot.plot_number}
                 </h3>
               </div>
               <button

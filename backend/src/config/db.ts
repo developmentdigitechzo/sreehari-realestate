@@ -3,47 +3,33 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
-// Load .env from multiple standard locations (cwd, backend/, project root)
-dotenv.config();
-dotenv.config({ path: path.join(__dirname, '../../.env') });
-dotenv.config({ path: path.join(__dirname, '../.env') });
-dotenv.config({ path: path.join(process.cwd(), '.env') });
-dotenv.config({ path: path.join(process.cwd(), 'backend/.env') });
+// Load .env from multiple standard locations (cwd, backend/, project root) with override
+dotenv.config({ override: true });
+dotenv.config({ path: path.join(__dirname, '../../.env'), override: true });
+dotenv.config({ path: path.join(__dirname, '../.env'), override: true });
+dotenv.config({ path: path.join(process.cwd(), '.env'), override: true });
+dotenv.config({ path: path.join(process.cwd(), 'backend/.env'), override: true });
 
 export const dbDiagnostics = {
   isPostgres: false,
   connectionError: null as string | null,
   activeConfig: {} as any,
   connectedAt: null as string | null,
-  tableCounts: {} as Record<string, number>
+  tableCounts: {} as Record<string, number>,
+  connectionAttempts: [] as Array<{ method: string; error: string }>
 };
 
 function getPoolConfig(): PoolConfig {
-  const hasDiscreteConfig = Boolean(process.env.DB_USER || process.env.DB_NAME || process.env.DB_PASSWORD);
-  const connectionString = process.env.DATABASE_URL;
-
-  // Discrete DB settings take precedence on cPanel production
-  if (!hasDiscreteConfig && connectionString) {
-    const fixedUrl = connectionString.replace('@localhost:', '@127.0.0.1:');
-    const config: PoolConfig = {
-      connectionString: fixedUrl,
-      connectionTimeoutMillis: 7000,
-    };
-    if (process.env.DB_SSL === 'true' || connectionString.includes('sslmode=require')) {
-      config.ssl = { rejectUnauthorized: false };
-    }
-    return config;
-  }
-
-  let host = process.env.PGHOST || process.env.DB_HOST || '127.0.0.1';
-  // On Linux/cPanel Node 18+, 'localhost' resolves to IPv6 ::1 which PostgreSQL often rejects.
+  const isLinux = process.platform === 'linux';
+  const defaultHost = isLinux ? '/var/run/postgresql' : '127.0.0.1';
+  let host = process.env.PGHOST || process.env.DB_HOST || defaultHost;
   if (host === 'localhost') {
-    host = '127.0.0.1';
+    host = isLinux ? '/var/run/postgresql' : '127.0.0.1';
   }
   const port = parseInt(process.env.PGPORT || process.env.DB_PORT || '5432', 10);
-  const user = process.env.PGUSER || process.env.DB_USER || 'postgres';
-  const password = process.env.PGPASSWORD || process.env.DB_PASSWORD || 'postgres';
-  const database = process.env.PGDATABASE || process.env.DB_NAME || 'sree_hari_realty';
+  const user = process.env.PGUSER || process.env.DB_USER || 'sreeharirealty_client_db';
+  const password = process.env.PGPASSWORD || process.env.DB_PASSWORD || 'Realestate@2026!#';
+  const database = process.env.PGDATABASE || process.env.DB_NAME || 'sreeharirealty_db';
 
   const config: PoolConfig = {
     host,
@@ -239,49 +225,149 @@ function saveFallbackDB(data: FallbackDB) {
 }
 
 export async function initDatabase() {
-  const poolConfig = getPoolConfig();
+  const baseConfig = getPoolConfig();
+  const baseUser = process.env.PGUSER || process.env.DB_USER || baseConfig.user || 'sreeharirealty_client_db';
+  const basePassword = process.env.PGPASSWORD || process.env.DB_PASSWORD || baseConfig.password || 'Realestate@2026!#';
+  const baseDatabase = process.env.PGDATABASE || process.env.DB_NAME || baseConfig.database || 'sreeharirealty_db';
+  const basePort = parseInt(process.env.PGPORT || process.env.DB_PORT || String(baseConfig.port || 5432), 10);
+  const baseHost = process.env.PGHOST || process.env.DB_HOST || baseConfig.host || (process.platform === 'linux' ? '/var/run/postgresql' : '127.0.0.1');
+  const connectionString = process.env.DATABASE_URL;
+
+  // Build candidate configurations in priority order:
+  const candidateConfigs: Array<{ label: string; config: PoolConfig }> = [];
+
+  // Determine potential usernames (user-specified and cPanel base user)
+  const usersToTry = [baseUser];
+  const cpanelUser = baseUser.includes('_') ? baseUser.split('_')[0] : 'sreeharirealty';
+  if (!usersToTry.includes(cpanelUser)) {
+    usersToTry.push(cpanelUser);
+  }
+
+  // Socket locations to test
+  const socketPaths = ['/var/run/postgresql', '/tmp'];
+
+  // Priority 1: Unix Domain Sockets (standard cPanel Linux IPC)
+  for (const sPath of socketPaths) {
+    for (const u of usersToTry) {
+      candidateConfigs.push({
+        label: `Unix Socket ${sPath} (user: ${u})`,
+        config: { host: sPath, port: basePort, user: u, password: basePassword, database: baseDatabase, connectionTimeoutMillis: 5000 }
+      });
+      // Also try peer auth without password on local socket
+      candidateConfigs.push({
+        label: `Unix Socket ${sPath} (peer auth, user: ${u})`,
+        config: { host: sPath, port: basePort, user: u, database: baseDatabase, connectionTimeoutMillis: 5000 }
+      });
+    }
+  }
+
+  // Priority 2: Default System Unix Socket (no host property)
+  for (const u of usersToTry) {
+    candidateConfigs.push({
+      label: `Default Local Socket (user: ${u})`,
+      config: { port: basePort, user: u, password: basePassword, database: baseDatabase, connectionTimeoutMillis: 5000 }
+    });
+  }
+
+  // Priority 3: DATABASE_URL if explicitly given
+  if (connectionString) {
+    candidateConfigs.push({
+      label: 'DATABASE_URL (SSL on)',
+      config: { connectionString, connectionTimeoutMillis: 5000, ssl: { rejectUnauthorized: false } }
+    });
+    candidateConfigs.push({
+      label: 'DATABASE_URL (SSL off)',
+      config: { connectionString, connectionTimeoutMillis: 5000 }
+    });
+  }
+
+  // Priority 4: TCP with SSL
+  for (const u of usersToTry) {
+    candidateConfigs.push({
+      label: `TCP ${baseHost}:${basePort} (with SSL, user: ${u})`,
+      config: { host: baseHost, port: basePort, user: u, password: basePassword, database: baseDatabase, connectionTimeoutMillis: 5000, ssl: { rejectUnauthorized: false } }
+    });
+  }
+
+  // Priority 5: TCP without SSL
+  for (const u of usersToTry) {
+    candidateConfigs.push({
+      label: `TCP ${baseHost}:${basePort} (SSL off, user: ${u})`,
+      config: { host: baseHost, port: basePort, user: u, password: basePassword, database: baseDatabase, connectionTimeoutMillis: 5000 }
+    });
+  }
+
+  const attemptLogs: Array<{ method: string; error: string }> = [];
 
   try {
-    pool = new Pool(poolConfig);
+    let client: any = null;
+    let activePool: Pool | null = null;
+    let activeConfig: PoolConfig | null = null;
+    let activeLabel = '';
+    let lastErr: any = null;
 
-    let client;
-    try {
-      client = await pool.connect();
-    } catch (connErr: any) {
-      // If DB does not exist in local development, connect to default 'postgres' db and create it
-      if (
-        process.env.NODE_ENV !== 'production' &&
-        connErr.message &&
-        connErr.message.includes('does not exist') &&
-        poolConfig.connectionString
-      ) {
-        const rootConnStr = poolConfig.connectionString.replace(/\/sree_hari_realty(\?.*)?$/, '/postgres$1');
-        const rootPool = new Pool({ connectionString: rootConnStr, connectionTimeoutMillis: 3000 });
-        const rootClient = await rootPool.connect();
-        await rootClient.query('CREATE DATABASE sree_hari_realty;');
-        rootClient.release();
-        await rootPool.end();
-        console.log('✓ Created PostgreSQL database "sree_hari_realty"');
+    for (const candidate of candidateConfigs) {
+      let testPool: Pool | null = null;
+      try {
+        testPool = new Pool(candidate.config);
+        client = await testPool.connect();
+        activePool = testPool;
+        activeConfig = candidate.config;
+        activeLabel = candidate.label;
+        console.log(`✓ Successfully established PostgreSQL connection via ${candidate.label}`);
+        break;
+      } catch (connErr: any) {
+        lastErr = connErr;
+        attemptLogs.push({ method: candidate.label, error: connErr.message });
+        if (testPool) {
+          try { await testPool.end(); } catch {}
+        }
 
-        // Re-try connection
-        client = await pool.connect();
-      } else {
-        throw connErr;
+        // If DB does not exist in local development, connect to default 'postgres' db and create it
+        if (
+          process.env.NODE_ENV !== 'production' &&
+          connErr.message &&
+          connErr.message.includes('does not exist') &&
+          baseConfig.connectionString
+        ) {
+          try {
+            const rootConnStr = baseConfig.connectionString.replace(/\/sree_hari_realty(\?.*)?$/, '/postgres$1');
+            const rootPool = new Pool({ connectionString: rootConnStr, connectionTimeoutMillis: 3000 });
+            const rootClient = await rootPool.connect();
+            await rootClient.query('CREATE DATABASE sree_hari_realty;');
+            rootClient.release();
+            await rootPool.end();
+            console.log('✓ Created PostgreSQL database "sree_hari_realty"');
+
+            testPool = new Pool(candidate.config);
+            client = await testPool.connect();
+            activePool = testPool;
+            activeConfig = candidate.config;
+            activeLabel = candidate.label;
+            break;
+          } catch {}
+        }
       }
     }
 
+    if (!client || !activePool || !activeConfig) {
+      throw (lastErr || new Error('All PostgreSQL connection strategies exhausted.'));
+    }
+
+    pool = activePool;
     isPostgresAvailable = true;
     dbDiagnostics.isPostgres = true;
     dbDiagnostics.connectionError = null;
     dbDiagnostics.activeConfig = {
-      host: poolConfig.host || (poolConfig.connectionString ? 'via DATABASE_URL' : '127.0.0.1'),
-      port: poolConfig.port || 5432,
-      user: poolConfig.user || 'configured',
-      database: poolConfig.database || 'configured',
-      ssl: Boolean(poolConfig.ssl)
+      method: activeLabel,
+      host: activeConfig.host || (activeConfig.connectionString ? 'via DATABASE_URL' : 'unix-domain-socket'),
+      port: activeConfig.port || 5432,
+      user: activeConfig.user || 'configured',
+      database: activeConfig.database || 'configured',
+      ssl: Boolean(activeConfig.ssl)
     };
     dbDiagnostics.connectedAt = new Date().toISOString();
-    console.log(`✓ Successfully connected to PostgreSQL database (${poolConfig.database || 'db'} on ${poolConfig.host || 'host'})`);
+    console.log(`✓ Connected to PostgreSQL (${dbDiagnostics.activeConfig.database} via ${activeLabel})`);
 
     // Execute schema safely
     const schemaPath = path.join(__dirname, '../models/schema.sql');
@@ -295,6 +381,10 @@ export async function initDatabase() {
 
       // Auto-migrate additional columns & tables independently
       const alterQueries = [
+        // Projects extra fields
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS meta_title VARCHAR(255);`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS meta_description TEXT;`,
+
         // Blogs extra fields
         `ALTER TABLE blogs ADD COLUMN IF NOT EXISTS image_url TEXT;`,
         `ALTER TABLE blogs ADD COLUMN IF NOT EXISTS seo_title VARCHAR(255);`,
@@ -343,13 +433,14 @@ export async function initDatabase() {
             id VARCHAR(36) PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
             subtitle VARCHAR(255),
-            category VARCHAR(100) DEFAULT 'Festival',
-            badge_tag VARCHAR(100) DEFAULT 'FESTIVE OFFER',
+            category VARCHAR(100) DEFAULT '',
+            badge_tag VARCHAR(100) DEFAULT '',
             banner_image TEXT,
             highlights TEXT,
             cta_text VARCHAR(150) DEFAULT 'Claim Offer on WhatsApp',
             cta_action VARCHAR(50) DEFAULT 'whatsapp',
-            whatsapp_number VARCHAR(50) DEFAULT '+91 98424 01991',
+            whatsapp_number VARCHAR(50) DEFAULT '+91 73737 13559',
+            custom_url TEXT,
             start_date VARCHAR(50),
             end_date VARCHAR(50),
             layout_style VARCHAR(50) DEFAULT 'Auto Detect',
@@ -359,6 +450,7 @@ export async function initDatabase() {
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS custom_url TEXT;`,
 
         // Users & Staff extra fields
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '["ALL"]'::jsonb;`,
@@ -656,13 +748,13 @@ export async function initDatabase() {
         for (const pop of store.popups) {
           try {
             await client.query(
-              `INSERT INTO popups (id, title, subtitle, category, badge_tag, banner_image, highlights, cta_text, cta_action, whatsapp_number, start_date, end_date, layout_style, display_delay, show_frequency, status, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+              `INSERT INTO popups (id, title, subtitle, category, badge_tag, banner_image, highlights, cta_text, cta_action, whatsapp_number, custom_url, start_date, end_date, layout_style, display_delay, show_frequency, status, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
                ON CONFLICT (id) DO NOTHING;`,
               [
-                pop.id, pop.title, pop.subtitle || '', pop.category || 'Festival', pop.badge_tag || 'FESTIVE OFFER',
+                pop.id, pop.title, pop.subtitle || '', pop.category || '', pop.badge_tag || '',
                 pop.banner_image || '', pop.highlights || '', pop.cta_text || '', pop.cta_action || 'whatsapp',
-                pop.whatsapp_number || '+91 98424 01991', pop.start_date || null, pop.end_date || null,
+                pop.whatsapp_number || '+91 73737 13559', pop.custom_url || '', pop.start_date || null, pop.end_date || null,
                 pop.layout_style || 'Auto Detect', pop.display_delay || '3s', pop.show_frequency || 'Once per Session',
                 pop.status || 'Active', pop.created_at || new Date().toISOString(), pop.updated_at || new Date().toISOString()
               ]
@@ -694,7 +786,7 @@ export async function initDatabase() {
 
       // Record verified table counts
       const counts: Record<string, number> = {};
-      for (const tbl of ['projects', 'plots', 'leads', 'site_visits', 'popups', 'blogs', 'gallery', 'users']) {
+      for (const tbl of ['projects', 'plots', 'leads', 'site_visits', 'popups', 'blogs', 'gallery', 'users', 'settings']) {
         try {
           const cRes = await client.query(`SELECT count(*)::int as c FROM ${tbl};`);
           counts[tbl] = cRes.rows[0]?.c || 0;
@@ -714,11 +806,12 @@ export async function initDatabase() {
     isPostgresAvailable = false;
     dbDiagnostics.isPostgres = false;
     dbDiagnostics.connectionError = err.message;
+    dbDiagnostics.connectionAttempts = attemptLogs;
     dbDiagnostics.activeConfig = {
-      host: poolConfig.host || (poolConfig.connectionString ? 'via DATABASE_URL' : '127.0.0.1'),
-      port: poolConfig.port || 5432,
-      user: poolConfig.user,
-      database: poolConfig.database
+      host: baseHost || (connectionString ? 'via DATABASE_URL' : '127.0.0.1'),
+      port: basePort || 5432,
+      user: baseUser,
+      database: baseDatabase
     };
     ensureFallbackDB();
   }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { StaffUser } from '@/lib/types';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 import {
   Users,
   UserPlus,
@@ -32,21 +33,23 @@ import {
 } from 'lucide-react';
 
 const CRM_MODULES_LIST = [
-  { id: '/nimda/dashboard', name: 'Dashboard Overview', icon: LayoutDashboard, desc: 'Real-time Analytics & CRM Performance' },
-  { id: '/nimda/leads', name: 'CRM Leads & Pipeline', icon: Users, desc: 'Lead Pipeline, Kanban & Customer Tracking' },
-  { id: '/nimda/site-visits', name: 'Site Visit Manager', icon: CalendarCheck, desc: 'Customer Plot Visits & Pickup Routing' },
-  { id: '/nimda/projects', name: 'Projects', icon: FolderKanban, desc: 'Gated Communities & Layout Management' },
-  { id: '/nimda/plots', name: 'Plots Inventory', icon: Grid, desc: 'Plot Dimensions, Pricing & Availability' },
-  { id: '/nimda/blogs', name: 'Blog Manager', icon: Newspaper, desc: 'Real Estate Articles & Buyer Guides' },
-  { id: '/nimda/popups', name: 'Ad & Seasonal Popups', icon: Megaphone, desc: 'Festive Offers & Popup Banners' },
-  { id: '/nimda/gallery', name: 'Media Gallery', icon: ImageIcon, desc: 'Site Photos & Layout Image Assets' },
-  { id: '/nimda/settings', name: 'Settings & Office', icon: Settings, desc: 'Office Address, Hours & Brand Contact' },
-  { id: '/nimda/staff', name: 'Staff & Permissions', icon: ShieldCheck, desc: 'Manage User Accounts & Access Rights' },
+  { id: '/nimda/dashboard', name: 'Dashboard', icon: LayoutDashboard, desc: 'Overview & metrics' },
+  { id: '/nimda/leads', name: 'Leads', icon: Users, desc: 'Lead pipeline & follow-ups' },
+  { id: '/nimda/site-visits', name: 'Site Visits', icon: CalendarCheck, desc: 'Plot tour bookings & schedules' },
+  { id: '/nimda/projects', name: 'Projects', icon: FolderKanban, desc: 'Projects & community layouts' },
+  { id: '/nimda/plots', name: 'Plots', icon: Grid, desc: 'Plot inventory & availability' },
+  { id: '/nimda/blogs', name: 'Blogs', icon: Newspaper, desc: 'Articles & market guides' },
+  { id: '/nimda/popups', name: 'Popups', icon: Megaphone, desc: 'Promotional & festive banners' },
+  { id: '/nimda/gallery', name: 'Gallery', icon: ImageIcon, desc: 'Photos & site media' },
+  { id: '/nimda/settings', name: 'Settings', icon: Settings, desc: 'Company settings & hero banners' },
+  { id: '/nimda/staff', name: 'Staff', icon: ShieldCheck, desc: 'Staff accounts & permissions' },
 ];
 
 export default function StaffManagementPage() {
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingStaffInfo, setDeletingStaffInfo] = useState<{ id: string; name: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Modal State
@@ -193,17 +196,24 @@ export default function StaffManagementPage() {
     }
   };
 
-  const handleDelete = async (id: string, staffName: string) => {
-    if (!confirm(`Are you sure you want to delete staff account for "${staffName}"?`)) return;
+  const handleDelete = (id: string, staffName: string) => {
+    setDeletingStaffInfo({ id, name: staffName });
+  };
+
+  const confirmDeleteStaff = async () => {
+    if (!deletingStaffInfo) return;
     try {
-      const res = await api.deleteStaff(id);
+      const res = await api.deleteStaff(deletingStaffInfo.id);
       if (!res.success) {
-        alert(res.message || 'Failed to delete staff member');
+        setToastMessage(res.message || 'Failed to delete staff member');
         return;
       }
       loadStaff();
+      setToastMessage('Staff member removed successfully');
     } catch (err: any) {
-      alert(err.message || 'Error deleting staff account');
+      setToastMessage(err.message || 'Error deleting staff account');
+    } finally {
+      setDeletingStaffInfo(null);
     }
   };
 
@@ -221,10 +231,10 @@ export default function StaffManagementPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-3">
             <Shield className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
-            <span>Staff & Access Permissions Manager</span>
+            <span>Staff</span>
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Create staff credentials (Gmail, Phone & Password) and customize module visibility per role.
+            Manage staff accounts, credentials, and module permissions.
           </p>
         </div>
 
@@ -233,7 +243,7 @@ export default function StaffManagementPage() {
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition-all text-sm shrink-0 cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
-          <span>Add New Staff Account</span>
+          <span>Add Staff</span>
         </button>
       </div>
 
@@ -640,6 +650,25 @@ export default function StaffManagementPage() {
         </div>
       </div>
       )}
+          {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl animate-fade-in">
+          <span className="text-sm font-medium">{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-200">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Styled Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deletingStaffInfo)}
+        title="Delete Staff Account?"
+        description={deletingStaffInfo ? `Are you sure you want to delete staff account for "${deletingStaffInfo.name}"?` : ''}
+        confirmLabel="Delete Staff"
+        onConfirm={confirmDeleteStaff}
+        onCancel={() => setDeletingStaffInfo(null)}
+      />
     </div>
   );
 }

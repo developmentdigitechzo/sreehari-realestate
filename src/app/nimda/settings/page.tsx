@@ -1,5 +1,6 @@
 'use client';
 
+import ConfirmModal from '@/components/admin/ConfirmModal';
 import { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
 import {
@@ -38,6 +39,19 @@ const COLOR_PRESETS = [
   { name: 'Soft Cream', hex: '#FFFCDD' },
 ];
 
+export const STANDARD_FRONTEND_PAGES = [
+  { path: '/properties', label: 'All Properties & Layouts (/properties)' },
+  { path: '/properties/park-avenue', label: 'Park Avenue Community (/properties/park-avenue)' },
+  { path: '/properties/sri-amman-nagar', label: 'Sri Amman Nagar (/properties/sri-amman-nagar)' },
+  { path: '/properties/aishwarya-nagar', label: 'Aishwarya Nagar (/properties/aishwarya-nagar)' },
+  { path: '/about', label: 'About Sree Hari Realty (/about)' },
+  { path: '/contact', label: 'Contact Us & Site Visit Booking (/contact)' },
+  { path: '/faq', label: 'Frequently Asked Questions (/faq)' },
+  { path: '/blog', label: 'Market Insights & Real Estate Blog (/blog)' },
+  { path: '/gallery', label: 'Layout & Development Gallery (/gallery)' },
+  { path: '/', label: 'Home Page (/)' }
+];
+
 export const DEFAULT_HERO_BANNER: HeroBanner = {
   id: 'default_entrance_hero',
   banner_type: 'overlay',
@@ -47,6 +61,7 @@ export const DEFAULT_HERO_BANNER: HeroBanner = {
   badge_text: 'PREMIUM GATED COMMUNITY PLOTS',
   button1_text: 'Explore Plots',
   button1_link: '/properties',
+  button1_active: true,
   button2_text: 'Book Site Visit',
   button2_link: 'enquiry',
   button2_active: true,
@@ -87,6 +102,7 @@ export default function AdminSettingsPage() {
   });
 
   const [heroBanners, setHeroBanners] = useState<HeroBanner[]>([]);
+  const [deletingBannerId, setDeletingBannerId] = useState<string | null>(null);
   const [autoplayInterval, setAutoplayInterval] = useState<number>(6);
 
   const [themeMode, setThemeMode] = useState<CrmThemeMode>('light');
@@ -94,6 +110,7 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
+  const setToastMessage = setMessage;
 
   // Banner Modal States
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
@@ -106,6 +123,7 @@ export default function AdminSettingsPage() {
     title: '',
     subtitle: '',
     badge_text: '',
+    button1_active: true,
     button1_text: 'Explore Plots',
     button1_link: '/properties',
     button2_text: 'Book Site Visit',
@@ -222,13 +240,13 @@ export default function AdminSettingsPage() {
           setSettings((prev) => ({ ...prev, logo_url: res.fileUrl }));
           setMessage('Logo uploaded successfully! Click "Save Branding & Settings" to apply.');
         } else {
-          alert(res.message || 'Logo upload failed');
+          setToastMessage(res.message || 'Logo upload failed');
         }
         setUploading(false);
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
-      alert('Upload error: ' + err.message);
+      setToastMessage('Upload error: ' + err.message);
       setUploading(false);
     }
   };
@@ -258,7 +276,7 @@ export default function AdminSettingsPage() {
         window.dispatchEvent(new Event('settingsUpdated'));
       }
     } catch (err: any) {
-      alert(err.message || 'Failed to update settings');
+      setToastMessage(err.message || 'Failed to update settings');
     } finally {
       setSaving(false);
     }
@@ -277,6 +295,7 @@ export default function AdminSettingsPage() {
       title: '',
       subtitle: '',
       badge_text: 'NEW LAUNCH',
+      button1_active: true,
       button1_text: 'Explore Plots',
       button1_link: '/properties',
       button2_text: 'Book Site Visit',
@@ -293,6 +312,7 @@ export default function AdminSettingsPage() {
     setEditingBannerId(banner.id);
     setBannerForm({
       ...banner,
+      button1_active: banner.button1_active !== false,
       button1_text: banner.button1_text || banner.button_text || 'Explore Plots',
       button1_link: banner.button1_link || banner.button_link || '/properties',
       button2_text: banner.button2_text || 'Book Site Visit',
@@ -324,20 +344,20 @@ export default function AdminSettingsPage() {
             setBannerForm((prev) => ({ ...prev, image_url: res.fileUrl }));
           }
         } else {
-          alert(res.message || 'Image upload failed');
+          setToastMessage(res.message || 'Image upload failed');
         }
         setBannerModalUploading(false);
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
-      alert('Upload error: ' + err.message);
+      setToastMessage('Upload error: ' + err.message);
       setBannerModalUploading(false);
     }
   };
 
   const handleSaveBanner = async () => {
     if (!bannerForm.image_url) {
-      alert('Please provide or upload a banner image.');
+      setToastMessage('Please provide or upload a banner image.');
       return;
     }
 
@@ -363,6 +383,7 @@ export default function AdminSettingsPage() {
         title: bannerForm.title || '',
         subtitle: bannerForm.subtitle || '',
         badge_text: bannerForm.badge_text || '',
+        button1_active: bannerForm.button1_active !== false,
         button1_text: bannerForm.button1_text || 'Explore Plots',
         button1_link: bannerForm.button1_link || '/properties',
         button2_text: bannerForm.button2_text || 'Book Site Visit',
@@ -391,9 +412,13 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleDeleteBanner = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this hero banner slide?')) return;
-    const updated = heroBanners.filter((b) => b.id !== id);
+  const handleDeleteBanner = (id: string) => {
+    setDeletingBannerId(id);
+  };
+
+  const confirmDeleteBanner = async () => {
+    if (!deletingBannerId) return;
+    const updated = heroBanners.filter((b) => b.id !== deletingBannerId);
     setHeroBanners(updated);
 
     try {
@@ -404,6 +429,8 @@ export default function AdminSettingsPage() {
       setMessage('Hero banner removed successfully.');
     } catch (err: any) {
       console.error('Failed to update after deletion:', err);
+    } finally {
+      setDeletingBannerId(null);
     }
   };
 
@@ -452,10 +479,10 @@ export default function AdminSettingsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-3">
             <SettingsIcon className="w-7 h-7" style={{ color: settings.primary_color || '#10b981' }} />
-            <span>Admin Settings & Homepage Banners</span>
+            <span>Settings</span>
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Configure branding, CRM themes, and manage auto-sliding Hero Banners for the public website.
+            Manage company profile, CRM appearance, and homepage hero banners.
           </p>
         </div>
       </div>
@@ -472,7 +499,7 @@ export default function AdminSettingsPage() {
           }`}
         >
           <Palette className="w-4 h-4" />
-          <span>Branding & General Settings</span>
+          <span>General & Branding</span>
         </button>
 
         <button
@@ -485,7 +512,7 @@ export default function AdminSettingsPage() {
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Hero Banners & Carousel</span>
+          <span>Hero Banners</span>
           {heroBanners.length > 0 && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500 text-slate-950">
               {heroBanners.length}
@@ -1170,89 +1197,293 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
 
+                {/* Subtitle with live character counter */}
                 <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Subtitle</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">Subtitle (Paragraph)</label>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${
+                      (bannerForm.subtitle?.length || 0) > 110 
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold' 
+                        : 'text-slate-400 bg-slate-100 dark:bg-slate-800'
+                    }`}>
+                      {bannerForm.subtitle?.length || 0} / 110 chars (Mobile-Safe)
+                    </span>
+                  </div>
                   <input
                     type="text"
+                    maxLength={130}
                     placeholder="Short description..."
                     value={bannerForm.subtitle || ''}
                     onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-xs sm:text-sm text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
                   />
+                  <p className="text-[10.5px] text-slate-400 mt-1">
+                    Recommended: under 110 characters to prevent overflow on mobile devices.
+                  </p>
                 </div>
 
-                {/* Button 1 */}
-                <div className="grid grid-cols-2 gap-2.5 pt-1">
-                  <div>
-                    <label className="block text-slate-500 text-[10.5px] mb-1">Button 1 Text</label>
-                    <input
-                      type="text"
-                      placeholder="Explore Plots"
-                      value={bannerForm.button1_text || ''}
-                      onChange={(e) => setBannerForm({ ...bannerForm, button1_text: e.target.value })}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
-                    />
+                {/* Button 1 (Pink Accent Button) */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-[#D61F69] shadow-xs" />
+                      <label className="text-slate-900 dark:text-white font-bold text-xs">Button 1 (Pink Accent CTA)</label>
+                    </div>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 dark:text-slate-300 font-semibold">
+                      <input
+                        type="checkbox"
+                        checked={bannerForm.button1_active !== false}
+                        onChange={(e) => setBannerForm({ ...bannerForm, button1_active: e.target.checked })}
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500"
+                      />
+                      <span>Enable Button 1</span>
+                    </label>
                   </div>
-                  <div>
-                    <label className="block text-slate-500 text-[10.5px] mb-1">Button 1 Link</label>
-                    <input
-                      type="text"
-                      placeholder="/properties"
-                      value={bannerForm.button1_link || ''}
-                      onChange={(e) => setBannerForm({ ...bannerForm, button1_link: e.target.value })}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
-                    />
-                  </div>
+
+                  {(bannerForm.button1_active !== false) && (
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-slate-500 text-[10.5px] font-semibold mb-1">Button 1 Label</label>
+                          <input
+                            type="text"
+                            placeholder="Explore Plots"
+                            value={bannerForm.button1_text || ''}
+                            onChange={(e) => setBannerForm({ ...bannerForm, button1_text: e.target.value })}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-500 text-[10.5px] font-semibold mb-1">Action / Route Destination</label>
+                          <select
+                            value={
+                              ['enquiry', '#enquiry'].includes(bannerForm.button1_link || '')
+                                ? 'enquiry'
+                                : (bannerForm.button1_link?.startsWith('https://wa.me') || bannerForm.button1_link?.startsWith('whatsapp:'))
+                                ? 'whatsapp'
+                                : bannerForm.button1_link?.startsWith('tel:')
+                                ? 'tel'
+                                : STANDARD_FRONTEND_PAGES.some((p) => p.path === bannerForm.button1_link)
+                                ? bannerForm.button1_link
+                                : '__custom__'
+                            }
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === 'enquiry') {
+                                setBannerForm({ ...bannerForm, button1_link: 'enquiry' });
+                              } else if (val === 'whatsapp') {
+                                const phoneNum = (settings.phone_whatsapp || '9842401991').replace(/\D/g, '');
+                                setBannerForm({ ...bannerForm, button1_link: `https://wa.me/${phoneNum.startsWith('91') ? phoneNum : '91' + phoneNum}` });
+                              } else if (val === 'tel') {
+                                setBannerForm({ ...bannerForm, button1_link: `tel:${settings.phone_primary || '+919842401991'}` });
+                              } else if (val === '__custom__') {
+                                setBannerForm({ ...bannerForm, button1_link: '' });
+                              } else {
+                                setBannerForm({ ...bannerForm, button1_link: val });
+                              }
+                            }}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-xs text-slate-800 dark:text-slate-200 focus:border-emerald-500 focus:outline-none"
+                          >
+                            <option value="enquiry">★ Open Quick Enquiry Modal (enquiry)</option>
+                            <option value="whatsapp">★ WhatsApp Direct Chat</option>
+                            <option value="tel">★ Direct Phone Call</option>
+                            <optgroup label="Website Pages">
+                              {STANDARD_FRONTEND_PAGES.map((page) => (
+                                <option key={page.path} value={page.path}>
+                                  {page.label}
+                                </option>
+                              ))}
+                            </optgroup>
+                            <option value="__custom__">★ Other / Enter Custom URL or External Link...</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Custom link input if Other is selected */}
+                      {(!['enquiry', '#enquiry'].includes(bannerForm.button1_link || '') &&
+                        !STANDARD_FRONTEND_PAGES.some((p) => p.path === bannerForm.button1_link)) && (
+                        <div className="pt-1">
+                          <label className="block text-slate-500 text-[10px] mb-1">
+                            {bannerForm.button1_link?.startsWith('https://wa.me') 
+                              ? 'WhatsApp Link (e.g. https://wa.me/919842401991)'
+                              : bannerForm.button1_link?.startsWith('tel:')
+                              ? 'Telephone Number Link (e.g. tel:+919842401991)'
+                              : 'Custom URL (Path or https:// link)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. /properties or https://wa.me/919842401991"
+                            value={bannerForm.button1_link || ''}
+                            onChange={(e) => setBannerForm({ ...bannerForm, button1_link: e.target.value })}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none font-mono"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {/* Button 2 */}
-                <div className="space-y-1.5 pt-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">Button 2</label>
-                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-500">
+                {/* Button 2 (White Button) */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-slate-200 border border-slate-400 shadow-xs" />
+                      <label className="text-slate-900 dark:text-white font-bold text-xs">Button 2 (White Neutral CTA)</label>
+                    </div>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 dark:text-slate-300 font-semibold">
                       <input
                         type="checkbox"
                         checked={bannerForm.button2_active ?? true}
                         onChange={(e) => setBannerForm({ ...bannerForm, button2_active: e.target.checked })}
-                        className="w-3.5 h-3.5 rounded text-emerald-500 focus:ring-emerald-500"
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500"
                       />
-                      <span>Enable</span>
+                      <span>Enable Button 2</span>
                     </label>
                   </div>
 
                   {(bannerForm.button2_active ?? true) && (
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <input
-                        type="text"
-                        placeholder="Book Site Visit"
-                        value={bannerForm.button2_text || ''}
-                        onChange={(e) => setBannerForm({ ...bannerForm, button2_text: e.target.value })}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
-                      />
-                      <input
-                        type="text"
-                        placeholder="enquiry or /contact"
-                        value={bannerForm.button2_link || ''}
-                        onChange={(e) => setBannerForm({ ...bannerForm, button2_link: e.target.value })}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
-                      />
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-slate-500 text-[10.5px] font-semibold mb-1">Button 2 Label</label>
+                          <input
+                            type="text"
+                            placeholder="Book Site Visit"
+                            value={bannerForm.button2_text || ''}
+                            onChange={(e) => setBannerForm({ ...bannerForm, button2_text: e.target.value })}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-500 text-[10.5px] font-semibold mb-1">Action / Route Destination</label>
+                          <select
+                            value={
+                              ['enquiry', '#enquiry'].includes(bannerForm.button2_link || '')
+                                ? 'enquiry'
+                                : (bannerForm.button2_link?.startsWith('https://wa.me') || bannerForm.button2_link?.startsWith('whatsapp:'))
+                                ? 'whatsapp'
+                                : bannerForm.button2_link?.startsWith('tel:')
+                                ? 'tel'
+                                : STANDARD_FRONTEND_PAGES.some((p) => p.path === bannerForm.button2_link)
+                                ? bannerForm.button2_link
+                                : '__custom__'
+                            }
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === 'enquiry') {
+                                setBannerForm({ ...bannerForm, button2_link: 'enquiry' });
+                              } else if (val === 'whatsapp') {
+                                const phoneNum = (settings.phone_whatsapp || '9842401991').replace(/\D/g, '');
+                                setBannerForm({ ...bannerForm, button2_link: `https://wa.me/${phoneNum.startsWith('91') ? phoneNum : '91' + phoneNum}` });
+                              } else if (val === 'tel') {
+                                setBannerForm({ ...bannerForm, button2_link: `tel:${settings.phone_primary || '+919842401991'}` });
+                              } else if (val === '__custom__') {
+                                setBannerForm({ ...bannerForm, button2_link: '' });
+                              } else {
+                                setBannerForm({ ...bannerForm, button2_link: val });
+                              }
+                            }}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-xs text-slate-800 dark:text-slate-200 focus:border-emerald-500 focus:outline-none"
+                          >
+                            <option value="enquiry">★ Open Quick Enquiry Modal (enquiry)</option>
+                            <option value="whatsapp">★ WhatsApp Direct Chat</option>
+                            <option value="tel">★ Direct Phone Call</option>
+                            <optgroup label="Website Pages">
+                              {STANDARD_FRONTEND_PAGES.map((page) => (
+                                <option key={page.path} value={page.path}>
+                                  {page.label}
+                                </option>
+                              ))}
+                            </optgroup>
+                            <option value="__custom__">★ Other / Enter Custom URL or External Link...</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Custom link input if Other is selected */}
+                      {(!['enquiry', '#enquiry'].includes(bannerForm.button2_link || '') &&
+                        !STANDARD_FRONTEND_PAGES.some((p) => p.path === bannerForm.button2_link)) && (
+                        <div className="pt-1">
+                          <label className="block text-slate-500 text-[10px] mb-1">
+                            {bannerForm.button2_link?.startsWith('https://wa.me') 
+                              ? 'WhatsApp Link (e.g. https://wa.me/919842401991)'
+                              : bannerForm.button2_link?.startsWith('tel:')
+                              ? 'Telephone Number Link (e.g. tel:+919842401991)'
+                              : 'Custom URL (Path or https:// link)'}
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. /contact or https://wa.me/919842401991"
+                            value={bannerForm.button2_link || ''}
+                            onChange={(e) => setBannerForm({ ...bannerForm, button2_link: e.target.value })}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none font-mono"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             ) : (
               /* GRAPHIC FLYER CLICK ACTION */
-              <div className="space-y-2 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+              <div className="space-y-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                 <label className="block text-slate-700 dark:text-slate-300 font-bold text-xs">
-                  Click Link / Action
+                  Click Link / Action (When Flyer is Tapped)
                 </label>
-                <input
-                  type="text"
-                  placeholder="enquiry or /properties or project URL"
-                  value={bannerForm.button1_link || ''}
-                  onChange={(e) => setBannerForm({ ...bannerForm, button1_link: e.target.value })}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
-                />
+                <select
+                  value={
+                    ['enquiry', '#enquiry'].includes(bannerForm.button1_link || '')
+                      ? 'enquiry'
+                      : (bannerForm.button1_link?.startsWith('https://wa.me') || bannerForm.button1_link?.startsWith('whatsapp:'))
+                      ? 'whatsapp'
+                      : bannerForm.button1_link?.startsWith('tel:')
+                      ? 'tel'
+                      : STANDARD_FRONTEND_PAGES.some((p) => p.path === bannerForm.button1_link)
+                      ? bannerForm.button1_link
+                      : '__custom__'
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'enquiry') {
+                      setBannerForm({ ...bannerForm, button1_link: 'enquiry' });
+                    } else if (val === 'whatsapp') {
+                      const phoneNum = (settings.phone_whatsapp || '9842401991').replace(/\D/g, '');
+                      setBannerForm({ ...bannerForm, button1_link: `https://wa.me/${phoneNum.startsWith('91') ? phoneNum : '91' + phoneNum}` });
+                    } else if (val === 'tel') {
+                      setBannerForm({ ...bannerForm, button1_link: `tel:${settings.phone_primary || '+919842401991'}` });
+                    } else if (val === '__custom__') {
+                      setBannerForm({ ...bannerForm, button1_link: '' });
+                    } else {
+                      setBannerForm({ ...bannerForm, button1_link: val });
+                    }
+                  }}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-xs text-slate-800 dark:text-slate-200 focus:border-emerald-500 focus:outline-none"
+                >
+                  <option value="enquiry">★ Open Quick Enquiry Modal (enquiry)</option>
+                  <option value="whatsapp">★ WhatsApp Direct Chat</option>
+                  <option value="tel">★ Direct Phone Call</option>
+                  <optgroup label="Website Pages">
+                    {STANDARD_FRONTEND_PAGES.map((page) => (
+                      <option key={page.path} value={page.path}>
+                        {page.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <option value="__custom__">★ Other / Enter Custom URL or External Link...</option>
+                </select>
+
+                {(!['enquiry', '#enquiry'].includes(bannerForm.button1_link || '') &&
+                  !STANDARD_FRONTEND_PAGES.some((p) => p.path === bannerForm.button1_link)) && (
+                  <input
+                    type="text"
+                    placeholder="e.g. /properties or https://wa.me/919842401991"
+                    value={bannerForm.button1_link || ''}
+                    onChange={(e) => setBannerForm({ ...bannerForm, button1_link: e.target.value })}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl p-2 text-xs text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none font-mono"
+                  />
+                )}
               </div>
             )}
 
@@ -1290,6 +1521,15 @@ export default function AdminSettingsPage() {
           </div>
         </div>
       )}
+          {/* Styled Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deletingBannerId)}
+        title="Delete Hero Banner Slide?"
+        description="Are you sure you want to delete this hero banner slide from the homepage carousel?"
+        confirmLabel="Delete Banner"
+        onConfirm={confirmDeleteBanner}
+        onCancel={() => setDeletingBannerId(null)}
+      />
     </div>
   );
 }

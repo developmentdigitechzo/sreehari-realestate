@@ -86,7 +86,7 @@ export async function getPublicProjectBySlug(req: Request, res: Response): Promi
            FROM projects WHERE slug = $1 AND status NOT IN ('Draft', 'Unpublished', 'Deleted');`,
           [slug]
         );
-        if (pgRes.rows.length > 0) project = pgRes.rows[0];
+        project = pgRes.rows.length > 0 ? pgRes.rows[0] : null;
       } catch (err: any) {
         console.error('getPublicProjectBySlug PG Error:', err.message);
       }
@@ -171,7 +171,7 @@ export async function getAllProjectsAdmin(req: Request, res: Response): Promise<
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM projects ORDER BY created_at DESC;');
-        if (pgRes.rows.length > 0) projects = pgRes.rows;
+        projects = pgRes.rows;
       } catch (err: any) {
         console.error('getAllProjectsAdmin PG Error:', err.message);
       }
@@ -204,7 +204,7 @@ export async function getProjectByIdAdmin(req: Request, res: Response): Promise<
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM projects WHERE id = $1 OR slug = $1;', [id]);
-        if (pgRes.rows.length > 0) project = pgRes.rows[0];
+        project = pgRes.rows.length > 0 ? pgRes.rows[0] : null;
       } catch (err: any) {
         console.error('getProjectByIdAdmin PG Error:', err.message);
       }
@@ -264,6 +264,9 @@ export async function createProject(req: Request, res: Response): Promise<void> 
   try {
     const {
       name,
+      slug: customSlug,
+      meta_title,
+      meta_description,
       tagline,
       description,
       location_area,
@@ -300,10 +303,10 @@ export async function createProject(req: Request, res: Response): Promise<void> 
     }
 
     const store = db.getFallbackData();
-    let slug = slugify(name);
+    let slug = customSlug && customSlug.trim() !== '' ? slugify(customSlug) : slugify(name);
     let counter = 1;
     while ((store.projects || []).some((p: any) => p.slug === slug)) {
-      slug = `${slugify(name)}-${counter++}`;
+      slug = `${customSlug && customSlug.trim() !== '' ? slugify(customSlug) : slugify(name)}-${counter++}`;
     }
 
     const resolvedAcres = Number(total_extent_acres !== undefined ? total_extent_acres : total_acres) || 0;
@@ -311,11 +314,15 @@ export async function createProject(req: Request, res: Response): Promise<void> 
     const resolvedAvailablePlots = Number(available_plots_count !== undefined ? available_plots_count : available_plots) || 0;
     const resolvedBanner = banner_image || hero_image || '/images/hero-bg.jpg';
     const resolvedMap = google_maps_embed_url || map_url || '';
+    const resolvedMetaTitle = meta_title && meta_title.trim() !== '' ? meta_title.trim() : (name || '').slice(0, 50);
+    const resolvedMetaDescription = meta_description && meta_description.trim() !== '' ? meta_description.trim() : (description || tagline || '').slice(0, 150);
 
     const newProject = {
       id: uuidv4(),
       name,
       slug,
+      meta_title: resolvedMetaTitle,
+      meta_description: resolvedMetaDescription,
       tagline: tagline || '',
       description: description || '',
       location_area,
@@ -350,10 +357,10 @@ export async function createProject(req: Request, res: Response): Promise<void> 
             id, name, slug, tagline, description, location_area, location_city,
             total_extent_acres, total_plots_count, available_plots_count, plot_size_range,
             price_range, status, is_featured, banner_image, video_url, brochure_url,
-            google_maps_embed_url, dtcp_number, rera_number, gallery_images, highlights,
-            amenities, nearby_landmarks, latitude, longitude
+            google_maps_embed_url, dtcp_number, rera_number, meta_title, meta_description,
+            gallery_images, highlights, amenities, nearby_landmarks, latitude, longitude
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
           );`,
           [
             newProject.id, newProject.name, newProject.slug, newProject.tagline, newProject.description,
@@ -361,7 +368,7 @@ export async function createProject(req: Request, res: Response): Promise<void> 
             newProject.total_plots_count, newProject.available_plots_count, newProject.plot_size_range,
             newProject.price_range, newProject.status, newProject.is_featured, newProject.banner_image,
             newProject.video_url, newProject.brochure_url, newProject.google_maps_embed_url,
-            newProject.dtcp_number, newProject.rera_number,
+            newProject.dtcp_number, newProject.rera_number, newProject.meta_title, newProject.meta_description,
             JSON.stringify(newProject.gallery_images), JSON.stringify(newProject.highlights),
             JSON.stringify(newProject.amenities), JSON.stringify(newProject.nearby_landmarks),
             newProject.latitude, newProject.longitude
@@ -407,6 +414,9 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
 
     const {
       name,
+      slug: customSlug,
+      meta_title,
+      meta_description,
       tagline,
       description,
       location_area,
@@ -446,7 +456,9 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
     const updated = {
       ...current,
       name: name !== undefined ? name : current.name,
-      slug: name && name !== current.name ? slugify(name) : current.slug,
+      slug: customSlug !== undefined && customSlug.trim() !== '' ? slugify(customSlug) : (name && name !== current.name ? slugify(name) : current.slug),
+      meta_title: meta_title !== undefined ? meta_title.trim() : (current.meta_title || (name ? name.slice(0, 50) : '')),
+      meta_description: meta_description !== undefined ? meta_description.trim() : (current.meta_description || ((description || tagline || current.description || '').slice(0, 150))),
       tagline: tagline !== undefined ? tagline : current.tagline,
       description: description !== undefined ? description : current.description,
       location_area: location_area !== undefined ? location_area : current.location_area,
@@ -482,16 +494,18 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
             available_plots_count = $9, plot_size_range = $10, price_range = $11,
             status = $12, is_featured = $13, banner_image = $14, video_url = $15,
             brochure_url = $16, google_maps_embed_url = $17, dtcp_number = $18,
-            rera_number = $19, gallery_images = $20, highlights = $21, amenities = $22,
-            nearby_landmarks = $23, latitude = $24, longitude = $25, updated_at = CURRENT_TIMESTAMP
-           WHERE id = $26;`,
+            rera_number = $19, meta_title = $20, meta_description = $21,
+            gallery_images = $22, highlights = $23, amenities = $24,
+            nearby_landmarks = $25, latitude = $26, longitude = $27, updated_at = CURRENT_TIMESTAMP
+           WHERE id = $28;`,
           [
             updated.name, updated.slug, updated.tagline, updated.description, updated.location_area,
             updated.location_city, updated.total_extent_acres, updated.total_plots_count,
             updated.available_plots_count, updated.plot_size_range, updated.price_range,
             updated.status, updated.is_featured, updated.banner_image, updated.video_url,
             updated.brochure_url, updated.google_maps_embed_url, updated.dtcp_number,
-            updated.rera_number, JSON.stringify(updated.gallery_images),
+            updated.rera_number, updated.meta_title, updated.meta_description,
+            JSON.stringify(updated.gallery_images),
             JSON.stringify(updated.highlights), JSON.stringify(updated.amenities),
             JSON.stringify(updated.nearby_landmarks), updated.latitude, updated.longitude, id
           ]

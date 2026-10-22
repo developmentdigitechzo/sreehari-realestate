@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import FloatingCTA from '@/components/FloatingCTA';
 import PageLoader from '@/components/PageLoader';
+import SparkleCursor from '@/components/SparkleCursor';
 import PromotionalPopupModal from '@/components/PromotionalPopupModal';
 
 export default function LayoutWrapper({
@@ -23,6 +24,7 @@ export default function LayoutWrapper({
   return (
     <>
       <PageLoader />
+      <SparkleCursor />
       <PromotionalPopupModal />
       <Suspense
         fallback={

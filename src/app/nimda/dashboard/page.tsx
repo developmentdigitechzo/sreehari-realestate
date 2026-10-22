@@ -64,7 +64,7 @@ export default function AdminDashboardPage() {
     {
       title: 'Active Projects',
       value: stats?.total_projects ?? stats?.projects?.total ?? 0,
-      subtitle: `${stats?.ongoing_projects ?? stats?.projects?.ongoing ?? 0} Ongoing Township`,
+      subtitle: `${stats?.ongoing_projects ?? stats?.projects?.ongoing ?? 0} Ongoing`,
       icon: Building2,
       color: 'from-blue-600 to-indigo-600',
       bgColor: 'bg-blue-600',
@@ -74,7 +74,7 @@ export default function AdminDashboardPage() {
     {
       title: 'Plot Inventory',
       value: stats?.total_plots ?? stats?.plots?.total ?? 0,
-      subtitle: `${stats?.available_plots ?? stats?.plots?.available ?? 0} Plots Available`,
+      subtitle: `${stats?.available_plots ?? stats?.plots?.available ?? 0} Available`,
       icon: Grid,
       color: 'from-emerald-600 to-teal-700',
       bgColor: 'bg-emerald-600',
@@ -82,24 +82,24 @@ export default function AdminDashboardPage() {
       badge: 'View All Plots',
     },
     {
-      title: 'Total CRM Leads',
+      title: 'Leads',
       value: crmStats?.total_leads ?? stats?.total_leads ?? stats?.leads?.total ?? (recentLeads?.length || 0),
-      subtitle: `${crmStats?.hot_leads ?? stats?.hot_leads ?? stats?.leads?.hot ?? 0} Hot Buyer Leads`,
+      subtitle: `${crmStats?.hot_leads ?? stats?.hot_leads ?? stats?.leads?.hot ?? 0} Hot Leads`,
       icon: Users,
       color: 'from-violet-600 to-purple-600',
       bgColor: 'bg-purple-600',
       href: '/nimda/leads',
-      badge: 'Lead Pipeline',
+      badge: 'View Leads',
     },
     {
-      title: 'Scheduled Visits',
+      title: 'Site Visits',
       value: crmStats?.site_visits_scheduled ?? stats?.site_visits_scheduled ?? 0,
-      subtitle: 'Site Visits Planned',
+      subtitle: 'Scheduled',
       icon: Calendar,
       color: 'from-amber-600 to-orange-600',
       bgColor: 'bg-amber-600',
       href: '/nimda/site-visits',
-      badge: 'Visit Calendar',
+      badge: 'View Visits',
     },
   ];
 
@@ -109,10 +109,10 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-wide">
-            Real Estate CRM Executive Dashboard
+            Dashboard
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Live database overview of plot inventory, active gated communities, buyer leads & site visits.
+            Overview of projects, plot inventory, leads, and site visits.
           </p>
         </div>
         <div className="flex items-center gap-3">

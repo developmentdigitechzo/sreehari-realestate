@@ -180,7 +180,7 @@ export default function AdminSiteVisitsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!formData.customer_name || !formData.customer_phone || !formData.visit_date) {
-      alert('Please fill customer name, phone number, and visit date');
+      showToast('Please fill customer name, phone number, and visit date');
       return;
     }
 
@@ -277,10 +277,10 @@ export default function AdminSiteVisitsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-              Site Visit Manager
+              Site Visits
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Customer plot tour bookings, calendar schedules & staff assignments
+              Customer plot tour bookings and schedules
             </p>
           </div>
         </div>
@@ -289,29 +289,29 @@ export default function AdminSiteVisitsPage() {
           onClick={handleOpenCreate}
           className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 shrink-0 cursor-pointer"
         >
-          <Plus className="w-4 h-4 stroke-[2.5]" /> Schedule Site Visit
+          <Plus className="w-4 h-4 stroke-[2.5]" /> Schedule Visit
         </button>
       </div>
 
       {/* Stat Cards Row (4 Columns - Clean & Balanced) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-1 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Total Bookings</span>
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">Total</span>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.totalVisits}</p>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-1 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-          <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider dark:text-amber-400">New Requests</span>
+          <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider dark:text-amber-400">Requested</span>
           <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.pendingRequests}</p>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-1 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-          <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider dark:text-blue-400">Confirmed Visits</span>
+          <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider dark:text-blue-400">Confirmed</span>
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.confirmedVisits}</p>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-1 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider dark:text-emerald-400">Completed Tours</span>
+          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider dark:text-emerald-400">Completed</span>
           <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.completedVisits}</p>
         </div>
       </div>

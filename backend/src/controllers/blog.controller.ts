@@ -10,7 +10,7 @@ export async function getAllBlogs(req: Request, res: Response): Promise<void> {
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM blogs ORDER BY created_at DESC;');
-        if (pgRes.rows.length > 0) blogs = pgRes.rows;
+        blogs = pgRes.rows;
       } catch (err: any) {
         console.error('PostgreSQL blogs SELECT error:', err.message);
       }
@@ -50,7 +50,7 @@ export async function getBlogById(req: Request, res: Response): Promise<void> {
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM blogs WHERE id = $1 OR slug = $1 LIMIT 1;', [id]);
-        if (pgRes.rows.length > 0) blog = pgRes.rows[0];
+        blog = pgRes.rows.length > 0 ? pgRes.rows[0] : null;
       } catch {}
     }
 
@@ -107,11 +107,11 @@ export async function createBlog(req: Request, res: Response): Promise<void> {
     }
 
     const blogId = uuidv4();
-    const computedSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const computedSlug = slug && slug.trim() !== '' ? slug.trim() : (category && category.trim() !== '' ? category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''));
     const store = db.getFallbackData();
     if (!store.blogs) store.blogs = [];
 
-    const finalImage = image_url || banner_image || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80';
+    const finalImage = image_url || banner_image || '';
     const finalSeoTitle = seo_title || meta_title || title;
     const finalSeoDesc = seo_description || meta_description || excerpt || '';
 
@@ -119,7 +119,7 @@ export async function createBlog(req: Request, res: Response): Promise<void> {
       id: blogId,
       title,
       slug: computedSlug,
-      category: category || 'Buying Guide',
+      category: category || '',
       author: author || 'Sree Hari Realty Editorial',
       status: status || 'Published',
       read_time: read_time || '5 min read',
@@ -183,7 +183,9 @@ export async function updateBlog(req: Request, res: Response): Promise<void> {
     const index = store.blogs.findIndex((b: any) => b.id === id);
 
     const current = index !== -1 ? store.blogs[index] : {};
-    const finalImage = req.body.image_url || req.body.banner_image || current.image_url || current.banner_image || '';
+    const finalImage = req.body.image_url !== undefined
+      ? req.body.image_url
+      : (req.body.banner_image !== undefined ? req.body.banner_image : (current.image_url || current.banner_image || ''));
     const finalSeoTitle = req.body.seo_title || req.body.meta_title || current.seo_title || current.meta_title || current.title || '';
     const finalSeoDesc = req.body.seo_description || req.body.meta_description || current.seo_description || current.meta_description || current.excerpt || '';
 
@@ -209,7 +211,7 @@ export async function updateBlog(req: Request, res: Response): Promise<void> {
           [
             updated.title || '',
             updated.slug || '',
-            updated.category || 'Buying Guide',
+            updated.category || '',
             updated.author || 'Sree Hari Realty Editorial',
             updated.status || 'Published',
             updated.read_time || '5 min read',

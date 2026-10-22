@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { api } from '@/lib/api';
 import { Project, LandmarkItem, AmenityItem } from '@/lib/types';
 import PlotFormModal from '@/components/admin/PlotFormModal';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 import {
   FolderKanban,
   Plus,
@@ -33,6 +34,7 @@ import {
   Award,
   ShieldCheck,
   Milestone,
+  RefreshCw,
   Check
 } from 'lucide-react';
 
@@ -82,11 +84,14 @@ const AMENITY_PRESETS: AmenityItem[] = [
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingProjId, setDeletingProjId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [activeTab, setActiveTab] = useState<'basic' | 'content' | 'amenities' | 'media' | 'landmarks'>('basic');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingBrochure, setUploadingBrochure] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   // Plot Modal State for adding a plot directly from project cards
   const [isPlotModalOpen, setIsPlotModalOpen] = useState(false);
@@ -95,6 +100,9 @@ export default function AdminProjectsPage() {
   // Form Data with clean, fresh defaults (no fake pre-filled numbers)
   const [formData, setFormData] = useState({
     name: '',
+    slug: '',
+    meta_title: '',
+    meta_description: '',
     tagline: '',
     status: 'Ongoing',
     location_city: 'Trichy',
@@ -156,6 +164,9 @@ export default function AdminProjectsPage() {
     setActiveTab('basic');
     setFormData({
       name: '',
+      slug: '',
+      meta_title: '',
+      meta_description: '',
       tagline: '',
       status: 'Ongoing',
       location_city: 'Trichy',
@@ -205,6 +216,9 @@ export default function AdminProjectsPage() {
 
     setFormData({
       name: project.name || '',
+      slug: project.slug || '',
+      meta_title: (project as any).meta_title || '',
+      meta_description: (project as any).meta_description || '',
       tagline: project.tagline || '',
       status: project.status || 'Ongoing',
       location_city: project.location_city || 'Trichy',
@@ -252,14 +266,14 @@ export default function AdminProjectsPage() {
         if (res && res.success && res.fileUrl) {
           setFormData((prev) => ({ ...prev, hero_image: res.fileUrl }));
         } else {
-          alert('Failed to upload image. Please check backend connection.');
+          setToastMessage('Failed to upload image.');
         }
         setUploadingImage(false);
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
       console.error('Upload error:', err);
-      alert('Upload failed: ' + err.message);
+      setToastMessage('Upload failed: ' + err.message);
       setUploadingImage(false);
     }
   };
@@ -277,22 +291,47 @@ export default function AdminProjectsPage() {
         if (res && res.success && res.fileUrl) {
           setFormData((prev) => ({ ...prev, brochure_url: res.fileUrl }));
         } else {
-          alert('Failed to upload brochure file.');
+          setToastMessage('Failed to upload brochure file.');
         }
         setUploadingBrochure(false);
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
       console.error('Brochure upload error:', err);
-      alert('Brochure upload failed: ' + err.message);
+      setToastMessage('Brochure upload failed: ' + err.message);
       setUploadingBrochure(false);
+    }
+  };
+
+  const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingVideo(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        const res = await api.uploadMedia({ imageBase64: base64, filename: file.name });
+        if (res && res.success && res.fileUrl) {
+          setFormData((prev) => ({ ...prev, video_url: res.fileUrl }));
+        } else {
+          setToastMessage('Failed to upload video file.');
+        }
+        setUploadingVideo(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error('Video upload error:', err);
+      setToastMessage('Upload failed: ' + err.message);
+      setUploadingVideo(false);
     }
   };
 
   // Amenity Management Handlers
   const handleSaveAmenity = () => {
     if (!newAmenity.title.trim()) {
-      alert('Please enter amenity title');
+      setToastMessage('Please enter amenity title');
       return;
     }
     if (editingAmenityIndex !== null) {
@@ -332,7 +371,7 @@ export default function AdminProjectsPage() {
 
   const handleAddPresetAmenity = (preset: AmenityItem) => {
     if (formData.amenities.some((a) => a.title.toLowerCase() === preset.title.toLowerCase())) {
-      alert(`"${preset.title}" is already added.`);
+      setToastMessage('Amenity already added');
       return;
     }
     setFormData((prev) => ({
@@ -344,7 +383,7 @@ export default function AdminProjectsPage() {
   // Landmark Management Handlers
   const handleSaveLandmark = () => {
     if (!newLandmark.landmark.trim()) {
-      alert('Please enter a landmark name');
+      setToastMessage('Please enter a landmark name');
       return;
     }
     const finalCategory =
@@ -425,6 +464,9 @@ export default function AdminProjectsPage() {
 
     const payload = {
       name: formData.name,
+      slug: formData.slug,
+      meta_title: formData.meta_title,
+      meta_description: formData.meta_description,
       tagline: formData.tagline,
       status: formData.status,
       location_city: formData.location_city,
@@ -459,17 +501,24 @@ export default function AdminProjectsPage() {
       setIsModalOpen(false);
       loadProjects();
     } catch (err: any) {
-      alert(err.message || 'Operation failed');
+      setToastMessage(err.message || 'Operation failed');
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this project? All associated plots will also be removed.')) return;
+  const handleDelete = (id: string) => {
+    setDeletingProjId(id);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!deletingProjId) return;
     try {
-      await api.deleteProject(id);
+      await api.deleteProject(deletingProjId);
       loadProjects();
+      setToastMessage('Project deleted successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to delete project');
+      setToastMessage(err.message || 'Failed to delete project');
+    } finally {
+      setDeletingProjId(null);
     }
   };
 
@@ -480,10 +529,10 @@ export default function AdminProjectsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-3">
             <FolderKanban className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
-            <span>Land & Plot Projects Manager</span>
+            <span>Projects</span>
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Manage projects, cover images, promotional videos, descriptions, verified location advantages, and plot inventory.
+            Manage residential projects, layouts, and plot inventory.
           </p>
         </div>
         <button
@@ -491,7 +540,7 @@ export default function AdminProjectsPage() {
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md cursor-pointer self-start md:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Add New Project</span>
+          <span>Add Project</span>
         </button>
       </div>
 
@@ -749,7 +798,16 @@ export default function AdminProjectsPage() {
                         required
                         placeholder="e.g. Park Avenue"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const genSlug = val.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+                          setFormData((prev) => ({
+                            ...prev,
+                            name: val,
+                            slug: (!prev.slug || prev.slug === prev.name.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')) ? genSlug : prev.slug,
+                            meta_title: (!prev.meta_title || prev.meta_title === prev.name.slice(0, 50)) ? val.slice(0, 50) : prev.meta_title
+                          }));
+                        }}
                         className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
                       />
                     </div>
@@ -767,6 +825,40 @@ export default function AdminProjectsPage() {
                         <option value="Draft">Draft (Internal Only)</option>
                       </select>
                     </div>
+                  </div>
+
+                  {/* Project URL Slug Input */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">
+                        Project URL Slug *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const s = (formData.name || '').toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+                          setFormData((prev) => ({ ...prev, slug: s }));
+                        }}
+                        className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Sync slug with current project name"
+                      >
+                        <RefreshCw className="w-3 h-3" /> Sync with Name
+                      </button>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-800/80 px-2.5 py-2.5 rounded-l-xl border border-r-0 border-slate-300 dark:border-slate-700 font-mono">
+                        /projects/
+                      </span>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. park-avenue"
+                        value={formData.slug}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-') })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-r-xl p-2.5 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-500">Public URL: https://sreeharirealty.com/projects/{formData.slug || 'project-slug'}</p>
                   </div>
 
                   <div>
@@ -875,6 +967,55 @@ export default function AdminProjectsPage() {
                       />
                     </div>
                   </div>
+
+                  {/* SEO Metadata Box */}
+                  <div className="p-4 bg-emerald-50/60 dark:bg-slate-950/70 border border-emerald-200/80 dark:border-slate-800 rounded-xl space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-emerald-200/60 dark:border-slate-800 pb-2">
+                      <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-400 font-bold text-xs">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Search Engine Optimization (SEO Meta Tags)</span>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-mono">Google Search Preview</span>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
+                          Meta Title (Search Engine Title)
+                        </label>
+                        <span className={`text-[10px] font-mono ${(formData.meta_title || '').length > 60 ? 'text-rose-500 font-bold' : 'text-slate-500'}`}>
+                          {(formData.meta_title || '').length} / 50 characters
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="e.g. Park Avenue Gated Plots near Trichy Airport"
+                        value={formData.meta_title}
+                        onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 text-xs"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">Recommended: 45–60 characters. Auto-defaults to project name.</p>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
+                          Meta Description (Search Engine Snippet)
+                        </label>
+                        <span className={`text-[10px] font-mono ${(formData.meta_description || '').length > 160 ? 'text-rose-500 font-bold' : 'text-slate-500'}`}>
+                          {(formData.meta_description || '').length} / 150 characters
+                        </span>
+                      </div>
+                      <textarea
+                        rows={2}
+                        placeholder="e.g. DTCP approved residential villa plots in Park Avenue, Trichy. 40ft blacktop roads, sweet groundwater, 100% bank loans. Inquire for spot booking offers."
+                        value={formData.meta_description}
+                        onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 text-xs leading-relaxed"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">Recommended: 120–150 characters. Auto-defaults to overview snippet.</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -890,7 +1031,14 @@ export default function AdminProjectsPage() {
                       required
                       placeholder="Detailed overview describing location advantages, civil infrastructure, water quality, bank loans, and community standards..."
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          description: val,
+                          meta_description: (!prev.meta_description || prev.meta_description === (prev.description || prev.tagline).slice(0, 150)) ? val.slice(0, 150) : prev.meta_description
+                        }));
+                      }}
                       className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
                     />
                     <p className="text-[10px] text-slate-500 mt-1">
@@ -1178,13 +1326,26 @@ export default function AdminProjectsPage() {
                     <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
                       Project Video URL (YouTube, Vimeo, or MP4)
                     </label>
-                    <input
-                      type="url"
-                      placeholder="e.g. https://www.youtube.com/watch?v=... or direct MP4 link"
-                      value={formData.video_url}
-                      onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        placeholder="e.g. https://www.youtube.com/watch?v=... or direct MP4 link"
+                        value={formData.video_url}
+                        onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                        className="flex-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 text-xs"
+                      />
+                      <label className="cursor-pointer bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-1.5 shrink-0 transition">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{uploadingVideo ? 'Uploading...' : 'Upload Video'}</span>
+                        <input
+                          type="file"
+                          accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                          onChange={handleVideoFileUpload}
+                          className="hidden"
+                          disabled={uploadingVideo}
+                        />
+                      </label>
+                    </div>
                     <p className="text-[10px] text-slate-500 mt-1">
                       When provided, a video showcase player will render on the public project detail page.
                     </p>
@@ -1432,6 +1593,25 @@ export default function AdminProjectsPage() {
         initialProjectId={plotModalProject?.id}
         initialProjectName={plotModalProject?.name}
         projectsList={projects}
+      />
+          {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl animate-fade-in">
+          <span className="text-sm font-medium">{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-200">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Styled Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deletingProjId)}
+        title="Delete Community Project?"
+        description="Are you sure you want to delete this project? All associated plots will also be removed."
+        confirmLabel="Delete Project"
+        onConfirm={confirmDeleteProject}
+        onCancel={() => setDeletingProjId(null)}
       />
     </div>
   );

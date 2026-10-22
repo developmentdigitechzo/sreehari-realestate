@@ -105,15 +105,15 @@ export default function Sidebar({
 
   const navItems = [
     { name: 'Dashboard', href: '/nimda/dashboard', icon: LayoutDashboard },
-    { name: 'CRM Leads & Pipeline', href: '/nimda/leads', icon: Users },
-    { name: 'Site Visit Manager', href: '/nimda/site-visits', icon: CalendarCheck },
+    { name: 'Leads', href: '/nimda/leads', icon: Users },
+    { name: 'Site Visits', href: '/nimda/site-visits', icon: CalendarCheck },
     { name: 'Projects', href: '/nimda/projects', icon: FolderKanban },
-    { name: 'Plots Inventory', href: '/nimda/plots', icon: Grid },
-    { name: 'Blog Manager', href: '/nimda/blogs', icon: Newspaper },
-    { name: 'Ad & Seasonal Popups', href: '/nimda/popups', icon: Megaphone },
-    { name: 'Media Gallery', href: '/nimda/gallery', icon: ImageIcon },
-    { name: 'Settings & Office', href: '/nimda/settings', icon: Settings },
-    { name: 'Staff & Permissions', href: '/nimda/staff', icon: ShieldCheck },
+    { name: 'Plots', href: '/nimda/plots', icon: Grid },
+    { name: 'Blogs', href: '/nimda/blogs', icon: Newspaper },
+    { name: 'Popups', href: '/nimda/popups', icon: Megaphone },
+    { name: 'Gallery', href: '/nimda/gallery', icon: ImageIcon },
+    { name: 'Settings', href: '/nimda/settings', icon: Settings },
+    { name: 'Staff', href: '/nimda/staff', icon: ShieldCheck },
   ];
 
   // Filter items based on staff module access permissions (supports both /nimda and legacy /admin stored perms)
@@ -161,7 +161,7 @@ export default function Sidebar({
                 {brandName}
               </h1>
               <p className="text-xs font-semibold tracking-wider uppercase mt-0.5 transition-colors duration-200" style={{ color: primaryColor }}>
-                Admin CRM Suite
+                Admin Panel
               </p>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function Sidebar({
         {/* Scrollable Navigation Area (Hidden scrollbar) */}
         <nav className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden min-h-0 p-3 space-y-1">
           <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            Staff CRM Navigation ({visibleNavItems.length} Modules)
+            Menu
           </div>
           {visibleNavItems.map((item) => {
             const legacyHref = item.href.replace(/^\/nimda/, '/admin');

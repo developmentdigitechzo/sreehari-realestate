@@ -225,6 +225,7 @@ export interface PromotionalPopup {
   cta_text?: string;
   cta_action?: string;
   whatsapp_number?: string;
+  custom_url?: string;
   start_date?: string | null;
   end_date?: string | null;
   layout_style?: string;
@@ -246,6 +247,7 @@ export interface HeroBanner {
   // Two Buttons Support
   button1_text?: string;
   button1_link?: string;
+  button1_active?: boolean;
   button2_text?: string;
   button2_link?: string;
   button2_active?: boolean;
