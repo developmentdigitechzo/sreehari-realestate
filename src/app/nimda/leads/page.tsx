@@ -199,6 +199,20 @@ export default function AdminLeadsPage() {
     }
   }
 
+  async function refreshLeadsOnly() {
+    try {
+      const leadsRes = await api.getCrmLeads({
+        stage: selectedStage,
+        priority: selectedPriority,
+        projectId: selectedProject,
+        search: searchQuery
+      });
+      if (leadsRes?.data) setLeads(leadsRes.data);
+    } catch (err) {
+      console.error('Error refreshing leads:', err);
+    }
+  }
+
   const normalizeFrontendStage = (stg?: string): string => {
     if (!stg) return 'New Lead';
     const s = stg.trim();
@@ -249,7 +263,7 @@ export default function AdminLeadsPage() {
         targetStage = 'Follow Up Pending';
       }
       const targetPriority = newLead.priority || (newLead.site_visit_date ? 'Hot' : 'Warm');
-      await api.createCrmLead({ ...newLead, stage: targetStage, status: targetStage, source: newLead.source || 'Manual', priority: targetPriority });
+      const createRes = await api.createCrmLead({ ...newLead, stage: targetStage, status: targetStage, source: newLead.source || 'Manual', priority: targetPriority });
       setIsAddModalOpen(false);
       setNewLead({
         name: '',
@@ -273,7 +287,10 @@ export default function AdminLeadsPage() {
         message: '',
         initial_note: ''
       });
-      loadData();
+      if (createRes?.data) {
+        setLeads((prev) => [createRes.data, ...prev]);
+      }
+      refreshLeadsOnly();
     } catch (err: any) {
       setToastMessage(err.message || 'Failed to create CRM lead');
     }
@@ -340,7 +357,7 @@ export default function AdminLeadsPage() {
         });
       }
       setEditingLead(null);
-      loadData();
+      refreshLeadsOnly();
     } catch (err: any) {
       setToastMessage(err.message || 'Failed to update lead');
     }
@@ -376,7 +393,7 @@ export default function AdminLeadsPage() {
             : l
         )
       );
-      loadData();
+      refreshLeadsOnly();
     } catch (err: any) {
       setToastMessage(err.message || 'Failed to add note');
     }
@@ -403,7 +420,7 @@ export default function AdminLeadsPage() {
           priority: autoPriority
         });
       }
-      loadData();
+      refreshLeadsOnly();
     } catch (err: any) {
       setToastMessage(err.message || 'Failed to update lead status');
     }
@@ -417,9 +434,10 @@ export default function AdminLeadsPage() {
     if (!deletingLeadInfo) return;
     try {
       await api.deleteCrmLead(deletingLeadInfo.id);
+      setLeads((prev) => prev.filter((l) => l.id !== deletingLeadInfo.id));
       if (selectedLeadForDetail?.id === deletingLeadInfo.id) setSelectedLeadForDetail(null);
       if (editingLead?.id === deletingLeadInfo.id) setEditingLead(null);
-      loadData();
+      refreshLeadsOnly();
       setToastMessage('Lead deleted successfully');
     } catch (err: any) {
       setToastMessage(err.message || 'Failed to delete lead');

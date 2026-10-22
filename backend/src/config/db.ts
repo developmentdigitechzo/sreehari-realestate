@@ -142,10 +142,20 @@ export const DEFAULT_PROJECT_AMENITIES: Record<string, any[]> = {
   ]
 };
 
+let memoryFallbackDB: FallbackDB | null = null;
+let isWritingFallback = false;
+let pendingFallbackWrite: FallbackDB | null = null;
+
 function ensureFallbackDB(): FallbackDB {
+  if (memoryFallbackDB) {
+    return memoryFallbackDB;
+  }
+
   const dir = path.dirname(FALLBACK_DB_PATH);
   if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+    } catch {}
   }
   if (!fs.existsSync(FALLBACK_DB_PATH)) {
     const initial: FallbackDB = {
@@ -163,7 +173,10 @@ function ensureFallbackDB(): FallbackDB {
       media_library: [...DEFAULT_MEDIA_LIBRARY],
       settings: {}
     };
-    fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(initial, null, 2));
+    try {
+      fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(initial));
+    } catch {}
+    memoryFallbackDB = initial;
     return initial;
   }
   try {
@@ -174,32 +187,23 @@ function ensureFallbackDB(): FallbackDB {
     if (!parsed.popups) parsed.popups = [];
     if (parsed.media_library === undefined) {
       parsed.media_library = [...DEFAULT_MEDIA_LIBRARY];
-      try {
-        fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(parsed, null, 2));
-      } catch {}
     }
 
     // Ensure fallback projects have amenities populated
     if (Array.isArray(parsed.projects)) {
-      let projectsUpdated = false;
       for (const p of parsed.projects) {
         if (!p.amenities || !Array.isArray(p.amenities) || p.amenities.length === 0) {
           const defaults = DEFAULT_PROJECT_AMENITIES[p.id] || DEFAULT_PROJECT_AMENITIES[`proj-${p.slug}`];
           if (defaults) {
             p.amenities = defaults;
-            projectsUpdated = true;
           }
         }
       }
-      if (projectsUpdated) {
-        try {
-          fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(parsed, null, 2));
-        } catch {}
-      }
     }
+    memoryFallbackDB = parsed;
     return parsed;
   } catch {
-    return {
+    const fallbackEmpty: FallbackDB = {
       users: [],
       projects: [],
       plots: [],
@@ -213,15 +217,38 @@ function ensureFallbackDB(): FallbackDB {
       popups: [],
       settings: {}
     };
+    memoryFallbackDB = fallbackEmpty;
+    return fallbackEmpty;
   }
 }
 
 function saveFallbackDB(data: FallbackDB) {
+  memoryFallbackDB = data;
+
+  if (isWritingFallback) {
+    pendingFallbackWrite = data;
+    return;
+  }
+
+  isWritingFallback = true;
   const dir = path.dirname(FALLBACK_DB_PATH);
   if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+    } catch {}
   }
-  fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(data, null, 2));
+
+  fs.writeFile(FALLBACK_DB_PATH, JSON.stringify(data), 'utf-8', (err) => {
+    isWritingFallback = false;
+    if (err) {
+      console.warn('Async fallback write error:', err.message);
+    }
+    if (pendingFallbackWrite) {
+      const nextData = pendingFallbackWrite;
+      pendingFallbackWrite = null;
+      saveFallbackDB(nextData);
+    }
+  });
 }
 
 export async function initDatabase() {

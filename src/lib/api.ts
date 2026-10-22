@@ -65,6 +65,7 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       ...options,
       headers,
+      cache: 'no-store',
     });
 
     const data = await res.json();
