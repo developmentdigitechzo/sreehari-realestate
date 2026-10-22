@@ -455,7 +455,7 @@ export async function initDatabase() {
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );`,
 
-        // Popups Table
+        // Popups Table & Columns
         `CREATE TABLE IF NOT EXISTS popups (
             id VARCHAR(36) PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
@@ -477,7 +477,21 @@ export async function initDatabase() {
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS subtitle VARCHAR(255);`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT '';`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS badge_tag VARCHAR(100) DEFAULT '';`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS banner_image TEXT;`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS highlights TEXT;`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS cta_text VARCHAR(150) DEFAULT 'Claim Offer on WhatsApp';`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS cta_action VARCHAR(50) DEFAULT 'whatsapp';`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS whatsapp_number VARCHAR(50) DEFAULT '+91 73737 13559';`,
         `ALTER TABLE popups ADD COLUMN IF NOT EXISTS custom_url TEXT;`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS start_date VARCHAR(50);`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS end_date VARCHAR(50);`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS layout_style VARCHAR(50) DEFAULT 'Auto Detect';`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS display_delay VARCHAR(50) DEFAULT '3s';`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS show_frequency VARCHAR(50) DEFAULT 'Once per Session';`,
+        `ALTER TABLE popups ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';`,
 
         // Users & Staff extra fields
         `ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '["ALL"]'::jsonb;`,
@@ -821,6 +835,42 @@ export async function initDatabase() {
       }
       dbDiagnostics.tableCounts = counts;
       console.log('✓ PostgreSQL tables verified with live row counts:', counts);
+
+      // Pre-load and synchronize in-memory cache directly from live PostgreSQL
+      try {
+        const memDb = ensureFallbackDB();
+        const [projRows, plotRows, leadRows, blogRows, popRows, setRows] = await Promise.all([
+          client.query('SELECT * FROM projects ORDER BY created_at DESC;').catch(() => ({ rows: [] })),
+          client.query('SELECT * FROM plots ORDER BY created_at DESC;').catch(() => ({ rows: [] })),
+          client.query('SELECT * FROM leads ORDER BY created_at DESC;').catch(() => ({ rows: [] })),
+          client.query('SELECT * FROM blogs ORDER BY created_at DESC;').catch(() => ({ rows: [] })),
+          client.query('SELECT * FROM popups ORDER BY created_at DESC;').catch(() => ({ rows: [] })),
+          client.query('SELECT * FROM settings;').catch(() => ({ rows: [] })),
+        ]);
+
+        if (projRows.rows.length > 0) memDb.projects = projRows.rows;
+        if (plotRows.rows.length > 0) memDb.plots = plotRows.rows;
+        if (leadRows.rows.length > 0) memDb.leads = leadRows.rows;
+        if (blogRows.rows.length > 0) memDb.blogs = blogRows.rows;
+        if (popRows.rows.length > 0) memDb.popups = popRows.rows;
+        if (setRows.rows.length > 0) {
+          const settingsObj: Record<string, any> = {};
+          setRows.rows.forEach((r: any) => {
+            try {
+              settingsObj[r.key] = typeof r.value === 'string' && (r.value.startsWith('{') || r.value.startsWith('['))
+                ? JSON.parse(r.value)
+                : r.value;
+            } catch {
+              settingsObj[r.key] = r.value;
+            }
+          });
+          memDb.settings = { ...memDb.settings, ...settingsObj };
+        }
+        memoryFallbackDB = memDb;
+        console.log('✓ In-memory cache synchronized with live PostgreSQL rows.');
+      } catch (syncErr: any) {
+        console.warn('Sync memory cache note:', syncErr.message);
+      }
 
     } catch (popErr: any) {
       console.warn('Note on table population:', popErr.message);

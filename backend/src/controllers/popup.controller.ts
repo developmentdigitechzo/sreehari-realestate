@@ -186,11 +186,24 @@ export async function updatePopup(req: Request, res: Response): Promise<void> {
     if (!store.popups) store.popups = [];
     const index = store.popups.findIndex((p: any) => p.id === id);
 
-    const current = index !== -1 ? store.popups[index] : {};
+    let current: any = {};
+    if (db.isPostgres()) {
+      try {
+        const pgCurrent = await db.query('SELECT * FROM popups WHERE id = $1;', [id]);
+        if (pgCurrent.rows && pgCurrent.rows.length > 0) {
+          current = pgCurrent.rows[0];
+        }
+      } catch {}
+    }
+    if (!current.id && index !== -1) {
+      current = store.popups[index];
+    }
     const updated: PopupRecord = {
       ...current,
       ...req.body,
       id,
+      title: req.body.title !== undefined ? req.body.title : (current.title || ''),
+      banner_image: req.body.banner_image !== undefined ? req.body.banner_image : (current.banner_image || ''),
       category: req.body.category !== undefined ? req.body.category : (current.category || ''),
       badge_tag: req.body.badge_tag !== undefined ? req.body.badge_tag : (current.badge_tag || ''),
       whatsapp_number: req.body.whatsapp_number !== undefined ? req.body.whatsapp_number : (current.whatsapp_number || '+91 73737 13559'),
