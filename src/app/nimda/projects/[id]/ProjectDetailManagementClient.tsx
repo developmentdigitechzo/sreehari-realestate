@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Project, Plot, LandmarkItem } from '@/lib/types';
 import PlotFormModal from '@/components/admin/PlotFormModal';
-import MediaLibraryModal from '@/components/admin/MediaLibraryModal';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 import GpsLocationPicker from '@/components/admin/GpsLocationPicker';
 import {
   ArrowLeft,
@@ -47,6 +47,7 @@ import {
   Fence,
   Zap,
   Award,
+  RefreshCw,
   Check
 } from 'lucide-react';
 
@@ -133,6 +134,16 @@ function renderAmenityIcon(iconName?: string) {
 export default function ProjectDetailManagementClient({ projectId }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [toastMessage, setToastMessage] = useState<{ text: string; type?: 'success' | 'error' | 'warning' } | null>(null);
+  const [deletingPlotInfo, setDeletingPlotInfo] = useState<{ id: string; plotNumber: string } | null>(null);
+  const [isDeletingProjectModalOpen, setIsDeletingProjectModalOpen] = useState(false);
+
+  const showToast = (text: string, type: 'success' | 'error' | 'warning' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => {
+      setToastMessage((cur) => (cur?.text === text ? null : cur));
+    }, 4000);
+  };
   const initialTab = (searchParams.get('tab') as any) || 'plots';
 
   const [project, setProject] = useState<any>(null);
@@ -146,7 +157,6 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
 
   // Plot Modal (Add / Edit)
   const [isPlotModalOpen, setIsPlotModalOpen] = useState(false);
-  const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
   const [editingPlot, setEditingPlot] = useState<Plot | null>(null);
   const [plotSaving, setPlotSaving] = useState(false);
 
@@ -161,6 +171,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
   const [projectSaving, setProjectSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingBrochure, setUploadingBrochure] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
   const [editModalTab, setEditModalTab] = useState<'basic' | 'content' | 'amenities' | 'media' | 'landmarks'>('basic');
   const [newHighlightInput, setNewHighlightInput] = useState('');
@@ -225,6 +236,8 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
         setProjectFormData({
           name: res.data.name || '',
           slug: res.data.slug || '',
+          meta_title: res.data.meta_title || '',
+          meta_description: res.data.meta_description || '',
           tagline: res.data.tagline || '',
           description: res.data.description || '',
           status: res.data.status || 'Ongoing',
@@ -278,18 +291,20 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
     try {
       const payload = {
         ...projectFormData,
-        slug: project.slug
+        slug: projectFormData.slug || project.slug,
+        meta_title: projectFormData.meta_title,
+        meta_description: projectFormData.meta_description
       };
       const res = await api.updateProject(projectId, payload);
       if (res?.success) {
         setIsEditProjectModalOpen(false);
         await loadProjectDetails();
-        alert('Project overview successfully updated!');
+        showToast('Project overview successfully updated!');
       } else {
-        alert(res?.message || 'Failed to update project');
+        showToast(res?.message || 'Failed to update project', 'error');
       }
     } catch (err: any) {
-      alert(err.message || 'Save failed');
+      showToast(err.message || 'Save failed', 'error');
     } finally {
       setProjectSaving(false);
     }
@@ -341,7 +356,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
   const handleAddPresetAmenity = (preset: AmenityItem) => {
     const current = projectFormData?.amenities || [];
     if (current.some((a: any) => (a.title || '').toLowerCase() === preset.title.toLowerCase())) {
-      alert(`"${preset.title}" is already added.`);
+      showToast(`"${preset.title}" is already added.`, 'warning');
       return;
     }
     setProjectFormData((prev: any) => ({
@@ -489,13 +504,31 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
     setIsViewPlotModalOpen(true);
   };
 
-  const handleDeletePlot = async (plotId: string, plotNumber: string) => {
-    if (!confirm(`Are you sure you want to delete ${plotNumber}? This will remove it from this project's inventory.`)) return;
+  const handleDeletePlot = (plotId: string, plotNumber: string) => {
+    setDeletingPlotInfo({ id: plotId, plotNumber });
+  };
+
+  const confirmDeletePlot = async () => {
+    if (!deletingPlotInfo) return;
     try {
-      await api.deletePlot(plotId);
+      await api.deletePlot(deletingPlotInfo.id);
       await refreshPlots();
+      showToast(`Plot ${deletingPlotInfo.plotNumber} deleted successfully`);
     } catch (err: any) {
-      alert(err.message || 'Failed to delete plot');
+      showToast(err.message || 'Failed to delete plot', 'error');
+    } finally {
+      setDeletingPlotInfo(null);
+    }
+  };
+
+  const confirmDeleteProjectPermanent = async () => {
+    try {
+      await api.deleteProject(projectId);
+      router.push('/nimda/projects');
+    } catch (err: any) {
+      showToast('Delete failed: ' + err.message, 'error');
+    } finally {
+      setIsDeletingProjectModalOpen(false);
     }
   };
 
@@ -504,7 +537,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
       await api.updatePlot(plotId, { status: newStatus });
       setPlots(prev => prev.map(p => p.id === plotId ? { ...p, status: newStatus as any } : p));
     } catch (err: any) {
-      alert('Failed to update plot status: ' + err.message);
+      showToast('Failed to update plot status: ' + err.message, 'error');
     }
   };
 
@@ -514,13 +547,13 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
     try {
       const res = await api.updateProject(projectId, projectFormData);
       if (res?.success) {
-        alert('Project details successfully saved!');
+        showToast('Project details successfully saved!');
         await loadProjectDetails();
       } else {
-        alert(res?.message || 'Failed to update project');
+        showToast(res?.message || 'Failed to update project', 'error');
       }
     } catch (err: any) {
-      alert(err.message || 'Save failed');
+      showToast(err.message || 'Save failed', 'error');
     } finally {
       setProjectSaving(false);
     }
@@ -546,13 +579,13 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
             }));
           }
         } else {
-          alert('Upload failed: ' + (uploadRes?.message || 'Unknown error'));
+          showToast('Upload failed: ' + (uploadRes?.message || 'Unknown error'), 'error');
         }
         setUploadingImage(false);
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
-      alert('Upload error: ' + err.message);
+      showToast('Upload error: ' + err.message, 'error');
       setUploadingImage(false);
     }
   };
@@ -570,14 +603,38 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
         if (uploadRes?.success && uploadRes?.fileUrl) {
           setProjectFormData((prev: any) => ({ ...prev, brochure_url: uploadRes.fileUrl }));
         } else {
-          alert('Upload failed: ' + (uploadRes?.message || 'Unknown error'));
+          showToast('Upload failed: ' + (uploadRes?.message || 'Unknown error'), 'error');
         }
         setUploadingBrochure(false);
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
-      alert('Upload error: ' + err.message);
+      showToast('Upload error: ' + err.message, 'error');
       setUploadingBrochure(false);
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingVideo(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        const uploadRes = await api.uploadMedia({ imageBase64: base64, filename: file.name });
+        if (uploadRes?.success && uploadRes?.fileUrl) {
+          setProjectFormData((prev: any) => ({ ...prev, video_url: uploadRes.fileUrl }));
+        } else {
+          showToast('Upload failed: ' + (uploadRes?.message || 'Unknown error'), 'error');
+        }
+        setUploadingVideo(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      showToast('Upload error: ' + err.message, 'error');
+      setUploadingVideo(false);
     }
   };
 
@@ -1227,14 +1284,17 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                   <Video className="w-4 h-4 text-pink-600 dark:text-pink-400" />
                   <span>Promotional Video (YouTube, Vimeo, or MP4)</span>
                 </h4>
-                <button
-                  type="button"
-                  onClick={() => setIsMediaLibraryOpen(true)}
-                  className="inline-flex items-center gap-1.5 text-xs text-pink-700 dark:text-pink-300 hover:text-pink-800 dark:hover:text-pink-200 bg-pink-50 dark:bg-pink-950/80 border border-pink-200 dark:border-pink-700/60 px-3 py-1.5 rounded-xl transition font-medium"
-                >
-                  <FolderOpen className="w-3.5 h-3.5" />
-                  <span>Select from Video Library</span>
-                </button>
+                <label className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-pink-700 dark:text-pink-300 hover:text-pink-800 dark:hover:text-pink-200 bg-pink-50 dark:bg-pink-950/80 border border-pink-200 dark:border-pink-700/60 px-3 py-1.5 rounded-xl transition font-medium">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{uploadingVideo ? 'Uploading...' : 'Upload Video File'}</span>
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                    onChange={handleVideoUpload}
+                    className="hidden"
+                    disabled={uploadingVideo}
+                  />
+                </label>
               </div>
               <input
                 type="text"
@@ -1607,6 +1667,88 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
               />
             </div>
 
+            {/* URL Slug & SEO Metadata Section */}
+            <div className="p-4 bg-emerald-50/50 dark:bg-slate-950/70 border border-emerald-200/80 dark:border-slate-800 rounded-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-emerald-200/60 dark:border-slate-800 pb-2">
+                <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-400 font-bold text-xs">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Search Engine Optimization & Custom URL</span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-mono">Google Indexing Standards</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">
+                    Project URL Slug *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const s = (projectFormData.name || '').toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+                      setProjectFormData((prev: any) => ({ ...prev, slug: s }));
+                    }}
+                    className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Sync slug with current project name"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Sync with Name
+                  </button>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-800/80 px-3 py-2.5 rounded-l-xl border border-r-0 border-slate-300 dark:border-slate-700 font-mono">
+                    /projects/
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. park-avenue"
+                    value={projectFormData.slug || ''}
+                    onChange={(e) => setProjectFormData({ ...projectFormData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-') })}
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-r-xl p-2.5 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500">Public URL: https://sreeharirealty.com/projects/{projectFormData.slug || 'project-slug'}</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
+                      Meta Title (Search Engine Title)
+                    </label>
+                    <span className={`text-[10px] font-mono ${(projectFormData.meta_title || '').length > 60 ? 'text-rose-500 font-bold' : 'text-slate-500'}`}>
+                      {(projectFormData.meta_title || '').length} / 50 characters
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="e.g. Park Avenue Gated Plots near Trichy Airport"
+                    value={projectFormData.meta_title || ''}
+                    onChange={(e) => setProjectFormData({ ...projectFormData, meta_title: e.target.value })}
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
+                      Meta Description (Search Engine Snippet)
+                    </label>
+                    <span className={`text-[10px] font-mono ${(projectFormData.meta_description || '').length > 160 ? 'text-rose-500 font-bold' : 'text-slate-500'}`}>
+                      {(projectFormData.meta_description || '').length} / 150 characters
+                    </span>
+                  </div>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g. DTCP approved residential villa plots in Park Avenue, Trichy. 40ft blacktop roads, sweet groundwater, 100% bank loans."
+                    value={projectFormData.meta_description || ''}
+                    onChange={(e) => setProjectFormData({ ...projectFormData, meta_description: e.target.value })}
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 text-xs leading-relaxed"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Danger Zone */}
             <div className="border-t border-rose-200 dark:border-rose-950 pt-6 mt-6">
               <div className="flex items-center justify-between p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 rounded-xl">
@@ -1618,15 +1760,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                 </div>
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (!confirm(`Are you absolutely sure you want to permanently delete "${project.name}" and all its plots? This cannot be undone.`)) return;
-                    try {
-                      await api.deleteProject(projectId);
-                      router.push('/admin/projects');
-                    } catch (err: any) {
-                      alert('Delete failed: ' + err.message);
-                    }
-                  }}
+                  onClick={() => setIsDeletingProjectModalOpen(true)}
                   className="bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-700/60 font-semibold text-xs px-4 py-2 rounded-xl transition cursor-pointer"
                 >
                   Delete Project
@@ -1945,18 +2079,6 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
         );
       })()}
 
-      {/* Media Library Modal for Project Videos */}
-      <MediaLibraryModal
-        isOpen={isMediaLibraryOpen}
-        onClose={() => setIsMediaLibraryOpen(false)}
-        filterType="video"
-        title="Select Promotional Video for Project"
-        onSelect={(url) => {
-          if (projectFormData) {
-            setProjectFormData({ ...projectFormData, video_url: url });
-          }
-        }}
-      />
 
       {/* EDIT PROJECT OVERVIEW & SPECIFICATIONS MODAL */}
       {isEditProjectModalOpen && projectFormData && (
@@ -2033,7 +2155,14 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                         type="text"
                         required
                         value={projectFormData.name}
-                        onChange={(e) => setProjectFormData({ ...projectFormData, name: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setProjectFormData((prev: any) => ({
+                            ...prev,
+                            name: val,
+                            meta_title: (!prev.meta_title || prev.meta_title === (prev.name || '').slice(0, 50)) ? val.slice(0, 50) : prev.meta_title
+                          }));
+                        }}
                         className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-semibold"
                       />
                     </div>
@@ -2050,6 +2179,40 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                         <option value="Sold Out">Sold Out</option>
                       </select>
                     </div>
+                  </div>
+
+                  {/* Project URL Slug Input */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">
+                        Project URL Slug *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const s = (projectFormData.name || '').toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+                          setProjectFormData((prev: any) => ({ ...prev, slug: s }));
+                        }}
+                        className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Sync slug with current project name"
+                      >
+                        <RefreshCw className="w-3 h-3" /> Sync with Name
+                      </button>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-800/80 px-3 py-2.5 rounded-l-xl border border-r-0 border-slate-300 dark:border-slate-700 font-mono">
+                        /projects/
+                      </span>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. park-avenue"
+                        value={projectFormData.slug || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-') })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-r-xl p-2.5 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-500">Public URL: https://sreeharirealty.com/projects/{projectFormData.slug || 'project-slug'}</p>
                   </div>
 
                   <div>
@@ -2149,6 +2312,55 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                     label="Master Project GPS Coordinates"
                     helpText="Powers driving directions and turn-by-turn navigation for public website visitors."
                   />
+
+                  {/* SEO Metadata Box */}
+                  <div className="p-4 bg-emerald-50/60 dark:bg-slate-950/70 border border-emerald-200/80 dark:border-slate-800 rounded-xl space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-emerald-200/60 dark:border-slate-800 pb-2">
+                      <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-400 font-bold text-xs">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Search Engine Optimization (SEO Meta Tags)</span>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-mono">Google Search Preview</span>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
+                          Meta Title (Search Engine Title)
+                        </label>
+                        <span className={`text-[10px] font-mono ${(projectFormData.meta_title || '').length > 60 ? 'text-rose-500 font-bold' : 'text-slate-500'}`}>
+                          {(projectFormData.meta_title || '').length} / 50 characters
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="e.g. Park Avenue Gated Plots near Trichy Airport"
+                        value={projectFormData.meta_title || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, meta_title: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 text-xs"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">Recommended: 45–60 characters. Auto-defaults to project name.</p>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
+                          Meta Description (Search Engine Snippet)
+                        </label>
+                        <span className={`text-[10px] font-mono ${(projectFormData.meta_description || '').length > 160 ? 'text-rose-500 font-bold' : 'text-slate-500'}`}>
+                          {(projectFormData.meta_description || '').length} / 150 characters
+                        </span>
+                      </div>
+                      <textarea
+                        rows={2}
+                        placeholder="e.g. DTCP approved residential villa plots in Park Avenue, Trichy. 40ft blacktop roads, sweet groundwater, 100% bank loans. Inquire for spot booking offers."
+                        value={projectFormData.meta_description || ''}
+                        onChange={(e) => setProjectFormData({ ...projectFormData, meta_description: e.target.value })}
+                        className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 text-xs leading-relaxed"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">Recommended: 120–150 characters. Auto-defaults to overview snippet.</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -2164,7 +2376,14 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
                       required
                       placeholder="Comprehensive project narrative describing layout advantages, potable water, wide roads, and living environment..."
                       value={projectFormData.description || ''}
-                      onChange={(e) => setProjectFormData({ ...projectFormData, description: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setProjectFormData((prev: any) => ({
+                          ...prev,
+                          description: val,
+                          meta_description: (!prev.meta_description || prev.meta_description === (prev.description || prev.tagline).slice(0, 150)) ? val.slice(0, 150) : prev.meta_description
+                        }));
+                      }}
                       className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
                     />
                   </div>
@@ -2456,7 +2675,20 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
 
                   {/* Walkthrough Video URL */}
                   <div>
-                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">Project Walkthrough Video URL</label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-slate-700 dark:text-slate-300 font-semibold">Project Walkthrough Video URL</label>
+                      <label className="cursor-pointer inline-flex items-center gap-1 text-[11px] font-bold text-pink-700 dark:text-pink-400 hover:underline">
+                        <Upload className="w-3 h-3" />
+                        <span>{uploadingVideo ? 'Uploading...' : 'Upload Video File'}</span>
+                        <input
+                          type="file"
+                          accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                          onChange={handleVideoUpload}
+                          className="hidden"
+                          disabled={uploadingVideo}
+                        />
+                      </label>
+                    </div>
                     <input
                       type="url"
                       placeholder="e.g. https://www.youtube.com/watch?v=... or direct MP4 link"
@@ -2674,6 +2906,47 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl animate-fade-in ${
+            toastMessage.type === 'error'
+              ? 'bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-300'
+              : toastMessage.type === 'warning'
+              ? 'bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300'
+              : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300'
+          }`}
+        >
+          <span className="text-sm font-medium">{toastMessage.text}</span>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="hover:opacity-75 cursor-pointer ml-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Styled Confirm Delete Plot Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deletingPlotInfo)}
+        title="Delete Plot?"
+        description={deletingPlotInfo ? `Are you sure you want to delete ${deletingPlotInfo.plotNumber}? This will remove it from this project's inventory.` : ''}
+        confirmLabel="Delete Plot"
+        onConfirm={confirmDeletePlot}
+        onCancel={() => setDeletingPlotInfo(null)}
+      />
+
+      {/* Styled Confirm Delete Project Modal */}
+      <ConfirmModal
+        isOpen={isDeletingProjectModalOpen}
+        title="Permanently Delete Project?"
+        description={`Are you absolutely sure you want to permanently delete "${project?.name || 'this project'}" and all its plots? This action cannot be undone.`}
+        confirmLabel="Permanently Delete"
+        onConfirm={confirmDeleteProjectPermanent}
+        onCancel={() => setIsDeletingProjectModalOpen(false)}
+      />
     </div>
   );
 }

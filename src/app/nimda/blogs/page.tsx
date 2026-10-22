@@ -112,19 +112,45 @@ export default function AdminBlogsPage() {
     setTimeout(() => setToastMessage(null), 4000);
   }
 
-  function handleTitleChange(val: string) {
-    const generatedSlug = val
+  function slugify(val?: string) {
+    return (val || '')
       .toLowerCase()
       .trim()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-');
+  }
 
-    setFormData((prev) => ({
-      ...prev,
-      title: val,
-      slug: generatedSlug,
-      seo_title: (!prev.seo_title || prev.seo_title === prev.title) ? val : prev.seo_title
-    }));
+  function handleCategoryChange(catVal: string) {
+    setFormData((prev) => {
+      // Category is primary slug; fallback to title only if category is empty. Never combine them.
+      const generatedSlug = catVal.trim()
+        ? slugify(catVal)
+        : slugify(prev.title);
+
+      const shouldSync = !prev.slug || prev.slug === slugify(prev.title) || prev.slug === slugify(prev.category);
+      return {
+        ...prev,
+        category: catVal,
+        slug: shouldSync ? generatedSlug : prev.slug
+      };
+    });
+  }
+
+  function handleTitleChange(val: string) {
+    setFormData((prev) => {
+      // Category is primary slug; if category exists, keep category slug, otherwise take title
+      const generatedSlug = prev.category && prev.category.trim() !== ''
+        ? slugify(prev.category)
+        : slugify(val);
+
+      const shouldSync = !prev.slug || prev.slug === slugify(prev.title) || prev.slug === slugify(prev.category);
+      return {
+        ...prev,
+        title: val,
+        slug: shouldSync ? generatedSlug : prev.slug,
+        seo_title: (!prev.seo_title || prev.seo_title === prev.title) ? val : prev.seo_title
+      };
+    });
   }
 
   function handleCreateNew() {
@@ -132,7 +158,7 @@ export default function AdminBlogsPage() {
     setFormData({
       title: '',
       slug: '',
-      category: 'Buying Guide',
+      category: '',
       author: 'Sree Hari Realty Editorial',
       read_time: '5 min read',
       image_url: '',
@@ -150,7 +176,7 @@ export default function AdminBlogsPage() {
     setFormData({
       title: blog.title || '',
       slug: blog.slug || '',
-      category: blog.category || 'Buying Guide',
+      category: blog.category || '',
       author: blog.author || 'Sree Hari Realty Editorial',
       read_time: blog.read_time || '5 min read',
       image_url: blog.image_url || blog.banner_image || '',
@@ -173,12 +199,12 @@ export default function AdminBlogsPage() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file (.png, .jpg, .jpeg, .webp)');
+      showToast('Please select a valid image file (.png, .jpg, .jpeg, .webp)');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image file size must be less than 10MB');
+      showToast('Image file size must be less than 10MB');
       return;
     }
 
@@ -211,7 +237,7 @@ export default function AdminBlogsPage() {
 
   async function handleSave(targetStatus?: 'Published' | 'Draft') {
     if (!formData.title || !formData.title.trim()) {
-      alert('Please enter article title / heading');
+      showToast('Please enter article title / heading');
       return;
     }
 
@@ -222,7 +248,7 @@ export default function AdminBlogsPage() {
 
     const finalImage = formData.image_url && formData.image_url.trim() !== ''
       ? formData.image_url.trim()
-      : DEFAULT_BLOG_IMAGE;
+      : '';
 
     const payload = {
       ...formData,
@@ -326,10 +352,10 @@ export default function AdminBlogsPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                Blog Manager
+                Blogs
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Manage real estate articles, guides, market news & SEO articles
+                Manage articles, updates, and educational guides
               </p>
             </div>
           </div>
@@ -364,7 +390,7 @@ export default function AdminBlogsPage() {
               onClick={handleCreateNew}
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 shrink-0 cursor-pointer"
             >
-              <Plus className="w-4 h-4 stroke-[2.5]" /> Write New Article
+              <Plus className="w-4 h-4 stroke-[2.5]" /> New Article
             </button>
           </div>
         )}
@@ -409,41 +435,59 @@ export default function AdminBlogsPage() {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-medium text-slate-700 dark:text-slate-300">URL Slug</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const s = (formData.title || '').toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
-                        setFormData((prev) => ({ ...prev, slug: s }));
-                      }}
-                      className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 transition-colors cursor-pointer"
-                      title="Sync slug with current title"
-                    >
-                      <RefreshCw className="w-3 h-3" /> Sync with Title
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {formData.category ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const s = slugify(formData.category);
+                            setFormData((prev) => ({ ...prev, slug: s }));
+                          }}
+                          className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Sync slug with current category"
+                        >
+                          <RefreshCw className="w-3 h-3" /> Sync with Category
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const s = slugify(formData.title);
+                            setFormData((prev) => ({ ...prev, slug: s }));
+                          }}
+                          className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Sync slug with current title"
+                        >
+                          <RefreshCw className="w-3 h-3" /> Sync with Title
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <input
                     type="text"
                     value={formData.slug || ''}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-') })}
-                    placeholder="dtcp-approved-plots-trichy-guide"
+                    placeholder="market-trends"
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs font-mono text-amber-600 dark:text-amber-400 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
                   />
-                  <p className="text-[10px] text-slate-500">Auto-generated from title. Accessible at /blog/{"{"}slug{"}"}</p>
+                  <p className="text-[10px] text-slate-500">Primary slug is category (or title if category is blank). Accessible at /blog/{"{"}slug{"}"}</p>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Category</label>
-                  <select
-                    value={formData.category || 'Buying Guide'}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none transition-colors"
-                  >
+                  <input
+                    type="text"
+                    list="blog-category-suggestions"
+                    value={formData.category || ''}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
+                    placeholder="e.g. Buying Guide, Market Trends, Legal Updates..."
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
+                  />
+                  <datalist id="blog-category-suggestions">
                     {CATEGORIES.filter((c) => c !== 'All Categories').map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
+                      <option key={cat} value={cat} />
                     ))}
-                  </select>
+                  </datalist>
                 </div>
 
                 <div className="space-y-1.5">
@@ -490,7 +534,7 @@ export default function AdminBlogsPage() {
                         onClick={() => setFormData({ ...formData, image_url: '' })}
                         className="text-[11px] text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:underline cursor-pointer"
                       >
-                        Reset to Default Image
+                        Remove Cover Image
                       </button>
                     )}
                   </div>
@@ -532,38 +576,40 @@ export default function AdminBlogsPage() {
                         type="url"
                         value={formData.image_url || ''}
                         onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                        placeholder="Or paste image URL (https://images.unsplash.com/...)"
+                        placeholder="Or paste image URL (https://...)"
                         className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none transition-colors"
                       />
                     </div>
                   </div>
                   <p className="text-[11px] text-slate-500">
-                    Upload an image file from your computer or paste an external image link. Leave blank to use default real estate layout image.
+                    Upload an image file from your computer or paste an external image link. Leave blank to display without a cover image.
                   </p>
                 </div>
 
                 {/* Cover Image Preview */}
                 <div className="md:col-span-2">
                   <div className="relative h-48 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={formData.image_url && formData.image_url.trim() !== '' ? formData.image_url : DEFAULT_BLOG_IMAGE}
-                      alt="Blog Cover Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = DEFAULT_BLOG_IMAGE;
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-between p-4">
-                      <span className="text-[11px] text-white font-medium bg-black/60 px-2.5 py-1 rounded-lg border border-white/20 backdrop-blur-md">
-                        {formData.image_url ? 'Custom Upload / URL' : 'Default Real Estate Cover'}
-                      </span>
-                      {formData.image_url && (
-                        <span className="text-[10px] text-emerald-300 font-semibold bg-emerald-950/80 border border-emerald-500/40 px-2 py-0.5 rounded">
-                          Active Image
-                        </span>
-                      )}
-                    </div>
+                    {formData.image_url && formData.image_url.trim() !== '' ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={formData.image_url}
+                          alt="Blog Cover Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-between p-4">
+                          <span className="text-[11px] text-white font-medium bg-black/60 px-2.5 py-1 rounded-lg border border-white/20 backdrop-blur-md">
+                            Active Cover Image
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center p-6 text-slate-400">
+                        <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+                        <p className="text-xs font-medium">No cover image uploaded</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Article will publish cleanly without a cover banner.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

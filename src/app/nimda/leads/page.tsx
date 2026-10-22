@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { CrmLead, Project, Plot, StaffUser } from '@/lib/types';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 import {
   Users,
   Search,
@@ -41,20 +42,44 @@ const LEAD_STATUS_OPTIONS = [
   'Lost Closed'
 ];
 
+function formatPlotBadge(raw?: string): string {
+  if (!raw) return '';
+  let str = raw.trim();
+  // Strip redundant leading "Plot", "Plot:", "Plot #", "#"
+  str = str.replace(/^(?:plot\s*[:#-]*\s*)+/gi, '').trim();
+  str = str.replace(/^#+\s*/g, '').trim();
+  // Clean duplicate "Facing" occurrences at the end
+  str = str.replace(/(Facing\s*)+$/gi, 'Facing').trim();
+  return str ? `Plot #${str}` : '';
+}
+
 function getPlotFullTitle(plot: Plot): string {
   const pNum = (plot.plot_number || '').trim();
   const title = (plot.title || '').trim();
-  if (title) {
-    const cleanTitle = title.replace(/^(?:plot\s*#*|#\s*)+/gi, '').trim();
-    if (cleanTitle) return `Plot #${cleanTitle}`;
-    return title;
+  if (pNum && title && pNum.toLowerCase() !== title.toLowerCase()) {
+    if (title.toLowerCase().startsWith(pNum.toLowerCase())) {
+      return title;
+    }
+    return `${pNum} - ${title}`;
   }
-  if (pNum) {
-    const cleanNum = pNum.replace(/^(?:plot\s*#*|#\s*)+/gi, '').trim();
-    if (cleanNum) return `Plot #${cleanNum}`;
-    return pNum;
-  }
+  if (pNum) return pNum;
+  if (title) return title;
   return `Plot #${plot.id}`;
+}
+
+function formatTimeForInput(val?: string): string {
+  if (!val) return '';
+  const trimmed = val.trim();
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})/);
+  if (match) {
+    const hh = match[1].padStart(2, '0');
+    const mm = match[2];
+    return `${hh}:${mm}`;
+  }
+  if (trimmed.toLowerCase().includes('morning')) return '10:00';
+  if (trimmed.toLowerCase().includes('afternoon')) return '14:00';
+  if (trimmed.toLowerCase().includes('evening')) return '17:00';
+  return '';
 }
 
 export default function AdminLeadsPage() {
@@ -63,6 +88,8 @@ export default function AdminLeadsPage() {
   const [plots, setPlots] = useState<Plot[]>([]);
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingLeadInfo, setDeletingLeadInfo] = useState<{ id: string; name: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Filters
   const [selectedStage, setSelectedStage] = useState('All');
@@ -89,7 +116,7 @@ export default function AdminLeadsPage() {
     facing_preference: 'Any',
     source: 'Manual',
     stage: 'New Lead' as any,
-    priority: 'Cold' as any,
+    priority: 'Warm' as any,
     assigned_to: 'Sales Team',
     site_visit_date: '',
     site_visit_time: '',
@@ -183,14 +210,16 @@ export default function AdminLeadsPage() {
     return s;
   };
 
-  // Strictly map Priority based on the 15 Pipeline Stages
-  const getPriorityForStatus = (stage: string): string => {
+  // Determine Priority: Never default to Cold. Default to Warm, or Hot if site visit/urgent.
+  const getPriorityForStatus = (stage: string, userPriority?: string): string => {
+    if (userPriority && userPriority.trim() !== '') {
+      return userPriority.toUpperCase();
+    }
     const s = (stage || '').toLowerCase().trim();
     if (s.includes('registration') || s.includes('booking') || s.includes('agreement') || s.includes('converted')) return 'COMPLETED';
     if (s.includes('lost') || s.includes('closed')) return 'CLOSED / LOST';
     if (s.includes('site') || s.includes('visit') || s.includes('negotiation') || s.includes('loan')) return 'HOT';
-    if (s.includes('matching') || s.includes('partner') || s.includes('shared') || s.includes('follow')) return 'WARM';
-    return 'COLD';
+    return 'WARM';
   };
 
   const getStatusSelectStyle = (stage: string) => {
@@ -213,8 +242,14 @@ export default function AdminLeadsPage() {
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const autoPriority = getPriorityForStatus(newLead.stage);
-      await api.createCrmLead({ ...newLead, source: newLead.source || 'Manual', priority: autoPriority });
+      let targetStage = newLead.stage || 'New Lead';
+      if (newLead.site_visit_date && (targetStage === 'New Lead' || targetStage === 'Follow Up Pending')) {
+        targetStage = 'Site Visit Scheduled';
+      } else if (newLead.next_follow_up_date && targetStage === 'New Lead') {
+        targetStage = 'Follow Up Pending';
+      }
+      const targetPriority = newLead.priority || (newLead.site_visit_date ? 'Hot' : 'Warm');
+      await api.createCrmLead({ ...newLead, stage: targetStage, status: targetStage, source: newLead.source || 'Manual', priority: targetPriority });
       setIsAddModalOpen(false);
       setNewLead({
         name: '',
@@ -229,7 +264,7 @@ export default function AdminLeadsPage() {
         facing_preference: 'Any',
         source: 'Manual',
         stage: 'New Lead',
-        priority: 'Cold',
+        priority: 'Warm',
         assigned_to: 'Sales Team',
         site_visit_date: '',
         site_visit_time: '',
@@ -240,7 +275,7 @@ export default function AdminLeadsPage() {
       });
       loadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to create CRM lead');
+      setToastMessage(err.message || 'Failed to create CRM lead');
     }
   };
 
@@ -273,17 +308,24 @@ export default function AdminLeadsPage() {
     e.preventDefault();
     if (!editingLead) return;
     try {
-      const autoPriority = getPriorityForStatus(editForm.stage);
+      let targetStage = editForm.stage || 'New Lead';
+      if (editForm.site_visit_date && (targetStage === 'New Lead' || targetStage === 'Follow Up Pending')) {
+        targetStage = 'Site Visit Scheduled';
+      } else if (editForm.next_follow_up_date && targetStage === 'New Lead') {
+        targetStage = 'Follow Up Pending';
+      }
+      const targetPriority = editForm.priority || (editForm.site_visit_date ? 'Hot' : 'Warm');
       await api.updateCrmLead(editingLead.id, {
         ...editForm,
         source: editForm.source,
-        status: editForm.stage,
-        priority: autoPriority
+        stage: targetStage,
+        status: targetStage,
+        priority: targetPriority
       });
       setLeads((prev) =>
         prev.map((l) =>
           l.id === editingLead.id
-            ? { ...l, ...editForm, source: editForm.source, stage: editForm.stage, status: editForm.stage, priority: autoPriority }
+            ? { ...l, ...editForm, source: editForm.source, stage: targetStage, status: targetStage, priority: targetPriority }
             : l
         )
       );
@@ -292,15 +334,15 @@ export default function AdminLeadsPage() {
           ...selectedLeadForDetail,
           ...editForm,
           source: editForm.source,
-          stage: editForm.stage,
-          status: editForm.stage,
-          priority: autoPriority
+          stage: targetStage,
+          status: targetStage,
+          priority: targetPriority
         });
       }
       setEditingLead(null);
       loadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update lead');
+      setToastMessage(err.message || 'Failed to update lead');
     }
   };
 
@@ -336,7 +378,7 @@ export default function AdminLeadsPage() {
       );
       loadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to add note');
+      setToastMessage(err.message || 'Failed to add note');
     }
   };
 
@@ -363,19 +405,26 @@ export default function AdminLeadsPage() {
       }
       loadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update lead status');
+      setToastMessage(err.message || 'Failed to update lead status');
     }
   };
 
-  const handleDeleteLead = async (leadId: string, leadName: string) => {
-    if (!confirm(`Are you sure you want to delete lead '${leadName}' from PostgreSQL database?`)) return;
+  const handleDeleteLead = (leadId: string, leadName: string) => {
+    setDeletingLeadInfo({ id: leadId, name: leadName });
+  };
+
+  const confirmDeleteLead = async () => {
+    if (!deletingLeadInfo) return;
     try {
-      await api.deleteCrmLead(leadId);
-      if (selectedLeadForDetail?.id === leadId) setSelectedLeadForDetail(null);
-      if (editingLead?.id === leadId) setEditingLead(null);
+      await api.deleteCrmLead(deletingLeadInfo.id);
+      if (selectedLeadForDetail?.id === deletingLeadInfo.id) setSelectedLeadForDetail(null);
+      if (editingLead?.id === deletingLeadInfo.id) setEditingLead(null);
       loadData();
+      setToastMessage('Lead deleted successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to delete lead');
+      setToastMessage(err.message || 'Failed to delete lead');
+    } finally {
+      setDeletingLeadInfo(null);
     }
   };
 
@@ -454,10 +503,10 @@ export default function AdminLeadsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-3">
             <Users className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
-            <span>CRM Buyer Leads Management</span>
+            <span>Leads</span>
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Track customer plot enquiries through 15 real estate sales pipeline stages.
+            Manage customer enquiries and follow-ups.
           </p>
         </div>
         <button
@@ -465,7 +514,7 @@ export default function AdminLeadsPage() {
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-600/20"
         >
           <Plus className="w-4 h-4" />
-          <span>Add New Buyer Lead</span>
+          <span>Add Lead</span>
         </button>
       </div>
 
@@ -517,12 +566,12 @@ export default function AdminLeadsPage() {
             onChange={(e) => setSelectedPriority(e.target.value)}
             className="bg-slate-50 border border-slate-200 text-xs text-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500 font-medium dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300"
           >
-            <option value="All">Priority / State: All</option>
+            <option value="All">Priority: All</option>
             <option value="HOT">HOT Priority</option>
             <option value="WARM">WARM Priority</option>
             <option value="COLD">COLD Priority</option>
-            <option value="COMPLETED">COMPLETED (Won)</option>
-            <option value="CLOSED / LOST">CLOSED / LOST</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="CLOSED / LOST">LOST / CLOSED</option>
           </select>
         </div>
       </div>
@@ -533,20 +582,20 @@ export default function AdminLeadsPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 dark:bg-slate-950/80 dark:text-slate-400 dark:border-slate-800">
               <tr>
-                <th className="px-6 py-4">Customer Details</th>
+                <th className="px-6 py-4">Customer</th>
                 <th className="px-6 py-4">Project & Budget</th>
-                <th className="px-6 py-4">Created & Site Visit</th>
-                <th className="px-6 py-4">Lead Source</th>
-                <th className="px-6 py-4">Lead Status (15 Pipeline Stages)</th>
-                <th className="px-6 py-4">Auto Priority</th>
-                <th className="px-6 py-4 text-center">Actions (View / Edit / Delete)</th>
+                <th className="px-6 py-4">Date & Follow-up</th>
+                <th className="px-6 py-4">Source</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Priority</th>
+                <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-slate-500">
-                    Loading CRM leads from PostgreSQL database...
+                    Loading CRM leads...
                   </td>
                 </tr>
               ) : leads.length === 0 ? (
@@ -558,7 +607,7 @@ export default function AdminLeadsPage() {
               ) : (
                 leads.map((lead) => {
                   const currentStage = normalizeFrontendStage(lead.stage || lead.status);
-                  const currentPriority = getPriorityForStatus(currentStage);
+                  const currentPriority = (lead.priority ? lead.priority.toUpperCase() : getPriorityForStatus(currentStage));
                   const matchedProject = projects.find((p) => p.id === lead.project_id);
                   const projectName = matchedProject?.name || matchedProject?.title || (lead as any).project_name || lead.project_interest || '—';
 
@@ -571,7 +620,7 @@ export default function AdminLeadsPage() {
                         {(lead.plot_name || lead.plot_id) && (
                           <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                             <span className="px-2 py-0.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold dark:bg-emerald-950/80 dark:border-emerald-800/60 dark:text-emerald-300">
-                              Plot: {lead.plot_name || lead.plot_id}
+                              {formatPlotBadge(lead.plot_name || lead.plot_id)}
                             </span>
                           </div>
                         )}
@@ -604,12 +653,6 @@ export default function AdminLeadsPage() {
                             <span>Follow-up: {lead.next_follow_up_date} {lead.next_follow_up_time ? `(${lead.next_follow_up_time})` : ''}</span>
                           </div>
                         )}
-                        {lead.site_visit_date && (
-                          <div className="mt-1 flex items-center gap-1 text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 w-fit dark:bg-purple-950/80 dark:text-purple-300 dark:border-purple-800/60">
-                            <Calendar className="w-3 h-3 text-purple-600 dark:text-purple-400 shrink-0" />
-                            <span>Visit: {lead.site_visit_date} {lead.site_visit_time ? `(${lead.site_visit_time})` : ''}</span>
-                          </div>
-                        )}
                       </td>
                       <td className="px-6 py-4">
                         {renderSourceBadge(lead.source)}
@@ -628,21 +671,35 @@ export default function AdminLeadsPage() {
                         </select>
                       </td>
                       <td className="px-6 py-4">
-                        <span
-                          className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        <select
+                          value={currentPriority}
+                          onChange={async (e) => {
+                            const nextPri = e.target.value;
+                            try {
+                              await api.updateCrmLead(lead.id, { priority: nextPri });
+                              setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, priority: nextPri } : l)));
+                            } catch (err: any) {
+                              setToastMessage('Failed to update priority: ' + err.message);
+                            }
+                          }}
+                          className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider cursor-pointer border focus:outline-none transition-colors ${
                             currentPriority === 'COMPLETED'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800/60'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800/60'
                               : currentPriority.includes('CLOSED') || currentPriority.includes('LOST')
-                              ? 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800/60'
+                              ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800/60'
                               : currentPriority === 'HOT'
-                              ? 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800/60'
+                              ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800/60'
                               : currentPriority === 'WARM'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800/60'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800/60'
                               : 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
                           }`}
                         >
-                          {currentPriority}
-                        </span>
+                          <option value="HOT">HOT</option>
+                          <option value="WARM">WARM</option>
+                          <option value="COLD">COLD</option>
+                          <option value="COMPLETED">COMPLETED</option>
+                          <option value="CLOSED / LOST">CLOSED / LOST</option>
+                        </select>
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -775,7 +832,7 @@ export default function AdminLeadsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Lead Source</label>
                   <select
@@ -803,6 +860,18 @@ export default function AdminLeadsPage() {
                         {idx + 1}. {stg}
                       </option>
                     ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Lead Priority</label>
+                  <select
+                    value={newLead.priority}
+                    onChange={(e) => setNewLead({ ...newLead, priority: e.target.value as any })}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg p-2 font-bold dark:bg-slate-950 dark:border-slate-800 dark:text-amber-400"
+                  >
+                    <option value="Warm">Warm (Default)</option>
+                    <option value="Hot">Hot (High Intent)</option>
+                    <option value="Cold">Cold</option>
                   </select>
                 </div>
                 <div>
@@ -836,7 +905,14 @@ export default function AdminLeadsPage() {
                     <input
                       type="date"
                       value={newLead.next_follow_up_date}
-                      onChange={(e) => setNewLead({ ...newLead, next_follow_up_date: e.target.value })}
+                      onChange={(e) => {
+                        const d = e.target.value;
+                        setNewLead((prev) => ({
+                          ...prev,
+                          next_follow_up_date: d,
+                          stage: d && (!prev.stage || prev.stage === 'New Lead') ? 'Follow Up Pending' : prev.stage
+                        }));
+                      }}
                       className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
                     />
                   </div>
@@ -865,22 +941,25 @@ export default function AdminLeadsPage() {
                     <input
                       type="date"
                       value={newLead.site_visit_date}
-                      onChange={(e) => setNewLead({ ...newLead, site_visit_date: e.target.value })}
+                      onChange={(e) => {
+                        const d = e.target.value;
+                        setNewLead((prev) => ({
+                          ...prev,
+                          site_visit_date: d,
+                          stage: d && (!prev.stage || prev.stage === 'New Lead' || prev.stage === 'Follow Up Pending') ? 'Site Visit Scheduled' : prev.stage
+                        }));
+                      }}
                       className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1 text-[11px]">Time Slot</label>
-                    <select
-                      value={newLead.site_visit_time}
+                    <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1 text-[11px]">Visit Time</label>
+                    <input
+                      type="time"
+                      value={newLead.site_visit_time || ''}
                       onChange={(e) => setNewLead({ ...newLead, site_visit_time: e.target.value })}
                       className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
-                    >
-                      <option value="">Select Time Slot</option>
-                      <option value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</option>
-                      <option value="Afternoon (12 PM - 3 PM)">Afternoon (12 PM - 3 PM)</option>
-                      <option value="Evening (3 PM - 6 PM)">Evening (3 PM - 6 PM)</option>
-                    </select>
+                    />
                   </div>
                 </div>
               </div>
@@ -938,9 +1017,12 @@ export default function AdminLeadsPage() {
                         <option value="">-- No Specific Plot (General Project Interest) --</option>
                         {availablePlots.map((plot) => {
                           const cleanLabel = getPlotFullTitle(plot);
+                          const cleanFacing = plot.facing
+                            ? (plot.facing.toLowerCase().includes('facing') ? plot.facing : `${plot.facing} Facing`)
+                            : '';
                           return (
                             <option key={plot.id} value={plot.id}>
-                              {cleanLabel} {plot.area_sqft ? `(${plot.area_sqft} sq.ft)` : ''} {plot.facing ? `- ${plot.facing} Facing` : ''} [{plot.status || 'Available'}]
+                              {cleanLabel} {plot.area_sqft ? `(${plot.area_sqft} sq.ft)` : ''} {cleanFacing ? `- ${cleanFacing}` : ''} [{plot.status || 'Available'}]
                             </option>
                           );
                         })}
@@ -1127,7 +1209,7 @@ export default function AdminLeadsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Lead Source</label>
                   <select
@@ -1154,6 +1236,20 @@ export default function AdminLeadsPage() {
                         {idx + 1}. {stg}
                       </option>
                     ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Priority</label>
+                  <select
+                    value={editForm.priority}
+                    onChange={(e) => setEditForm({ ...editForm, priority: e.target.value as any })}
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2 font-bold dark:bg-slate-950 dark:border-slate-800 dark:text-amber-400 text-slate-900"
+                  >
+                    <option value="Hot">Hot</option>
+                    <option value="Warm">Warm</option>
+                    <option value="Cold">Cold</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Closed / Lost">Closed / Lost</option>
                   </select>
                 </div>
                 <div>
@@ -1187,7 +1283,14 @@ export default function AdminLeadsPage() {
                     <input
                       type="date"
                       value={editForm.next_follow_up_date}
-                      onChange={(e) => setEditForm({ ...editForm, next_follow_up_date: e.target.value })}
+                      onChange={(e) => {
+                        const d = e.target.value;
+                        setEditForm((prev) => ({
+                          ...prev,
+                          next_follow_up_date: d,
+                          stage: d && (!prev.stage || prev.stage === 'New Lead') ? 'Follow Up Pending' : prev.stage
+                        }));
+                      }}
                       className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
                     />
                   </div>
@@ -1216,22 +1319,25 @@ export default function AdminLeadsPage() {
                     <input
                       type="date"
                       value={editForm.site_visit_date}
-                      onChange={(e) => setEditForm({ ...editForm, site_visit_date: e.target.value })}
+                      onChange={(e) => {
+                        const d = e.target.value;
+                        setEditForm((prev) => ({
+                          ...prev,
+                          site_visit_date: d,
+                          stage: d && (!prev.stage || prev.stage === 'New Lead' || prev.stage === 'Follow Up Pending') ? 'Site Visit Scheduled' : prev.stage
+                        }));
+                      }}
                       className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1 text-[11px]">Time Slot</label>
-                    <select
-                      value={editForm.site_visit_time}
+                    <label className="block text-slate-600 dark:text-slate-400 font-semibold mb-1 text-[11px]">Visit Time</label>
+                    <input
+                      type="time"
+                      value={formatTimeForInput(editForm.site_visit_time)}
                       onChange={(e) => setEditForm({ ...editForm, site_visit_time: e.target.value })}
                       className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-900 text-xs dark:bg-slate-900 dark:border-slate-800 dark:text-white"
-                    >
-                      <option value="">Select Time Slot</option>
-                      <option value="Morning (9 AM - 12 PM)">Morning (9 AM - 12 PM)</option>
-                      <option value="Afternoon (12 PM - 3 PM)">Afternoon (12 PM - 3 PM)</option>
-                      <option value="Evening (3 PM - 6 PM)">Evening (3 PM - 6 PM)</option>
-                    </select>
+                    />
                   </div>
                 </div>
               </div>
@@ -1289,9 +1395,12 @@ export default function AdminLeadsPage() {
                         <option value="">-- No Specific Plot (General Project Interest) --</option>
                         {availablePlots.map((plot) => {
                           const cleanLabel = getPlotFullTitle(plot);
+                          const cleanFacing = plot.facing
+                            ? (plot.facing.toLowerCase().includes('facing') ? plot.facing : `${plot.facing} Facing`)
+                            : '';
                           return (
                             <option key={plot.id} value={plot.id}>
-                              {cleanLabel} {plot.area_sqft ? `(${plot.area_sqft} sq.ft)` : ''} {plot.facing ? `- ${plot.facing}` : ''} [{plot.status || 'Available'}]
+                              {cleanLabel} {plot.area_sqft ? `(${plot.area_sqft} sq.ft)` : ''} {cleanFacing ? `- ${cleanFacing}` : ''} [{plot.status || 'Available'}]
                             </option>
                           );
                         })}
@@ -1575,6 +1684,25 @@ export default function AdminLeadsPage() {
           </div>
         </div>
       )}
+          {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl animate-fade-in">
+          <span className="text-sm font-medium">{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-200">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Styled Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deletingLeadInfo)}
+        title="Delete CRM Lead?"
+        description={deletingLeadInfo ? `Are you sure you want to permanently delete lead '${deletingLeadInfo.name}' from the database?` : ''}
+        confirmLabel="Delete Lead"
+        onConfirm={confirmDeleteLead}
+        onCancel={() => setDeletingLeadInfo(null)}
+      />
     </div>
   );
 }

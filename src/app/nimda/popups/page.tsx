@@ -32,6 +32,18 @@ const DEFAULT_POPUP_IMAGE =
   'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80';
 
 const CATEGORIES = ['Festival', 'Seasonal Deal', 'New Launch', 'Exclusive Offer', 'Spot Discount'];
+const STANDARD_FRONTEND_PAGES = [
+  { path: '/', label: 'Home Page (/)' },
+  { path: '/properties', label: 'All Properties & Layouts (/properties)' },
+  { path: '/properties/park-avenue', label: 'Park Avenue Community (/properties/park-avenue)' },
+  { path: '/properties/sri-amman-nagar', label: 'Sri Amman Nagar (/properties/sri-amman-nagar)' },
+  { path: '/properties/aishwarya-nagar', label: 'Aishwarya Nagar (/properties/aishwarya-nagar)' },
+  { path: '/about', label: 'About Sree Hari Realty (/about)' },
+  { path: '/contact', label: 'Contact Us & Site Visit Booking (/contact)' },
+  { path: '/faq', label: 'Frequently Asked Questions (/faq)' },
+  { path: '/blog', label: 'Market Insights & Real Estate Blog (/blog)' },
+  { path: '/gallery', label: 'Layout & Development Gallery (/gallery)' }
+];
 const LAYOUT_STYLES = [
   'Auto Detect (Side-by-Side for Vertical, Top Banner for Land)',
   'Top Banner + Content Card',
@@ -57,13 +69,14 @@ export default function AdminPopupsPage() {
   const [formData, setFormData] = useState<Partial<PromotionalPopup>>({
     title: '',
     subtitle: '',
-    category: 'Festival',
-    badge_tag: 'FESTIVE OFFER',
+    category: '',
+    badge_tag: '',
     banner_image: '',
     highlights: '',
-    cta_text: 'Claim Festive Offer on WhatsApp',
+    cta_text: 'Claim Offer on WhatsApp',
     cta_action: 'whatsapp',
-    whatsapp_number: '+91 98424 01991',
+    whatsapp_number: '+91 73737 13559',
+    custom_url: '',
     start_date: '',
     end_date: '',
     layout_style: 'Auto Detect (Side-by-Side for Vertical, Top Banner for Land)',
@@ -103,13 +116,14 @@ export default function AdminPopupsPage() {
     setFormData({
       title: '',
       subtitle: '',
-      category: 'Festival',
-      badge_tag: 'FESTIVE OFFER',
+      category: '',
+      badge_tag: '',
       banner_image: '',
-      highlights: 'Spot Patta Transfer & 0% Brokerage\nReady for immediate plot construction\nSpecial ₹50,000 spot booking cashback',
-      cta_text: 'Claim Festive Offer on WhatsApp',
+      highlights: '',
+      cta_text: 'Claim Offer on WhatsApp',
       cta_action: 'whatsapp',
-      whatsapp_number: '+91 98424 01991',
+      whatsapp_number: '+91 73737 13559',
+      custom_url: '',
       start_date: '',
       end_date: '',
       layout_style: 'Auto Detect (Side-by-Side for Vertical, Top Banner for Land)',
@@ -125,13 +139,14 @@ export default function AdminPopupsPage() {
     setFormData({
       title: popup.title || '',
       subtitle: popup.subtitle || '',
-      category: popup.category || 'Festival',
-      badge_tag: popup.badge_tag || 'FESTIVE OFFER',
+      category: popup.category || '',
+      badge_tag: popup.badge_tag || '',
       banner_image: popup.banner_image || '',
       highlights: popup.highlights || '',
       cta_text: popup.cta_text || 'Claim Offer on WhatsApp',
       cta_action: popup.cta_action || 'whatsapp',
-      whatsapp_number: popup.whatsapp_number || '+91 98424 01991',
+      whatsapp_number: popup.whatsapp_number !== undefined ? popup.whatsapp_number : '+91 73737 13559',
+      custom_url: popup.custom_url || '',
       start_date: popup.start_date || '',
       end_date: popup.end_date || '',
       layout_style: popup.layout_style || 'Auto Detect (Side-by-Side for Vertical, Top Banner for Land)',
@@ -175,13 +190,13 @@ export default function AdminPopupsPage() {
           setFormData((prev) => ({ ...prev, banner_image: res.fileUrl }));
           showToast('Image poster uploaded successfully');
         } else {
-          alert(res.message || 'Upload failed');
+          showToast(res.message || 'Upload failed');
         }
         setUploading(false);
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
-      alert('Upload error: ' + err.message);
+      showToast('Upload error: ' + err.message);
       setUploading(false);
     }
   }
@@ -189,7 +204,7 @@ export default function AdminPopupsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!formData.title || !formData.title.trim()) {
-      alert('Please enter popup title');
+      showToast('Please enter popup title before saving');
       return;
     }
 
@@ -265,10 +280,10 @@ export default function AdminPopupsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-              Ad & Seasonal Popups
+              Popups
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Customize banner visual posters, custom category tags, action buttons, and active date campaigns
+              Manage promotional banners, announcements, and festive offers
             </p>
           </div>
         </div>
@@ -277,7 +292,7 @@ export default function AdminPopupsPage() {
           onClick={handleOpenCreate}
           className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 shrink-0 cursor-pointer"
         >
-          <Plus className="w-4 h-4 stroke-[2.5]" /> Create Promotional Popup
+          <Plus className="w-4 h-4 stroke-[2.5]" /> New Popup
         </button>
       </div>
 
@@ -452,27 +467,35 @@ export default function AdminPopupsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Category / Campaign Type</label>
-                    <select
-                      value={formData.category || 'Festival'}
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Category / Campaign Type</label>
+                      <span className="text-[10px] text-slate-500">Free-form or Select</span>
+                    </div>
+                    <input
+                      type="text"
+                      list="popup-category-list"
+                      value={formData.category || ''}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      placeholder="e.g. Festival, New Launch, or leave blank"
                       className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none"
-                    >
+                    />
+                    <datalist id="popup-category-list">
                       {CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
+                        <option key={cat} value={cat} />
                       ))}
-                    </select>
+                    </datalist>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Badge Tag Text</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Badge Tag Text</label>
+                      <span className="text-[10px] text-slate-500">Optional (blank = no badge)</span>
+                    </div>
                     <input
                       type="text"
-                      value={formData.badge_tag || 'FESTIVE OFFER'}
+                      value={formData.badge_tag || ''}
                       onChange={(e) => setFormData({ ...formData, badge_tag: e.target.value })}
-                      placeholder="e.g. 🎉 FESTIVE OFFER"
+                      placeholder="e.g. 🎉 FESTIVE OFFER (Leave blank to hide)"
                       className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none"
                     />
                   </div>
@@ -575,22 +598,97 @@ export default function AdminPopupsPage() {
                     >
                       <option value="whatsapp">Open WhatsApp Direct Chat</option>
                       <option value="lead_form">Open Site Visit Lead Form</option>
-                      <option value="call">Phone Call (+91 98424 01991)</option>
+                      <option value="call">Phone Call (Direct Dial)</option>
+                      <option value="custom_url">Custom Website / Page URL</option>
+                      <option value="none">No CTA Button (Announcement Only)</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">WhatsApp Phone Number (with Country Code)</label>
-                  <input
-                    type="text"
-                    value={formData.whatsapp_number || '+91 98424 01991'}
-                    onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
-                    placeholder="+91 98424 01991"
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none"
-                  />
-                  <p className="text-[10px] text-slate-500">Default: +91 98424 01991. Enter customer support WhatsApp number.</p>
-                </div>
+                {formData.cta_action === 'custom_url' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Destination Website / Link URL</label>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Select Page or Enter Custom</span>
+                    </div>
+
+                    <select
+                      value={
+                        STANDARD_FRONTEND_PAGES.some((p) => p.path === formData.custom_url)
+                          ? formData.custom_url
+                          : formData.custom_url ? '__custom__' : ''
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '__custom__') {
+                          if (STANDARD_FRONTEND_PAGES.some((p) => p.path === formData.custom_url)) {
+                            setFormData({ ...formData, custom_url: '' });
+                          }
+                        } else {
+                          setFormData({ ...formData, custom_url: val });
+                        }
+                      }}
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                    >
+                      <option value="">-- Choose a website page or select custom link --</option>
+                      {STANDARD_FRONTEND_PAGES.map((p) => (
+                        <option key={p.path} value={p.path}>
+                          {p.label}
+                        </option>
+                      ))}
+                      <option value="__custom__">★ Other / Enter Custom URL or External Link...</option>
+                    </select>
+
+                    {/* Custom Input shown when custom URL is selected or entered */}
+                    {(!STANDARD_FRONTEND_PAGES.some((p) => p.path === formData.custom_url)) && (
+                      <div className="pt-1 space-y-1">
+                        <input
+                          type="text"
+                          value={formData.custom_url || ''}
+                          onChange={(e) => setFormData({ ...formData, custom_url: e.target.value })}
+                          placeholder="Type custom internal path (e.g. /properties/my-layout) or external https://..."
+                          className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none"
+                        />
+                        <p className="text-[10px] text-slate-500">
+                          Enter any custom internal route or external website link (starting with https://).
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {(formData.cta_action === 'whatsapp' || formData.cta_action === 'call') && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                        {formData.cta_action === 'whatsapp' ? 'WhatsApp Number (with Country Code)' : 'Phone Call Number (Direct Dial)'}
+                      </label>
+                      <span className="text-[10px] text-slate-500">Type custom or leave default</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.whatsapp_number || ''}
+                      onChange={(e) => setFormData({ ...formData, whatsapp_number: e.target.value })}
+                      placeholder="+91 73737 13559"
+                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none"
+                    />
+                    <p className="text-[10px] text-slate-500">
+                      Company Live Line: +91 73737 13559. You can type another support/agent number if preferred.
+                    </p>
+                  </div>
+                )}
+
+                {formData.cta_action === 'lead_form' && (
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-700 dark:text-emerald-300">
+                    Clicking the CTA button triggers the on-site Site Visit Booking / Lead Generation form modal.
+                  </div>
+                )}
+
+                {formData.cta_action === 'none' && (
+                  <div className="p-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-600 dark:text-slate-400">
+                    CTA button is disabled. This popup will render as a clean informational announcement or visual flyer without a button.
+                  </div>
+                )}
 
                 {/* Dates & Layout Settings */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -706,22 +804,26 @@ export default function AdminPopupsPage() {
                         />
 
                         {/* Top Overlays */}
-                        <div className="absolute top-3 left-3 z-10">
-                          <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-gradient-to-r from-[#D61F69] to-pink-600 text-white shadow-lg uppercase tracking-wider border border-white/20">
-                            {formData.badge_tag || 'FESTIVE OFFER'}
-                          </span>
-                        </div>
+                        {Boolean(formData.badge_tag && formData.badge_tag.trim()) && (
+                          <div className="absolute top-3 left-3 z-10">
+                            <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-gradient-to-r from-[#D61F69] to-pink-600 text-white shadow-lg uppercase tracking-wider border border-white/20">
+                              {formData.badge_tag}
+                            </span>
+                          </div>
+                        )}
                         <div className="absolute top-3 right-3 z-10">
                           <div className="w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center border border-white/20 backdrop-blur-md">
                             <X className="w-4 h-4" />
                           </div>
                         </div>
 
-                        {/* Bottom Gradient Content Overlay - reduced top darkness so poster image remains clearly visible */}
+                        {/* Bottom Gradient Content Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent flex flex-col justify-end p-5 space-y-2.5 z-10 image-overlay-text">
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-amber-300">
-                            {formData.category || 'Special Promotion'}
-                          </span>
+                          {Boolean(formData.category && formData.category.trim()) && (
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-amber-300">
+                              {formData.category}
+                            </span>
+                          )}
                           <h3 className="text-base font-bold text-white leading-snug font-serif">
                             {formData.title || '🌾 Your Offer Title Here'}
                           </h3>
@@ -733,7 +835,7 @@ export default function AdminPopupsPage() {
 
                           {highlightsList.length > 0 && (
                             <div className="space-y-1 py-0.5">
-                              {highlightsList.slice(0, 2).map((hl, i) => (
+                              {highlightsList.slice(0, 6).map((hl, i) => (
                                 <div key={i} className="flex items-center gap-1.5 text-[11px] text-white">
                                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                                   <span className="truncate">{hl}</span>
@@ -743,30 +845,36 @@ export default function AdminPopupsPage() {
                           )}
 
                           {/* CTA Button */}
-                          <div className="pt-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (formData.cta_action === 'lead_form') {
-                                  showToast('Action: Opens Site Visit Lead Form modal on website');
-                                } else if (formData.cta_action === 'call') {
-                                  showToast(`Action: Phone dialer to ${formData.whatsapp_number}`);
-                                } else {
-                                  showToast('Action: Opens WhatsApp direct chat');
-                                }
-                              }}
-                              className="w-full py-2.5 bg-gradient-to-r from-[#D61F69] via-pink-600 to-[#006452] hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 border border-white/20 transition cursor-pointer"
-                            >
-                              {formData.cta_action === 'lead_form' ? (
-                                <Send className="w-3.5 h-3.5" />
-                              ) : formData.cta_action === 'call' ? (
-                                <Phone className="w-3.5 h-3.5" />
-                              ) : (
-                                <MessageSquare className="w-3.5 h-3.5" />
-                              )}
-                              <span>{formData.cta_text || 'Claim Festive Offer on WhatsApp'}</span>
-                            </button>
-                          </div>
+                          {formData.cta_action !== 'none' && (
+                            <div className="pt-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (formData.cta_action === 'lead_form') {
+                                    showToast('Action: Opens Site Visit Lead Form modal on website');
+                                  } else if (formData.cta_action === 'call') {
+                                    showToast(`Action: Phone dialer to ${formData.whatsapp_number || '+91 73737 13559'}`);
+                                  } else if (formData.cta_action === 'custom_url') {
+                                    showToast(`Action: Navigates to ${formData.custom_url || '/'}`);
+                                  } else {
+                                    showToast(`Action: Opens WhatsApp direct chat to ${formData.whatsapp_number || '+91 73737 13559'}`);
+                                  }
+                                }}
+                                className="w-full py-2.5 bg-gradient-to-r from-[#D61F69] via-pink-600 to-[#006452] hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 border border-white/20 transition cursor-pointer"
+                              >
+                                {formData.cta_action === 'lead_form' ? (
+                                  <Send className="w-3.5 h-3.5" />
+                                ) : formData.cta_action === 'call' ? (
+                                  <Phone className="w-3.5 h-3.5" />
+                                ) : formData.cta_action === 'custom_url' ? (
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                ) : (
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                )}
+                                <span>{formData.cta_text || 'Claim Offer on WhatsApp'}</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -787,11 +895,13 @@ export default function AdminPopupsPage() {
                         />
 
                         {/* Badge Tag */}
-                        <div className="absolute top-3 left-3">
-                          <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-[#006452] text-white shadow-lg uppercase tracking-wider border border-white/20">
-                            {formData.badge_tag || 'FESTIVE OFFER'}
-                          </span>
-                        </div>
+                        {Boolean(formData.badge_tag && formData.badge_tag.trim()) && (
+                          <div className="absolute top-3 left-3">
+                            <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-[#006452] text-white shadow-lg uppercase tracking-wider border border-white/20">
+                              {formData.badge_tag}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Close X */}
                         <div className="absolute top-3 right-3">
@@ -804,9 +914,11 @@ export default function AdminPopupsPage() {
                       {/* Content Body */}
                       <div className="p-4 space-y-3 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                         <div className="space-y-1">
-                          <span className="text-[10px] font-bold text-[#D61F69] uppercase tracking-wider block">
-                            {formData.category || 'Festival Deals'}
-                          </span>
+                          {Boolean(formData.category && formData.category.trim()) && (
+                            <span className="text-[10px] font-bold text-[#D61F69] uppercase tracking-wider block">
+                              {formData.category}
+                            </span>
+                          )}
                           <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug font-serif">
                             {formData.title || '🌾 Your Offer Title Here'}
                           </h3>
@@ -828,30 +940,36 @@ export default function AdminPopupsPage() {
                           </div>
                         )}
 
-                        <div className="pt-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (formData.cta_action === 'lead_form') {
-                                showToast('Action: Opens Site Visit Lead Form modal on website');
-                              } else if (formData.cta_action === 'call') {
-                                showToast(`Action: Phone dialer to ${formData.whatsapp_number}`);
-                              } else {
-                                showToast('Action: Opens WhatsApp direct chat');
-                              }
-                            }}
-                            className="w-full py-2.5 bg-[#006452] hover:bg-[#005243] text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 border border-emerald-400/30 cursor-pointer"
-                          >
-                            {formData.cta_action === 'lead_form' ? (
-                              <Send className="w-3.5 h-3.5" />
-                            ) : formData.cta_action === 'call' ? (
-                              <Phone className="w-3.5 h-3.5" />
-                            ) : (
-                              <MessageSquare className="w-3.5 h-3.5" />
-                            )}
-                            <span>{formData.cta_text || 'Claim Festive Offer on WhatsApp'}</span>
-                          </button>
-                        </div>
+                        {formData.cta_action !== 'none' && (
+                          <div className="pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (formData.cta_action === 'lead_form') {
+                                  showToast('Action: Opens Site Visit Lead Form modal on website');
+                                } else if (formData.cta_action === 'call') {
+                                  showToast(`Action: Phone dialer to ${formData.whatsapp_number || '+91 73737 13559'}`);
+                                } else if (formData.cta_action === 'custom_url') {
+                                  showToast(`Action: Navigates to ${formData.custom_url || '/'}`);
+                                } else {
+                                  showToast(`Action: Opens WhatsApp direct chat to ${formData.whatsapp_number || '+91 73737 13559'}`);
+                                }
+                              }}
+                              className="w-full py-2.5 bg-[#006452] hover:bg-[#005243] text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 border border-emerald-400/30 cursor-pointer"
+                            >
+                              {formData.cta_action === 'lead_form' ? (
+                                <Send className="w-3.5 h-3.5" />
+                              ) : formData.cta_action === 'call' ? (
+                                <Phone className="w-3.5 h-3.5" />
+                              ) : formData.cta_action === 'custom_url' ? (
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              ) : (
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              )}
+                              <span>{formData.cta_text || 'Claim Offer on WhatsApp'}</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -872,19 +990,23 @@ export default function AdminPopupsPage() {
                         />
 
                         {/* Badge Tag */}
-                        <div className="absolute top-2.5 left-2.5">
-                          <span className="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#D61F69] text-white shadow-lg uppercase tracking-wider border border-white/20">
-                            {formData.badge_tag || 'OFFER'}
-                          </span>
-                        </div>
+                        {Boolean(formData.badge_tag && formData.badge_tag.trim()) && (
+                          <div className="absolute top-2.5 left-2.5">
+                            <span className="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#D61F69] text-white shadow-lg uppercase tracking-wider border border-white/20">
+                              {formData.badge_tag}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Right: Content */}
                       <div className="col-span-7 p-3.5 space-y-2.5 bg-white dark:bg-slate-950 flex flex-col justify-between text-slate-900 dark:text-slate-100">
                         <div className="space-y-1">
-                          <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
-                            {formData.category || 'Special Opportunity'}
-                          </span>
+                          {Boolean(formData.category && formData.category.trim()) && (
+                            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
+                              {formData.category}
+                            </span>
+                          )}
                           <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug font-serif">
                             {formData.title || '🌾 Your Offer Title Here'}
                           </h3>
@@ -896,7 +1018,7 @@ export default function AdminPopupsPage() {
 
                           {highlightsList.length > 0 && (
                             <div className="space-y-1 pt-1">
-                              {highlightsList.slice(0, 2).map((hl, i) => (
+                              {highlightsList.slice(0, 6).map((hl, i) => (
                                 <div key={i} className="flex items-start gap-1.5 text-[10px] text-slate-700 dark:text-slate-300">
                                   <CheckCircle2 className="w-3 h-3 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
                                   <span className="truncate">{hl}</span>
@@ -906,30 +1028,36 @@ export default function AdminPopupsPage() {
                           )}
                         </div>
 
-                        <div className="pt-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (formData.cta_action === 'lead_form') {
-                                showToast('Action: Opens Site Visit Lead Form modal on website');
-                              } else if (formData.cta_action === 'call') {
-                                showToast(`Action: Phone dialer to ${formData.whatsapp_number}`);
-                              } else {
-                                showToast('Action: Opens WhatsApp direct chat');
-                              }
-                            }}
-                            className="w-full py-2 bg-gradient-to-r from-[#006452] to-[#004f41] hover:opacity-95 text-white font-bold text-[11px] rounded-lg shadow-md flex items-center justify-center gap-1.5 border border-emerald-400/30 cursor-pointer"
-                          >
-                            {formData.cta_action === 'lead_form' ? (
-                              <Send className="w-3 h-3" />
-                            ) : formData.cta_action === 'call' ? (
-                              <Phone className="w-3 h-3" />
-                            ) : (
-                              <MessageSquare className="w-3 h-3" />
-                            )}
-                            <span className="truncate">{formData.cta_text || 'Claim Festive Offer'}</span>
-                          </button>
-                        </div>
+                        {formData.cta_action !== 'none' && (
+                          <div className="pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (formData.cta_action === 'lead_form') {
+                                  showToast('Action: Opens Site Visit Lead Form modal on website');
+                                } else if (formData.cta_action === 'call') {
+                                  showToast(`Action: Phone dialer to ${formData.whatsapp_number || '+91 73737 13559'}`);
+                                } else if (formData.cta_action === 'custom_url') {
+                                  showToast(`Action: Navigates to ${formData.custom_url || '/'}`);
+                                } else {
+                                  showToast(`Action: Opens WhatsApp direct chat to ${formData.whatsapp_number || '+91 73737 13559'}`);
+                                }
+                              }}
+                              className="w-full py-2 bg-gradient-to-r from-[#006452] to-[#004f41] hover:opacity-95 text-white font-bold text-[11px] rounded-lg shadow-md flex items-center justify-center gap-1.5 border border-emerald-400/30 cursor-pointer"
+                            >
+                              {formData.cta_action === 'lead_form' ? (
+                                <Send className="w-3 h-3" />
+                              ) : formData.cta_action === 'call' ? (
+                                <Phone className="w-3 h-3" />
+                              ) : formData.cta_action === 'custom_url' ? (
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              ) : (
+                                <MessageSquare className="w-3 h-3" />
+                              )}
+                              <span className="truncate">{formData.cta_text || 'Claim Offer'}</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

@@ -66,6 +66,11 @@ if (!fs.existsSync(rootNodeModules)) {
   function startBackend() {
     if (fs.existsSync(backendEntry)) {
       try {
+        if (process.platform === 'linux') {
+          try {
+            require('child_process').execSync('pkill -f "backend/dist/server.js" || true', { stdio: 'ignore' });
+          } catch {}
+        }
         backendProcess = fork(backendEntry, [], {
           cwd: path.join(__dirname, 'backend'),
           env: {
@@ -135,10 +140,23 @@ if (!fs.existsSync(rootNodeModules)) {
   }
 }
 
-// Graceful cleanup
-process.on('SIGTERM', () => {
+// Graceful cleanup - ensure child backend process is terminated
+function cleanupAndExit() {
+  if (backendProcess) {
+    try {
+      backendProcess.kill('SIGTERM');
+      setTimeout(() => {
+        try { backendProcess.kill('SIGKILL'); } catch {}
+      }, 1000);
+    } catch {}
+  }
   process.exit(0);
-});
-process.on('SIGINT', () => {
-  process.exit(0);
+}
+
+process.on('SIGTERM', cleanupAndExit);
+process.on('SIGINT', cleanupAndExit);
+process.on('exit', () => {
+  if (backendProcess) {
+    try { backendProcess.kill('SIGKILL'); } catch {}
+  }
 });

@@ -13,6 +13,7 @@ export interface PopupRecord {
   cta_text?: string;
   cta_action?: string;
   whatsapp_number?: string;
+  custom_url?: string;
   start_date?: string | null;
   end_date?: string | null;
   layout_style?: string;
@@ -27,15 +28,18 @@ export interface PopupRecord {
 export async function getAllPopups(req: Request, res: Response): Promise<void> {
   try {
     const store = db.getFallbackData();
-    let popups: any[] = store.popups || [];
+    let popups: any[] = [];
 
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM popups ORDER BY created_at DESC;');
-        if (pgRes.rows.length > 0) popups = pgRes.rows;
+        popups = pgRes.rows;
       } catch (err: any) {
         console.error('PostgreSQL popups SELECT error:', err.message);
+        popups = store.popups || [];
       }
+    } else {
+      popups = store.popups || [];
     }
 
     res.json({
@@ -52,21 +56,23 @@ export async function getAllPopups(req: Request, res: Response): Promise<void> {
 export async function getActivePopups(req: Request, res: Response): Promise<void> {
   try {
     const store = db.getFallbackData();
-    let popups: any[] = store.popups || [];
+    let popups: any[] = [];
 
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query("SELECT * FROM popups WHERE status = 'Active' ORDER BY created_at DESC;");
-        if (pgRes.rows.length > 0) popups = pgRes.rows;
-      } catch {}
+        popups = pgRes.rows;
+      } catch {
+        popups = (store.popups || []).filter((p: any) => (p.status || 'Active') === 'Active');
+      }
+    } else {
+      popups = (store.popups || []).filter((p: any) => (p.status || 'Active') === 'Active');
     }
-
-    const activePopups = popups.filter(p => (p.status || 'Active') === 'Active');
 
     res.json({
       success: true,
-      count: activePopups.length,
-      data: activePopups
+      count: popups.length,
+      data: popups
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: 'Failed to fetch active popups', error: err.message });
@@ -86,6 +92,7 @@ export async function createPopup(req: Request, res: Response): Promise<void> {
       cta_text,
       cta_action,
       whatsapp_number,
+      custom_url,
       start_date,
       end_date,
       layout_style,
@@ -100,22 +107,20 @@ export async function createPopup(req: Request, res: Response): Promise<void> {
     }
 
     const popupId = uuidv4();
-    const store = db.getFallbackData();
-    if (!store.popups) store.popups = [];
-
     const defaultBanner = 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80';
 
     const newPopup: PopupRecord = {
       id: popupId,
       title: title.trim(),
       subtitle: subtitle || '',
-      category: category || 'Festival',
-      badge_tag: badge_tag || 'FESTIVE OFFER',
+      category: category !== undefined ? category : '',
+      badge_tag: badge_tag !== undefined ? badge_tag : '',
       banner_image: banner_image && banner_image.trim() !== '' ? banner_image.trim() : defaultBanner,
       highlights: highlights || '',
       cta_text: cta_text || 'Claim Offer on WhatsApp',
       cta_action: cta_action || 'whatsapp',
-      whatsapp_number: whatsapp_number || '+91 98424 01991',
+      whatsapp_number: whatsapp_number !== undefined ? whatsapp_number : '+91 73737 13559',
+      custom_url: custom_url || '',
       start_date: start_date || null,
       end_date: end_date || null,
       layout_style: layout_style || 'Auto Detect',
@@ -130,8 +135,8 @@ export async function createPopup(req: Request, res: Response): Promise<void> {
       try {
         await db.query(
           `INSERT INTO popups (
-            id, title, subtitle, category, badge_tag, banner_image, highlights, cta_text, cta_action, whatsapp_number, start_date, end_date, layout_style, display_delay, show_frequency, status
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16);`,
+            id, title, subtitle, category, badge_tag, banner_image, highlights, cta_text, cta_action, whatsapp_number, custom_url, start_date, end_date, layout_style, display_delay, show_frequency, status
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);`,
           [
             newPopup.id,
             newPopup.title,
@@ -143,6 +148,7 @@ export async function createPopup(req: Request, res: Response): Promise<void> {
             newPopup.cta_text,
             newPopup.cta_action,
             newPopup.whatsapp_number,
+            newPopup.custom_url,
             newPopup.start_date,
             newPopup.end_date,
             newPopup.layout_style,
@@ -156,6 +162,8 @@ export async function createPopup(req: Request, res: Response): Promise<void> {
       }
     }
 
+    const store = db.getFallbackData();
+    if (!store.popups) store.popups = [];
     store.popups.unshift(newPopup);
     db.saveFallbackData(store);
 
@@ -179,10 +187,14 @@ export async function updatePopup(req: Request, res: Response): Promise<void> {
     const index = store.popups.findIndex((p: any) => p.id === id);
 
     const current = index !== -1 ? store.popups[index] : {};
-    const updated = {
+    const updated: PopupRecord = {
       ...current,
       ...req.body,
       id,
+      category: req.body.category !== undefined ? req.body.category : (current.category || ''),
+      badge_tag: req.body.badge_tag !== undefined ? req.body.badge_tag : (current.badge_tag || ''),
+      whatsapp_number: req.body.whatsapp_number !== undefined ? req.body.whatsapp_number : (current.whatsapp_number || '+91 73737 13559'),
+      custom_url: req.body.custom_url !== undefined ? req.body.custom_url : (current.custom_url || ''),
       updated_at: new Date().toISOString()
     };
 
@@ -190,18 +202,19 @@ export async function updatePopup(req: Request, res: Response): Promise<void> {
       try {
         await db.query(
           `UPDATE popups SET
-            title=$1, subtitle=$2, category=$3, badge_tag=$4, banner_image=$5, highlights=$6, cta_text=$7, cta_action=$8, whatsapp_number=$9, start_date=$10, end_date=$11, layout_style=$12, display_delay=$13, show_frequency=$14, status=$15, updated_at=CURRENT_TIMESTAMP
-          WHERE id=$16;`,
+            title=$1, subtitle=$2, category=$3, badge_tag=$4, banner_image=$5, highlights=$6, cta_text=$7, cta_action=$8, whatsapp_number=$9, custom_url=$10, start_date=$11, end_date=$12, layout_style=$13, display_delay=$14, show_frequency=$15, status=$16, updated_at=CURRENT_TIMESTAMP
+          WHERE id=$17;`,
           [
             updated.title || '',
             updated.subtitle || '',
-            updated.category || 'Festival',
-            updated.badge_tag || 'FESTIVE OFFER',
+            updated.category !== undefined ? updated.category : '',
+            updated.badge_tag !== undefined ? updated.badge_tag : '',
             updated.banner_image || '',
             updated.highlights || '',
             updated.cta_text || '',
             updated.cta_action || 'whatsapp',
-            updated.whatsapp_number || '+91 98424 01991',
+            updated.whatsapp_number || '+91 73737 13559',
+            updated.custom_url || '',
             updated.start_date || null,
             updated.end_date || null,
             updated.layout_style || 'Auto Detect',

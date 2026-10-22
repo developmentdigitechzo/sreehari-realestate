@@ -160,7 +160,7 @@ export async function getCrmLeadById(req: Request, res: Response): Promise<void>
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM leads WHERE id = $1;', [id]);
-        if (pgRes.rows.length > 0) lead = pgRes.rows[0];
+        lead = pgRes.rows.length > 0 ? pgRes.rows[0] : null;
       } catch {}
     }
 
@@ -256,7 +256,12 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
       });
     }
 
-    const finalStage = normalizeLeadStage(stage || status);
+    let finalStage = normalizeLeadStage(stage || status);
+    if (site_visit_date && String(site_visit_date).trim() && (finalStage === 'New Lead' || finalStage === 'Follow Up Pending')) {
+      finalStage = 'Site Visit Scheduled';
+    } else if (next_follow_up_date && String(next_follow_up_date).trim() && finalStage === 'New Lead') {
+      finalStage = 'Follow Up Pending';
+    }
 
     const newLead: any = {
       id: uuidv4(),
@@ -370,7 +375,14 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
     } = req.body;
 
     const current = index !== -1 ? store.leads[index] : {};
-    const finalStage = normalizeLeadStage(stage || status || current.stage || current.status || 'New Lead');
+    let finalStage = normalizeLeadStage(stage || status || current.stage || current.status || 'New Lead');
+    const resolvedSiteVisitDate = site_visit_date !== undefined ? site_visit_date : current.site_visit_date;
+    const resolvedFollowUpDate = next_follow_up_date !== undefined ? next_follow_up_date : current.next_follow_up_date;
+    if (resolvedSiteVisitDate && String(resolvedSiteVisitDate).trim() && (finalStage === 'New Lead' || finalStage === 'Follow Up Pending')) {
+      finalStage = 'Site Visit Scheduled';
+    } else if (resolvedFollowUpDate && String(resolvedFollowUpDate).trim() && finalStage === 'New Lead') {
+      finalStage = 'Follow Up Pending';
+    }
 
     const updated = {
       ...current,

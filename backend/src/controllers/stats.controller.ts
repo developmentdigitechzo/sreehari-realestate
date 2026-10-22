@@ -12,22 +12,22 @@ export async function getDashboardStats(req: Request, res: Response): Promise<vo
     if (db.isPostgres()) {
       try {
         const projRes = await db.query('SELECT * FROM projects;');
-        if (projRes.rows.length > 0) projects = projRes.rows;
+        projects = projRes.rows;
       } catch {}
 
       try {
         const plotRes = await db.query('SELECT * FROM plots;');
-        if (plotRes.rows.length > 0) plots = plotRes.rows;
+        plots = plotRes.rows;
       } catch {}
 
       try {
         const leadRes = await db.query('SELECT * FROM leads;');
-        if (leadRes.rows.length > 0) leads = leadRes.rows;
+        leads = leadRes.rows;
       } catch {}
 
       try {
         const visitRes = await db.query('SELECT * FROM site_visits;');
-        if (visitRes.rows.length > 0) siteVisits = visitRes.rows;
+        siteVisits = visitRes.rows;
       } catch {}
     }
 

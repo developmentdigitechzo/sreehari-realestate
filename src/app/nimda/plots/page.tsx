@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Plot, Project } from '@/lib/types';
+import ConfirmModal from '@/components/admin/ConfirmModal';
 import PlotFormModal, { formatPlotNumber } from '@/components/admin/PlotFormModal';
 import {
   Grid,
@@ -99,6 +100,8 @@ export default function AdminPlotsPage() {
   const [plots, setPlots] = useState<Plot[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingPlotId, setDeletingPlotId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // View mode: 'grid' | 'table'
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -284,7 +287,7 @@ export default function AdminPlotsPage() {
         setViewingPlot((prev) => prev ? { ...prev, status: newStatus as any } : null);
       }
     } catch (err: any) {
-      alert('Failed to update status: ' + err.message);
+      setToastMessage('Failed to update status: ' + err.message);
     }
   };
 
@@ -355,14 +358,14 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
             latitude: pos.coords.latitude.toFixed(6),
             longitude: pos.coords.longitude.toFixed(6)
           }));
-          alert(`Captured Location: ${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`);
+          setToastMessage('GPS Location captured successfully');
         },
         (err) => {
-          alert('Could not capture location: ' + err.message);
+          setToastMessage('Could not capture location: ' + err.message);
         }
       );
     } else {
-      alert('Geolocation is not supported by your browser.');
+      setToastMessage('Geolocation is not supported by your browser.');
     }
   };
 
@@ -410,7 +413,7 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
         primary_image_url: primary
       }));
     } catch (err: any) {
-      alert('Image upload failed: ' + (err.message || 'Unknown error'));
+      setToastMessage('Image upload failed: ' + (err.message || 'Unknown error'));
     } finally {
       setUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -485,15 +488,15 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
     e.preventDefault();
 
     if (!formData.project_id) {
-      alert('Please select a project for this plot');
+      setToastMessage('Please select a project for this plot');
       return;
     }
     if (!formData.plot_number?.trim()) {
-      alert('Plot number is required');
+      setToastMessage('Plot number is required');
       return;
     }
     if (!formData.area_sqft || Number(formData.area_sqft) <= 0) {
-      alert('Valid area in Sq.Ft is required');
+      setToastMessage('Valid area in Sq.Ft is required');
       return;
     }
 
@@ -505,7 +508,7 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
 
     const cleanNum = (formData.plot_number || '').replace(/^(?:plot\s*#*|#\s*)+/gi, '').trim();
     const formattedPlotNum = cleanNum ? `Plot #${cleanNum}` : (formData.plot_number || 'Plot Entry');
-    const finalTitle = formData.title?.trim() || `${formattedPlotNum} - ${projects.find((p) => p.id === formData.project_id)?.name || 'Project'}`;
+    const finalTitle = formData.title ? formData.title.trim() : '';
 
     const videoUrls = Array.isArray(formData.video_urls) ? formData.video_urls : (formData.video_url ? [formData.video_url] : []);
     const primaryVideo = videoUrls.length > 0 ? videoUrls[0] : (formData.video_url || '');
@@ -538,17 +541,24 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
       setViewMode('grid');
       loadData();
     } catch (err: any) {
-      alert(err.message || 'Plot operation failed');
+      setToastMessage(err.message || 'Plot operation failed');
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this property entry?')) return;
+  const handleDelete = (id: string) => {
+    setDeletingPlotId(id);
+  };
+
+  const confirmDeletePlot = async () => {
+    if (!deletingPlotId) return;
     try {
-      await api.deletePlot(id);
+      await api.deletePlot(deletingPlotId);
       loadData();
+      setToastMessage('Plot entry deleted successfully');
     } catch (err: any) {
-      alert(err.message || 'Failed to delete plot');
+      setToastMessage(err.message || 'Failed to delete plot');
+    } finally {
+      setDeletingPlotId(null);
     }
   };
 
@@ -589,15 +599,15 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
           <div className="flex flex-col gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
-                <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
-                  <span>Global Plots Catalog</span>
+                <div className="hidden">
+                  <span className="hidden">Plots</span>
                 </div>
                 <h1 className="text-2xl font-extrabold text-white mt-1 flex items-center gap-3">
                   <Building2 className="w-7 h-7 text-emerald-400" />
-                  <span>Global Plots Inventory</span>
+                  <span>Plots</span>
                 </h1>
                 <p className="text-slate-400 text-xs mt-0.5">
-                  Browse, search, and manage plots across all projects. Prices and commercial rates are strictly visible only inside the authorized CRM.
+                  Browse, filter, and manage plot inventory across all projects.
                 </p>
               </div>
 
@@ -1406,6 +1416,25 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
           </div>
         );
       })()}
+          {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 px-4 py-3 rounded-xl backdrop-blur-md shadow-2xl animate-fade-in">
+          <span className="text-sm font-medium">{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="text-emerald-500 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-200">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Styled Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={Boolean(deletingPlotId)}
+        title="Delete Property Plot?"
+        description="This action will permanently delete this plot entry from inventory and website."
+        confirmLabel="Delete Plot"
+        onConfirm={confirmDeletePlot}
+        onCancel={() => setDeletingPlotId(null)}
+      />
     </div>
   );
 }

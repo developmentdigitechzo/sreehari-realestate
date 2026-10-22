@@ -162,7 +162,7 @@ export async function getAllPlotsAdmin(req: Request, res: Response): Promise<voi
            LEFT JOIN projects ON plots.project_id = projects.id
            ORDER BY plots.created_at DESC;`
         );
-        if (pgRes.rows.length > 0) plots = pgRes.rows;
+        plots = pgRes.rows || [];
       } catch (err: any) {
         console.error('getAllPlotsAdmin PG Error:', err.message);
       }
@@ -267,7 +267,7 @@ export async function createPlot(req: Request, res: Response): Promise<void> {
     const newPlot = {
       id: plotId,
       project_id: resolvedProjectId,
-      title: title || formattedPlotNum,
+      title: title !== undefined ? title.trim() : '',
       slug: computedSlug,
       type: type || 'Plot',
       category: category || 'Sale',
@@ -297,7 +297,7 @@ export async function createPlot(req: Request, res: Response): Promise<void> {
       video_urls: parsedVideoUrls,
       latitude: latitude || '',
       longitude: longitude || '',
-      primary_image_url: primary_image_url || '/project_park_avenue_new.jpg',
+      primary_image_url: primary_image_url || null,
       gallery_images: parseJsonField(gallery_images, []),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -386,7 +386,7 @@ export async function updatePlot(req: Request, res: Response): Promise<void> {
 
     const updated = {
       ...current,
-      title: title !== undefined ? title : current.title,
+      title: title !== undefined ? title.trim() : (current.title || ''),
       slug: slug !== undefined ? slug : current.slug,
       type: type !== undefined ? type : current.type,
       category: category !== undefined ? category : current.category,

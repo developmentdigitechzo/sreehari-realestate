@@ -11,7 +11,7 @@ export async function getPublicGallery(req: Request, res: Response): Promise<voi
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM gallery ORDER BY sort_order ASC, created_at DESC;');
-        if (pgRes.rows && pgRes.rows.length > 0) items = pgRes.rows;
+        items = pgRes.rows;
       } catch (err: any) {
         console.error('PostgreSQL gallery SELECT error:', err.message);
       }

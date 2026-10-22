@@ -73,8 +73,9 @@ export default function GalleryPage() {
   const [lightboxFilter, setLightboxFilter] = useState<'All' | 'Project' | 'Plots' | 'Videos' | 'General'>('All');
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
   const [enquiryProjectName, setEnquiryProjectName] = useState<string | undefined>(undefined);
-  const [isCarouselPlaying, setIsCarouselPlaying] = useState<boolean>(true);
-  const carouselContainerRef = React.useRef<HTMLDivElement>(null);
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState<number>(0);
+  const [isCarouselHovered, setIsCarouselHovered] = useState<boolean>(false);
+  const [touchStartPos, setTouchStartPos] = useState<number | null>(null);
 
   // Load public projects, their plots, and standalone gallery photos
   useEffect(() => {
@@ -364,6 +365,120 @@ export default function GalleryPage() {
     setActiveMediaIndex(0);
   };
 
+  const handlePrevCarousel = useCallback(() => {
+    if (carouselItems.length === 0) return;
+    setCurrentCarouselIndex((prev) => (prev - 1 + carouselItems.length) % carouselItems.length);
+  }, [carouselItems.length]);
+
+  const handleNextCarousel = useCallback(() => {
+    if (carouselItems.length === 0) return;
+    setCurrentCarouselIndex((prev) => (prev + 1) % carouselItems.length);
+  }, [carouselItems.length]);
+
+  // Smooth continuous auto-advance with hover/touch pause
+  useEffect(() => {
+    if (carouselItems.length <= 1 || isCarouselHovered) return;
+    const interval = setInterval(() => {
+      setCurrentCarouselIndex((prev) => (prev + 1) % carouselItems.length);
+    }, 3800);
+    return () => clearInterval(interval);
+  }, [carouselItems.length, isCarouselHovered]);
+
+  // Touch Swipe Handlers for Mobile 3D Carousel
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsCarouselHovered(true);
+    setTouchStartPos(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    setIsCarouselHovered(false);
+    if (touchStartPos === null) return;
+    const touchEndPos = e.changedTouches[0].clientX;
+    const diff = touchStartPos - touchEndPos;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        handleNextCarousel();
+      } else {
+        handlePrevCarousel();
+      }
+    }
+    setTouchStartPos(null);
+  };
+
+  // 3D Perspective calculation matching Image 3 Coverflow
+  const getCardStyle = (index: number) => {
+    const total = carouselItems.length;
+    if (total === 0) return { display: 'none' };
+
+    let diff = (index - currentCarouselIndex) % total;
+    if (diff < -Math.floor(total / 2)) diff += total;
+    if (diff > Math.floor(total / 2)) diff -= total;
+
+    if (Math.abs(diff) > 2) {
+      return {
+        opacity: 0,
+        pointerEvents: 'none' as const,
+        transform: `translateX(${diff > 0 ? 160 : -160}%) scale(0.65)`,
+        zIndex: 0,
+        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+      };
+    }
+
+    if (diff === 0) {
+      return {
+        opacity: 1,
+        zIndex: 30,
+        transform: 'translateX(0%) scale(1.02) rotateY(0deg)',
+        filter: 'brightness(1)',
+        cursor: 'pointer',
+        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+      };
+    }
+
+    if (diff === -1) {
+      return {
+        opacity: 0.85,
+        zIndex: 20,
+        transform: 'translateX(-56%) scale(0.88) rotateY(10deg)',
+        filter: 'brightness(0.93)',
+        cursor: 'pointer',
+        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+      };
+    }
+
+    if (diff === 1) {
+      return {
+        opacity: 0.85,
+        zIndex: 20,
+        transform: 'translateX(56%) scale(0.88) rotateY(-10deg)',
+        filter: 'brightness(0.93)',
+        cursor: 'pointer',
+        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+      };
+    }
+
+    if (diff === -2) {
+      return {
+        opacity: 0.45,
+        zIndex: 10,
+        transform: 'translateX(-105%) scale(0.76) rotateY(18deg)',
+        filter: 'brightness(0.85)',
+        cursor: 'pointer',
+        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+      };
+    }
+
+    // diff === 2
+    return {
+      opacity: 0.45,
+      zIndex: 10,
+      transform: 'translateX(105%) scale(0.76) rotateY(-18deg)',
+      filter: 'brightness(0.85)',
+      cursor: 'pointer',
+      transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+    };
+  };
+
   return (
     <div className="space-y-12 pb-16 bg-[#fef9e6] font-sans min-h-screen">
       {/* 1. Page Header with Panoramic Background */}
@@ -399,26 +514,9 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      {/* 2. Featured Continuous Auto-Scroll Carousel Section (Matches Website Cream Theme) */}
+      {/* 2. Featured 3D Coverflow Carousel Section (Bounded Container, Image 3 Inspired) */}
       {carouselItems.length > 0 && (
-        <section className="relative py-8 bg-[#fef9e6] border-y border-amber-200/80 overflow-hidden">
-          <style>{`
-            @keyframes galleryInfiniteMarquee {
-              0% { transform: translateX(0); }
-              100% { transform: translateX(-50%); }
-            }
-            .gallery-continuous-track {
-              display: flex;
-              gap: 1.25rem;
-              width: max-content;
-              animation: galleryInfiniteMarquee 48s linear infinite;
-              will-change: transform;
-            }
-            .gallery-continuous-track:hover {
-              animation-play-state: paused !important;
-            }
-          `}</style>
-
+        <section className="relative py-8 bg-[#fef9e6] overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-300 text-[#006452] text-xs font-bold uppercase tracking-wider mb-1.5">
@@ -433,146 +531,166 @@ export default function GalleryPage() {
               </p>
             </div>
 
-            {/* Play/Pause & Scroll Navigation Controls */}
+            {/* Scroll Navigation Arrows (Stop button removed, auto-pauses on hover) */}
             <div className="flex items-center gap-2.5 self-start sm:self-auto">
               <button
                 type="button"
-                onClick={() => setIsCarouselPlaying(!isCarouselPlaying)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition border cursor-pointer shadow-xs ${
-                  isCarouselPlaying
-                    ? 'bg-white hover:bg-emerald-50 text-[#006452] border-emerald-300'
-                    : 'bg-[#006452] hover:bg-[#005041] text-white border-[#006452] shadow-md'
-                }`}
-                title={isCarouselPlaying ? 'Click to Pause Auto-Scroll' : 'Click to Resume Auto-Scroll'}
+                onClick={handlePrevCarousel}
+                className="w-10 h-10 rounded-full bg-white hover:bg-emerald-50 text-[#006452] border border-amber-200/90 flex items-center justify-center transition cursor-pointer shadow-xs hover:scale-105"
+                title="Previous Card"
+                aria-label="Previous Card"
               >
-                {isCarouselPlaying ? (
-                  <>
-                    <Pause className="w-3.5 h-3.5 text-[#006452]" />
-                    <span>Auto-Scroll Active</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-3.5 h-3.5 fill-white" />
-                    <span>Resume Scroll</span>
-                  </>
-                )}
+                <ChevronLeft className="w-5 h-5" />
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  if (carouselContainerRef.current) {
-                    carouselContainerRef.current.scrollBy({ left: -320, behavior: 'smooth' });
-                  }
-                }}
-                className="w-9 h-9 rounded-full bg-white hover:bg-emerald-50 text-[#006452] border border-amber-200/90 flex items-center justify-center transition cursor-pointer shadow-xs"
-                title="Scroll Left"
+                onClick={handleNextCarousel}
+                className="w-10 h-10 rounded-full bg-white hover:bg-emerald-50 text-[#006452] border border-amber-200/90 flex items-center justify-center transition cursor-pointer shadow-xs hover:scale-105"
+                title="Next Card"
+                aria-label="Next Card"
               >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (carouselContainerRef.current) {
-                    carouselContainerRef.current.scrollBy({ left: 320, behavior: 'smooth' });
-                  }
-                }}
-                className="w-9 h-9 rounded-full bg-white hover:bg-emerald-50 text-[#006452] border border-amber-200/90 flex items-center justify-center transition cursor-pointer shadow-xs"
-                title="Scroll Right"
-              >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          {/* Marquee Outer Container */}
-          <div
-            ref={carouselContainerRef}
-            className="w-full overflow-x-hidden py-3"
-          >
+          {/* Bounded 3D Perspective Stage */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div
-              className="gallery-continuous-track px-4"
-              style={{
-                animationPlayState: isCarouselPlaying ? 'running' : 'paused'
-              }}
+              className="relative w-full h-[400px] sm:h-[440px] flex items-center justify-center overflow-hidden [perspective:1200px]"
+              onMouseEnter={() => setIsCarouselHovered(true)}
+              onMouseLeave={() => setIsCarouselHovered(false)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
             >
-              {[...carouselItems, ...carouselItems].map((item, idx) => (
-                <div
-                  key={`${item.id}-${idx}`}
-                  onClick={() => setSingleViewingImage(item)}
-                  className="w-72 sm:w-80 h-[360px] rounded-2xl bg-white border border-amber-200/90 hover:border-[#006452] shadow-sm hover:shadow-[0_15px_35px_-10px_rgba(0,100,82,0.22)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden group shrink-0 relative"
-                >
-                  {/* Top Image Thumbnail Container */}
-                  <div className="h-52 w-full bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={item.url || '/project_park_avenue_new.jpg'}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.onerror = null;
-                        target.src = '/project_park_avenue_new.jpg';
-                      }}
-                    />
+              {carouselItems.map((item, idx) => {
+                const style = getCardStyle(idx);
+                const isCenter = idx === currentCarouselIndex;
 
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+                return (
+                  <div
+                    key={`${item.id}-${idx}`}
+                    style={style}
+                    onClick={() => {
+                      if (isCenter) {
+                        setSingleViewingImage(item);
+                      } else {
+                        setCurrentCarouselIndex(idx);
+                      }
+                    }}
+                    className="absolute w-[265px] xs:w-[285px] sm:w-[325px] md:w-[345px] h-[345px] sm:h-[375px] rounded-2xl sm:rounded-[1.75rem] bg-white border border-amber-200/90 shadow-lg hover:shadow-2xl flex flex-col justify-between overflow-hidden group select-none"
+                  >
+                    {/* Top Rounded Image Banner */}
+                    <div className="relative h-[215px] sm:h-[240px] w-full overflow-hidden bg-slate-900 rounded-t-2xl sm:rounded-t-[1.75rem]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.url || '/project_park_avenue_new.jpg'}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = '/project_park_avenue_new.jpg';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
-                    {/* Top Floating Badges */}
-                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-                      <span className="bg-[#006452]/95 backdrop-blur-md text-white text-[10.5px] font-bold px-2.5 py-0.5 rounded-full shadow-md uppercase tracking-wider border border-emerald-300/40">
-                        {item.badge}
-                      </span>
-                      <span className="bg-black/60 backdrop-blur-md text-[#f7db49] text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300/30">
-                        {item.category}
-                      </span>
+                      {/* Top Floating Badges */}
+                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+                        <span className="bg-[#006452]/95 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-md uppercase tracking-wider border border-emerald-300/40">
+                          {item.badge}
+                        </span>
+                        <span className="bg-black/60 backdrop-blur-md text-[#f7db49] text-[9.5px] font-bold px-2 py-0.5 rounded-full border border-amber-300/30">
+                          {item.category}
+                        </span>
+                      </div>
+
+                      {/* Center Quick View Pill on Hover for Center Card */}
+                      {isCenter && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
+                          <span className="px-4 py-1.5 rounded-full bg-[#006452] text-white text-xs font-extrabold shadow-xl flex items-center gap-1.5 border border-emerald-300/40">
+                            <Maximize2 className="w-3.5 h-3.5 text-[#f7db49]" />
+                            <span>View Photo</span>
+                          </span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Quick View Pill */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
-                      <span className="px-4 py-1.5 rounded-full bg-[#006452] text-white text-xs font-bold shadow-xl flex items-center gap-1.5 border border-emerald-300/40">
-                        <Maximize2 className="w-3.5 h-3.5" />
-                        <span>View Photo</span>
-                      </span>
+                    {/* Clean Minimalist Card Body */}
+                    <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between bg-gradient-to-b from-white to-[#fffdf5]">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-[#006452] font-bold truncate">
+                          <MapPin className="w-3.5 h-3.5 text-[#006452] shrink-0" />
+                          <span className="truncate">{item.project || 'General Infrastructure'}</span>
+                        </div>
+                        <h3 className="text-sm sm:text-base font-black text-gray-950 line-clamp-1 font-serif-title group-hover:text-[#006452] transition-colors">
+                          {item.title}
+                        </h3>
+                      </div>
+
+                      {/* View Action Row */}
+                      <div className="pt-2 border-t border-amber-100 flex items-center justify-between">
+                        <span className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                          Site Development
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSingleViewingImage(item);
+                          }}
+                          aria-label={`View photo of ${item.title}`}
+                          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-900 hover:bg-[#006452] text-white flex items-center justify-center transition-all duration-300 shadow-md hover:scale-110 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-[#f7db49]" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Card Bottom Body */}
-                  <div className="p-4 flex-1 flex flex-col justify-between space-y-2 bg-gradient-to-b from-white to-[#fffdf5]">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1 text-[11px] text-[#006452] font-semibold truncate">
-                        <MapPin className="w-3 h-3 text-[#006452] shrink-0" />
-                        <span className="truncate">{item.project} • {item.subbadge}</span>
-                      </div>
-                      <h3 className="text-sm sm:text-base font-extrabold text-gray-950 line-clamp-1 group-hover:text-[#006452] transition-colors">
-                        {item.title}
-                      </h3>
-                    </div>
-
-                    {/* Reference-style Footer with Tag Pill */}
-                    <div className="pt-2 border-t border-amber-100 flex items-center justify-between">
-                      <span className="text-[11px] text-gray-500 font-medium">
-                        Verified Development
-                      </span>
-
-                      <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-300 text-amber-900 text-[10.5px] font-extrabold shadow-2xs">
-                        <Sparkles className="w-3 h-3 text-amber-500" />
-                        <span>{item.tag}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+
+            {/* Carousel Dot Indicators */}
+            {carouselItems.length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 pt-4">
+                {carouselItems.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    onClick={() => setCurrentCarouselIndex(dotIdx)}
+                    aria-label={`Go to slide ${dotIdx + 1}`}
+                    className={`transition-all duration-300 rounded-full cursor-pointer ${
+                      currentCarouselIndex === dotIdx
+                        ? 'w-7 h-2 bg-[#006452]'
+                        : 'w-2 h-2 bg-amber-300/80 hover:bg-amber-500'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}
 
-      {/* 3. Category Filter Pills */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-center gap-2">
+      {/* 3. Community Project Galleries Section with Proper Header */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="mb-6 space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100/80 border border-amber-300 text-amber-900 text-xs font-bold uppercase tracking-wider">
+            <Building2 className="w-3.5 h-3.5 text-[#006452]" />
+            <span>Project-Based Galleries</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#006452] tracking-tight font-serif-title">
+            Explore Layouts by Community
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-700 max-w-2xl leading-relaxed">
+            Filter across ongoing and completed gated layouts to inspect layout master blueprints, 40ft blacktop avenues, and individual plot photographs.
+          </p>
+        </div>
+
+        {/* Community Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2 pb-2">
           {categoryOptions.map((cat) => (
             <button
               key={cat}

@@ -6,6 +6,31 @@ import { api } from '@/lib/api';
 
 export const instant = false;
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  try {
+    const res = await api.getPublicProjectBySlug(slug);
+    if (res && res.success && res.data) {
+      const p = res.data;
+      return {
+        title: p.meta_title ? `${p.meta_title} | Sree Hari Realty` : `${p.name || 'Project'} | Sree Hari Realty`,
+        description: p.meta_description || p.description?.slice(0, 160) || p.tagline || 'Premium DTCP & TNRERA approved plots in Trichy'
+      };
+    }
+  } catch {}
+  const staticProperty = properties.find((p) => p.slug === slug);
+  if (staticProperty) {
+    return {
+      title: `${staticProperty.title} | Sree Hari Realty`,
+      description: staticProperty.description?.slice(0, 160) || staticProperty.tagline
+    };
+  }
+  return {
+    title: 'Property Details | Sree Hari Realty',
+    description: 'Explore premium gated plotted communities and villa plots in Trichy'
+  };
+}
+
 export async function generateStaticParams() {
   try {
     const res = await api.getPublicProjects();

@@ -18,10 +18,12 @@ function renderHeroTitle(title?: string) {
   if (cleanTitle.toLowerCase().includes('build your future')) {
     const parts = cleanTitle.split(/build your future/i);
     const before = parts[0] || 'A Better Place to ';
+    const after = parts[1] ? parts[1].trim() : '';
     return (
       <>
         {before.trim()} <br />
         <span className="animate-text-shine">Build Your Future</span>
+        {after && <span className="block text-amber-300 text-[10px] xs:text-xs sm:text-xl font-bold tracking-wider uppercase mt-0.5">{after}</span>}
       </>
     );
   }
@@ -165,7 +167,7 @@ export default function HeroCarousel({
           <img
             src="/hero_gate_entrance.png"
             alt="Sree Hari Realty Promoters Gated Community Grand Entrance"
-            className="w-full h-auto block select-none"
+            className="w-full min-h-[240px] xs:min-h-[260px] sm:min-h-0 sm:h-auto object-cover block select-none"
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25 sm:bg-gradient-to-r sm:from-black/80 sm:via-black/35 sm:to-transparent pointer-events-none z-0" />
@@ -173,17 +175,17 @@ export default function HeroCarousel({
           <div className="absolute inset-0 z-10 w-full h-full flex items-center px-3 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 w-full flex items-center justify-start">
               <div className="max-w-full sm:max-w-xl lg:max-w-2xl text-left space-y-1 sm:space-y-3 lg:space-y-4">
-                <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3.5 sm:py-1 rounded-full bg-black/60 backdrop-blur-md text-[8px] sm:text-[11px] font-bold tracking-widest text-amber-300 uppercase border border-amber-300/30 shadow-md">
+                <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3.5 sm:py-1 rounded-full bg-black/60 backdrop-blur-md text-[7.5px] xs:text-[8px] sm:text-[11px] font-bold tracking-widest text-amber-300 uppercase border border-amber-300/30 shadow-md">
                   <span className="w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full bg-amber-400 animate-pulse" />
                   <span>PREMIUM GATED COMMUNITY PLOTS</span>
                 </div>
 
                 <div className="space-y-0.5 sm:space-y-2">
-                  <h1 className="text-sm sm:text-4xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight sm:leading-[1.15] drop-shadow-md">
+                  <h1 className="text-xl xs:text-2xl sm:text-4xl lg:text-6xl font-black text-white tracking-tight leading-tight sm:leading-[1.15] drop-shadow-md">
                     A Better Place to <br />
                     <span className="animate-text-shine">Build Your Future</span>
                   </h1>
-                  <p className="text-white/90 text-[10px] sm:text-[15px] font-medium max-w-xs sm:max-w-lg leading-snug sm:leading-relaxed line-clamp-1 sm:line-clamp-none drop-shadow-sm">
+                  <p className="text-white/75 sm:text-white/85 text-[9px] xs:text-[10px] sm:text-[14px] lg:text-[15px] font-normal max-w-[260px] xs:max-w-xs sm:max-w-lg leading-snug sm:leading-relaxed drop-shadow-sm">
                     Thoughtfully planned plots. A greener community. A place to call your own with 100% DTCP & RERA approved peace of mind.
                   </p>
                 </div>
@@ -191,7 +193,7 @@ export default function HeroCarousel({
                 <div className="pt-0.5 sm:pt-2 flex items-center gap-2 sm:gap-3.5">
                   <Link
                     href="/properties"
-                    className="bg-[#D61F69] hover:bg-[#BE185D] text-white px-2.5 sm:px-6 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
+                    className="bg-[#D61F69] hover:bg-[#BE185D] text-white px-2.5 sm:px-6 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[9px] xs:text-[10px] sm:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
                   >
                     <span>Explore Plots</span>
                     <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -200,7 +202,7 @@ export default function HeroCarousel({
                   <button
                     type="button"
                     onClick={() => onOpenEnquiry()}
-                    className="bg-white/95 hover:bg-white text-gray-950 px-2.5 sm:px-5 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold transition-all border border-white/40 shadow-sm hover:shadow-md flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
+                    className="bg-white/95 hover:bg-white text-gray-950 px-2.5 sm:px-5 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[9px] xs:text-[10px] sm:text-sm font-bold transition-all border border-white/40 shadow-sm hover:shadow-md flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
                   >
                     <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D61F69]" />
                     <span>Book Site Visit</span>
@@ -236,20 +238,27 @@ export default function HeroCarousel({
           {slides.map((banner, idx) => {
             const isGraphic = banner.banner_type === 'graphic';
 
-            // Button 1 (Primary)
+            // Button 1 (Primary Pink Accent)
+            const showB1 = banner.button1_active !== false && Boolean(banner.button1_text || banner.button_text);
             const b1Text = banner.button1_text || banner.button_text || 'Explore Plots';
             const b1Link = banner.button1_link || banner.button_link || '/properties';
             const b1IsEnquiry = !b1Link || b1Link === '#' || b1Link.toLowerCase() === 'enquiry';
+            const b1IsExternal = b1Link.startsWith('http') || b1Link.startsWith('tel:') || b1Link.startsWith('mailto:');
 
-            // Button 2 (Secondary / Optional)
-            const showB2 = banner.button2_active !== false;
+            // Button 2 (Secondary Neutral White)
+            const showB2 = banner.button2_active === true && Boolean(banner.button2_text);
             const b2Text = banner.button2_text || 'Book Site Visit';
             const b2Link = banner.button2_link || 'enquiry';
             const b2IsEnquiry = !b2Link || b2Link === '#' || b2Link.toLowerCase() === 'enquiry';
+            const b2IsExternal = b2Link.startsWith('http') || b2Link.startsWith('tel:') || b2Link.startsWith('mailto:');
 
             const handleFlyerClick = () => {
               if (banner.button1_link && !b1IsEnquiry) {
-                window.location.href = banner.button1_link;
+                if (b1IsExternal) {
+                  window.open(banner.button1_link, '_blank');
+                } else {
+                  window.location.href = banner.button1_link;
+                }
               } else {
                 onOpenEnquiry(banner.project_name || banner.title);
               }
@@ -287,7 +296,7 @@ export default function HeroCarousel({
                     <img
                       src={banner.image_url}
                       alt={banner.title || 'Sree Hari Realty'}
-                      className="w-full h-auto block select-none"
+                      className="w-full min-h-[240px] xs:min-h-[260px] sm:min-h-0 sm:h-auto object-cover block select-none"
                       loading="eager"
                     />
 
@@ -299,66 +308,88 @@ export default function HeroCarousel({
                       <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 w-full flex items-center justify-start">
                         <div className="max-w-full sm:max-w-xl lg:max-w-2xl text-left space-y-1 sm:space-y-3 lg:space-y-4">
                           {banner.badge_text && (
-                            <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3.5 sm:py-1 rounded-full bg-black/60 backdrop-blur-md text-[8px] sm:text-[11px] font-bold tracking-widest text-amber-300 uppercase border border-amber-300/30 shadow-md">
+                            <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3.5 sm:py-1 rounded-full bg-black/60 backdrop-blur-md text-[7.5px] xs:text-[8px] sm:text-[11px] font-bold tracking-widest text-amber-300 uppercase border border-amber-300/30 shadow-md">
                               <span className="w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full bg-amber-400 animate-pulse" />
                               <span>{banner.badge_text}</span>
                             </div>
                           )}
 
                           <div className="space-y-0.5 sm:space-y-2">
-                            <h1 className="text-sm sm:text-4xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight sm:leading-[1.15] drop-shadow-md">
+                            <h1 className="text-xl xs:text-2xl sm:text-4xl lg:text-6xl font-black text-white tracking-tight leading-tight sm:leading-[1.15] drop-shadow-md">
                               {renderHeroTitle(banner.title)}
                             </h1>
                             {banner.subtitle && (
-                              <p className="text-white/90 text-[10px] sm:text-[15px] font-medium max-w-xs sm:max-w-lg leading-snug sm:leading-relaxed line-clamp-1 sm:line-clamp-none drop-shadow-sm">
+                              <p className="text-white/80 sm:text-white/90 text-[10px] xs:text-[11px] sm:text-[14px] lg:text-[15px] font-normal max-w-[280px] xs:max-w-xs sm:max-w-lg leading-snug sm:leading-relaxed drop-shadow-sm line-clamp-2 sm:line-clamp-none">
                                 {banner.subtitle}
                               </p>
                             )}
                           </div>
 
-                          <div className="pt-0.5 sm:pt-2 flex items-center gap-2 sm:gap-3.5">
-                            {b1Text && (
-                              b1IsEnquiry ? (
-                                <button
-                                  type="button"
-                                  onClick={() => onOpenEnquiry(banner.project_name || banner.title)}
-                                  className="bg-[#D61F69] hover:bg-[#BE185D] text-white px-2.5 sm:px-6 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
-                                >
-                                  <span>{b1Text}</span>
-                                  <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                </button>
-                              ) : (
-                                <Link
-                                  href={b1Link}
-                                  className="bg-[#D61F69] hover:bg-[#BE185D] text-white px-2.5 sm:px-6 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
-                                >
-                                  <span>{b1Text}</span>
-                                  <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                </Link>
-                              )
-                            )}
+                          {(showB1 || showB2) && (
+                            <div className="pt-0.5 sm:pt-2 flex items-center gap-2 sm:gap-3.5">
+                              {showB1 && (
+                                b1IsEnquiry ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenEnquiry(banner.project_name || banner.title)}
+                                    className="bg-[#D61F69] hover:bg-[#BE185D] text-white px-2.5 sm:px-6 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[9px] xs:text-[10px] sm:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
+                                  >
+                                    <span>{b1Text}</span>
+                                    <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                  </button>
+                                ) : b1IsExternal ? (
+                                  <a
+                                    href={b1Link}
+                                    target={b1Link.startsWith('http') ? '_blank' : undefined}
+                                    rel="noopener noreferrer"
+                                    className="bg-[#D61F69] hover:bg-[#BE185D] text-white px-2.5 sm:px-6 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[9px] xs:text-[10px] sm:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
+                                  >
+                                    <span>{b1Text}</span>
+                                    <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                  </a>
+                                ) : (
+                                  <Link
+                                    href={b1Link}
+                                    className="bg-[#D61F69] hover:bg-[#BE185D] text-white px-2.5 sm:px-6 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[9px] xs:text-[10px] sm:text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
+                                  >
+                                    <span>{b1Text}</span>
+                                    <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                  </Link>
+                                )
+                              )}
 
-                            {showB2 && b2Text && (
-                              b2IsEnquiry ? (
-                                <button
-                                  type="button"
-                                  onClick={() => onOpenEnquiry(banner.project_name || banner.title)}
-                                  className="bg-white/95 hover:bg-white text-gray-950 px-2.5 sm:px-5 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold transition-all border border-white/40 shadow-sm hover:shadow-md flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
-                                >
-                                  <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D61F69]" />
-                                  <span>{b2Text}</span>
-                                </button>
-                              ) : (
-                                <Link
-                                  href={b2Link}
-                                  className="bg-white/95 hover:bg-white text-gray-950 px-2.5 sm:px-5 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-sm font-bold transition-all border border-white/40 shadow-sm hover:shadow-md flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
-                                >
-                                  <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D61F69]" />
-                                  <span>{b2Text}</span>
-                                </Link>
-                              )
-                            )}
-                          </div>
+                              {showB2 && (
+                                b2IsEnquiry ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenEnquiry(banner.project_name || banner.title)}
+                                    className="bg-white/95 hover:bg-white text-gray-950 px-2.5 sm:px-5 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[9px] xs:text-[10px] sm:text-sm font-bold transition-all border border-white/40 shadow-sm hover:shadow-md flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
+                                  >
+                                    <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D61F69]" />
+                                    <span>{b2Text}</span>
+                                  </button>
+                                ) : b2IsExternal ? (
+                                  <a
+                                    href={b2Link}
+                                    target={b2Link.startsWith('http') ? '_blank' : undefined}
+                                    rel="noopener noreferrer"
+                                    className="bg-white/95 hover:bg-white text-gray-950 px-2.5 sm:px-5 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[9px] xs:text-[10px] sm:text-sm font-bold transition-all border border-white/40 shadow-sm hover:shadow-md flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
+                                  >
+                                    <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D61F69]" />
+                                    <span>{b2Text}</span>
+                                  </a>
+                                ) : (
+                                  <Link
+                                    href={b2Link}
+                                    className="bg-white/95 hover:bg-white text-gray-950 px-2.5 sm:px-5 py-1 sm:py-3 rounded-lg sm:rounded-xl text-[9px] xs:text-[10px] sm:text-sm font-bold transition-all border border-white/40 shadow-sm hover:shadow-md flex items-center gap-1 sm:gap-1.5 cursor-pointer hover:-translate-y-0.5 whitespace-nowrap"
+                                  >
+                                    <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#D61F69]" />
+                                    <span>{b2Text}</span>
+                                  </Link>
+                                )
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
