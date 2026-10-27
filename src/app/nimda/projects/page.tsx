@@ -35,7 +35,8 @@ import {
   ShieldCheck,
   Milestone,
   RefreshCw,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react';
 
 const AMENITY_PRESETS: AmenityItem[] = [
@@ -84,6 +85,7 @@ const AMENITY_PRESETS: AmenityItem[] = [
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSavingProject, setIsSavingProject] = useState(false);
   const [deletingProjId, setDeletingProjId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -156,6 +158,15 @@ export default function AdminProjectsPage() {
       console.error('Failed to load projects:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function refreshProjectsSilently() {
+    try {
+      const res = await api.getProjects();
+      if (res?.data) setProjects(res.data);
+    } catch (err) {
+      console.error('Failed to silently refresh projects:', err);
     }
   }
 
@@ -492,16 +503,26 @@ export default function AdminProjectsPage() {
       nearby_landmarks: formData.nearby_landmarks
     };
 
+    setIsSavingProject(true);
     try {
       if (editingProject) {
-        await api.updateProject(editingProject.id, payload);
+        const res = await api.updateProject(editingProject.id, payload);
+        const updated = res?.data || { ...editingProject, ...payload };
+        setProjects((prev) => prev.map((p) => (p.id === editingProject.id ? { ...p, ...updated } : p)));
+        setToastMessage('Project updated successfully');
       } else {
-        await api.createProject(payload);
+        const res = await api.createProject(payload);
+        if (res?.data) {
+          setProjects((prev) => [res.data, ...prev]);
+        }
+        setToastMessage('New project created successfully');
       }
       setIsModalOpen(false);
-      loadProjects();
+      refreshProjectsSilently();
     } catch (err: any) {
       setToastMessage(err.message || 'Operation failed');
+    } finally {
+      setIsSavingProject(false);
     }
   };
 
@@ -1566,10 +1587,20 @@ export default function AdminProjectsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-md cursor-pointer flex items-center gap-1.5"
+                    disabled={isSavingProject}
+                    className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow-md cursor-pointer flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Save Project</span>
+                    {isSavingProject ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Saving Project...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Save Project</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1586,7 +1617,7 @@ export default function AdminProjectsPage() {
           setPlotModalProject(null);
         }}
         onSaved={() => {
-          loadProjects();
+          refreshProjectsSilently();
           setIsPlotModalOpen(false);
           setPlotModalProject(null);
         }}

@@ -25,7 +25,8 @@ import {
   ExternalLink,
   ShieldCheck,
   Zap,
-  Send
+  Send,
+  Loader2
 } from 'lucide-react';
 
 const DEFAULT_POPUP_IMAGE =
@@ -58,6 +59,7 @@ export default function AdminPopupsPage() {
 
   // Modal & Edit State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSavingPopup, setIsSavingPopup] = useState(false);
   const [editingPopup, setEditingPopup] = useState<PromotionalPopup | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -103,6 +105,17 @@ export default function AdminPopupsPage() {
       showToast('Error loading promotional popups');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function refreshPopupsSilently() {
+    try {
+      const res = await api.getPopups();
+      if (res && res.success && Array.isArray(res.data)) {
+        setPopups(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to silently refresh popups:', err);
     }
   }
 
@@ -213,26 +226,26 @@ export default function AdminPopupsPage() {
       banner_image: formData.banner_image && formData.banner_image.trim() !== '' ? formData.banner_image.trim() : DEFAULT_POPUP_IMAGE
     };
 
+    setIsSavingPopup(true);
     try {
       if (editingPopup && editingPopup.id) {
         const res = await api.updatePopup(editingPopup.id, payload);
-        if (res && res.success) {
-          showToast('Promotional popup updated successfully');
-        } else {
-          showToast(res.message || 'Failed to update popup');
-        }
+        const updated = res?.data || { ...editingPopup, ...payload };
+        setPopups((prev) => prev.map((p) => (p.id === editingPopup.id ? { ...p, ...updated } : p)));
+        showToast('Promotional popup updated successfully');
       } else {
         const res = await api.createPopup(payload);
-        if (res && res.success) {
-          showToast('New promotional popup published live!');
-        } else {
-          showToast(res.message || 'Failed to create popup');
+        if (res?.data) {
+          setPopups((prev) => [res.data, ...prev]);
         }
+        showToast('New promotional popup published live!');
       }
       setIsModalOpen(false);
-      await loadPopups();
+      refreshPopupsSilently();
     } catch (err: any) {
       showToast('Error saving popup: ' + err.message);
+    } finally {
+      setIsSavingPopup(false);
     }
   }
 
@@ -1081,9 +1094,20 @@ export default function AdminPopupsPage() {
               <button
                 type="submit"
                 form="popupForm"
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                disabled={isSavingPopup}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <CheckCircle2 className="w-4 h-4" /> Save & Publish Popup
+                {isSavingPopup ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Saving Popup...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Save & Publish Popup</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

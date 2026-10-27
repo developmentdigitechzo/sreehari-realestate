@@ -2,27 +2,32 @@
 
 import React, { useEffect, useRef } from 'react';
 
-interface Particle {
+interface PetalParticle {
   x: number;
   y: number;
   vx: number;
   vy: number;
   size: number;
+  aspectRatio: number;
   color: string;
+  tipColor: string;
+  baseColor: string;
   alpha: number;
   life: number;
   maxLife: number;
   rotation: number;
   rotationSpeed: number;
+  wobble: number;
+  wobbleSpeed: number;
 }
 
-const SPARKLE_COLORS = [
-  '#D61F69', // Brand Rose Pink
-  '#F59E0B', // Golden Amber
-  '#006452', // Emerald Green
-  '#F43F5E', // Vivid Pink
-  '#FBBF24', // Warm Gold
-  '#FFFFFF'  // Bright White Diamond
+// Royal Lotus Blossom Petal Palette
+const PETAL_THEMES = [
+  { color: '#D61F69', tipColor: '#FDA4AF', baseColor: '#9F1239' }, // Sree Hari Signature Pink
+  { color: '#E11D48', tipColor: '#FDE68A', baseColor: '#881337' }, // Deep Rose with Golden Pollen Tip
+  { color: '#F472B6', tipColor: '#FFF1F2', baseColor: '#BE185D' }, // Soft Lotus Blossom
+  { color: '#FB7185', tipColor: '#FEF08A', baseColor: '#9F1239' }, // Warm Sunset Pink
+  { color: '#EC4899', tipColor: '#FDF2F8', baseColor: '#9D174D' }, // Pure Floral Magenta
 ];
 
 export default function SparkleCursor() {
@@ -57,8 +62,8 @@ export default function SparkleCursor() {
     };
     window.addEventListener('resize', handleResize);
 
-    const particles: Particle[] = [];
-    const MAX_PARTICLES = 36;
+    const particles: PetalParticle[] = [];
+    const MAX_PARTICLES = 38;
 
     let mouseX = -100;
     let mouseY = -100;
@@ -68,40 +73,57 @@ export default function SparkleCursor() {
     let isHoveringInteractive = false;
     let isMouseDown = false;
 
-    // Helper: draw a 4-point sparkle star
-    function drawSparkleStar(
+    // Helper: draw an organic curved lotus petal
+    function drawLotusPetal(
       context: CanvasRenderingContext2D,
       cx: number,
       cy: number,
-      spikes: number,
-      outerRadius: number,
-      innerRadius: number,
-      rotation: number
+      size: number,
+      aspectRatio: number,
+      rotation: number,
+      color: string,
+      tipColor: string,
+      baseColor: string,
+      alpha: number
     ) {
-      let rot = (Math.PI / 2) * 3 + rotation;
-      let x = cx;
-      let y = cy;
-      const step = Math.PI / spikes;
+      context.save();
+      context.translate(cx, cy);
+      context.rotate(rotation);
+      context.globalAlpha = Math.max(0, Math.min(1, alpha));
 
+      const halfW = size * 0.52 * aspectRatio;
+      const topH = -size;
+      const botH = size * 0.82;
+
+      // Curved organic lotus petal contour
       context.beginPath();
-      context.moveTo(cx, cy - outerRadius);
-      for (let i = 0; i < spikes; i++) {
-        x = cx + Math.cos(rot) * outerRadius;
-        y = cy + Math.sin(rot) * outerRadius;
-        context.lineTo(x, y);
-        rot += step;
-
-        x = cx + Math.cos(rot) * innerRadius;
-        y = cy + Math.sin(rot) * innerRadius;
-        context.lineTo(x, y);
-        rot += step;
-      }
-      context.lineTo(cx, cy - outerRadius);
+      context.moveTo(0, topH);
+      // Right petal curve
+      context.bezierCurveTo(halfW * 1.15, topH * 0.45, halfW * 0.95, botH * 0.55, 0, botH);
+      // Left petal curve back to top tip
+      context.bezierCurveTo(-halfW * 0.95, botH * 0.55, -halfW * 1.15, topH * 0.45, 0, topH);
       context.closePath();
+
+      // Botanical petal gradient
+      const grad = context.createLinearGradient(0, topH, 0, botH);
+      grad.addColorStop(0, tipColor);
+      grad.addColorStop(0.35, color);
+      grad.addColorStop(1, baseColor);
+      context.fillStyle = grad;
       context.fill();
+
+      // Subtle translucent central petal vein
+      context.beginPath();
+      context.moveTo(0, topH * 0.72);
+      context.lineTo(0, botH * 0.38);
+      context.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      context.lineWidth = Math.max(0.7, size * 0.08);
+      context.stroke();
+
+      context.restore();
     }
 
-    // Spawn sparkles along cursor trail
+    // Spawn floating lotus petals along cursor trail
     const handleMouseMove = (e: MouseEvent) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
@@ -119,27 +141,32 @@ export default function SparkleCursor() {
       }
 
       const now = performance.now();
-      if (now - lastSpawnTime > 40 && particles.length < MAX_PARTICLES) {
+      if (now - lastSpawnTime > 38 && particles.length < MAX_PARTICLES) {
         lastSpawnTime = now;
 
-        const count = Math.random() > 0.5 ? 2 : 1;
+        const count = Math.random() > 0.4 ? 2 : 1;
         for (let i = 0; i < count; i++) {
-          const color = SPARKLE_COLORS[Math.floor(Math.random() * SPARKLE_COLORS.length)];
+          const theme = PETAL_THEMES[Math.floor(Math.random() * PETAL_THEMES.length)];
           const angle = Math.random() * Math.PI * 2;
-          const speed = 0.4 + Math.random() * 1.2;
+          const driftSpeed = 0.3 + Math.random() * 0.8;
 
           particles.push({
-            x: mouseX + (Math.random() - 0.5) * 12,
-            y: mouseY + (Math.random() - 0.5) * 12,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed - 0.3, // gentle rise
-            size: 3.5 + Math.random() * 4.5,
-            color,
+            x: mouseX + (Math.random() - 0.5) * 14,
+            y: mouseY + (Math.random() - 0.5) * 14,
+            vx: Math.cos(angle) * driftSpeed * 0.6,
+            vy: 0.4 + Math.random() * 0.7, // gentle downward floating breeze
+            size: 5 + Math.random() * 4.5,
+            aspectRatio: 0.8 + Math.random() * 0.4,
+            color: theme.color,
+            tipColor: theme.tipColor,
+            baseColor: theme.baseColor,
             alpha: 1,
             life: 0,
-            maxLife: 26 + Math.floor(Math.random() * 16),
-            rotation: Math.random() * Math.PI,
-            rotationSpeed: (Math.random() - 0.5) * 0.12
+            maxLife: 28 + Math.floor(Math.random() * 18),
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: (Math.random() - 0.5) * 0.07,
+            wobble: Math.random() * Math.PI * 2,
+            wobbleSpeed: 0.08 + Math.random() * 0.06
           });
         }
       }
@@ -161,30 +188,35 @@ export default function SparkleCursor() {
       if (lotus) lotus.style.opacity = '1';
     };
 
-    // Click burst: radiate little celebration sparkles
+    // Click burst: radiate a shower of blossoming petals
     const handleClick = (e: MouseEvent) => {
       const clickX = e.clientX;
       const clickY = e.clientY;
-      const burstCount = 12;
+      const burstCount = 14;
 
       for (let i = 0; i < burstCount; i++) {
-        if (particles.length >= MAX_PARTICLES + 12) break;
+        if (particles.length >= MAX_PARTICLES + 14) break;
         const angle = (Math.PI * 2 * i) / burstCount + (Math.random() - 0.5) * 0.4;
-        const speed = 1.4 + Math.random() * 2.4;
-        const color = SPARKLE_COLORS[i % SPARKLE_COLORS.length];
+        const speed = 1.2 + Math.random() * 2.2;
+        const theme = PETAL_THEMES[i % PETAL_THEMES.length];
 
         particles.push({
           x: clickX,
           y: clickY,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          size: 4 + Math.random() * 4.5,
-          color,
+          vy: Math.sin(angle) * speed * 0.7 + 0.3,
+          size: 5.5 + Math.random() * 4.5,
+          aspectRatio: 0.75 + Math.random() * 0.5,
+          color: theme.color,
+          tipColor: theme.tipColor,
+          baseColor: theme.baseColor,
           alpha: 1,
           life: 0,
-          maxLife: 30 + Math.floor(Math.random() * 15),
-          rotation: Math.random() * Math.PI,
-          rotationSpeed: (Math.random() - 0.5) * 0.18
+          maxLife: 32 + Math.floor(Math.random() * 16),
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 0.12,
+          wobble: Math.random() * Math.PI * 2,
+          wobbleSpeed: 0.09 + Math.random() * 0.07
         });
       }
     };
@@ -201,21 +233,25 @@ export default function SparkleCursor() {
       // 1. Smoothly interpolate lotus cursor position
       if (mouseX > -50 && mouseY > -50) {
         // Fast, fluid spring follow
-        lotusX += (mouseX - lotusX) * 0.55;
-        lotusY += (mouseY - lotusY) * 0.55;
+        const dx = mouseX - lotusX;
+        const dy = mouseY - lotusY;
+        lotusX += dx * 0.55;
+        lotusY += dy * 0.55;
 
-        const scale = isMouseDown ? 0.85 : isHoveringInteractive ? 1.25 : 1.0;
-        lotus.style.transform = `translate3d(${lotusX}px, ${lotusY}px, 0) scale(${scale})`;
+        const tilt = Math.max(-12, Math.min(12, dx * 0.25));
+        const scale = isMouseDown ? 0.88 : isHoveringInteractive ? 1.15 : 1.0;
+        lotus.style.transform = `translate3d(${lotusX}px, ${lotusY}px, 0) scale(${scale}) rotate(${tilt}deg)`;
       }
 
-      // 2. Render sparkle particles on canvas
+      // 2. Render fluttering lotus petal particles on canvas
       ctx.clearRect(0, 0, width, height);
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.life++;
-        p.x += p.vx;
-        p.y += p.vy;
+        p.wobble += p.wobbleSpeed;
+        p.x += p.vx + Math.sin(p.wobble) * 0.65; // gentle fluttering breeze wave
+        p.y += p.vy;                             // gentle drift
         p.rotation += p.rotationSpeed;
         p.alpha = 1 - p.life / p.maxLife;
 
@@ -224,15 +260,18 @@ export default function SparkleCursor() {
           continue;
         }
 
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, p.alpha);
-        ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 6;
-
-        // Draw glittering diamond sparkle
-        drawSparkleStar(ctx, p.x, p.y, 4, p.size, p.size * 0.32, p.rotation);
-        ctx.restore();
+        drawLotusPetal(
+          ctx,
+          p.x,
+          p.y,
+          p.size,
+          p.aspectRatio,
+          p.rotation,
+          p.color,
+          p.tipColor,
+          p.baseColor,
+          p.alpha
+        );
       }
 
       animId = requestAnimationFrame(render);
@@ -254,13 +293,14 @@ export default function SparkleCursor() {
 
   return (
     <>
+      {/* Canvas for Floating Lotus Petals */}
       <canvas
         ref={canvasRef}
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-[99998] select-none"
       />
 
-      {/* Brand Lotus Cursor Emblem (Prominent Size, Crisp & Clean) */}
+      {/* Brand Lotus Cursor Emblem (Clean, Crisp, Standalone with Zero Chain) */}
       <div
         ref={lotusRef}
         aria-hidden="true"
@@ -270,16 +310,14 @@ export default function SparkleCursor() {
           height: '48px',
         }}
       >
-        <div className="relative w-full h-full flex items-center justify-center">
-          {/* Subtle Ambient Aura (Reduced Pink Fog) */}
-          <div className="absolute inset-0 bg-[#D61F69]/10 rounded-full blur-[3px] pointer-events-none" />
-
-          {/* Crisp Official Pink Lotus Emblem */}
+        <div className="relative w-full h-full flex items-center justify-center select-none">
+          {/* Crisp Official Lotus Emblem with zero dark drop-shadow or blur */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/lotus_icon.png"
             alt=""
-            className="w-full h-full object-contain drop-shadow-[0_1px_4px_rgba(0,0,0,0.18)] relative z-10"
+            className="w-full h-full object-contain select-none"
+            draggable={false}
           />
         </div>
       </div>

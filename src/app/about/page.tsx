@@ -143,7 +143,7 @@ export default function AboutPage() {
             <div className="lg:col-span-5 relative flex items-end justify-center px-4 sm:px-6 pb-0 pt-8 sm:pt-10 lg:pt-0 min-h-[380px] sm:min-h-[460px] lg:min-h-[540px] order-1 lg:order-2">
               
               {/* Exact BeyondWalls Rounded Triangular Polygon in Logo Pink #D61F69 (Fills the box with no awkward top gap) */}
-              <div className="absolute inset-y-3 sm:inset-y-4 right-2 sm:right-6 left-2 sm:left-6 flex items-center justify-center pointer-events-none z-0">
+              <div className="absolute -top-6 sm:-top-10 lg:-top-14 bottom-2 sm:bottom-3 right-2 sm:right-6 left-2 sm:left-6 flex items-center justify-center pointer-events-none z-0">
                 <svg viewBox="0 0 500 500" className="w-full h-full drop-shadow-2xl overflow-visible" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="logoPinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -161,7 +161,7 @@ export default function AboutPage() {
               </div>
 
               {/* Standout Cutout Portrait (Head and shoulders pop-out smoothly above card top) */}
-              <div className="relative z-20 w-80 sm:w-96 lg:w-[440px] h-[400px] sm:h-[480px] lg:h-[550px] -mt-12 sm:-mt-18 lg:-mt-22 pointer-events-none flex items-end justify-center">
+              <div className="relative z-20 w-80 sm:w-96 lg:w-[440px] xl:w-[460px] h-[400px] sm:h-[480px] lg:h-[540px] -mt-8 sm:-mt-12 lg:-mt-16 pointer-events-none flex items-end justify-center">
                 <Image
                   src="/executive_founder_cutout.png"
                   alt="Executive Promoter - Sree Hari Realty Promoters"
@@ -173,7 +173,7 @@ export default function AboutPage() {
               </div>
 
               {/* Bottom Ground Shadow */}
-              <div className="absolute -bottom-2 w-52 h-4 bg-black/20 blur-md rounded-full pointer-events-none z-0" />
+              <div className="absolute -bottom-2 w-52 sm:w-60 h-4 bg-black/20 blur-md rounded-full pointer-events-none z-0" />
 
             </div>
 

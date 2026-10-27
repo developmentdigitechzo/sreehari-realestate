@@ -185,7 +185,7 @@ export default function HeroCarousel({
                     A Better Place to <br />
                     <span className="animate-text-shine">Build Your Future</span>
                   </h1>
-                  <p className="text-white/75 sm:text-white/85 text-[9px] xs:text-[10px] sm:text-[14px] lg:text-[15px] font-normal max-w-[260px] xs:max-w-xs sm:max-w-lg leading-snug sm:leading-relaxed drop-shadow-sm">
+                  <p className="text-white/80 sm:text-white/85 text-[9.5px] xs:text-[11px] sm:text-[14px] lg:text-[15px] font-normal max-w-[290px] xs:max-w-xs sm:max-w-lg leading-normal sm:leading-relaxed drop-shadow-sm">
                     Thoughtfully planned plots. A greener community. A place to call your own with 100% DTCP & RERA approved peace of mind.
                   </p>
                 </div>
@@ -319,7 +319,7 @@ export default function HeroCarousel({
                               {renderHeroTitle(banner.title)}
                             </h1>
                             {banner.subtitle && (
-                              <p className="text-white/80 sm:text-white/90 text-[10px] xs:text-[11px] sm:text-[14px] lg:text-[15px] font-normal max-w-[280px] xs:max-w-xs sm:max-w-lg leading-snug sm:leading-relaxed drop-shadow-sm line-clamp-2 sm:line-clamp-none">
+                              <p className="text-white/80 sm:text-white/90 text-[9.5px] xs:text-[11px] sm:text-[14px] lg:text-[15px] font-normal max-w-[290px] xs:max-w-xs sm:max-w-lg leading-normal sm:leading-relaxed drop-shadow-sm">
                                 {banner.subtitle}
                               </p>
                             )}

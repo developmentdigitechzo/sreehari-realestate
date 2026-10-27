@@ -18,12 +18,7 @@ export default function LayoutWrapper({
   const isAdminRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/nimda');
 
   if (isAdminRoute) {
-    return (
-      <>
-        <SparkleCursor />
-        <main className="flex-grow">{children}</main>
-      </>
-    );
+    return <main className="flex-grow">{children}</main>;
   }
 
   return (

@@ -63,7 +63,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static uploads serving
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Static uploads serving with 7-day browser caching for fast repeat loads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
+  maxAge: '7d',
+  etag: true,
+}));
 
 // Health check & DB Diagnostics
 app.get('/api/health', (req, res) => {

@@ -21,7 +21,8 @@ import {
   Building2,
   MapPin,
   IndianRupee,
-  Car
+  Car,
+  Loader2
 } from 'lucide-react';
 
 const LEAD_STATUS_OPTIONS = [
@@ -88,6 +89,7 @@ export default function AdminLeadsPage() {
   const [plots, setPlots] = useState<Plot[]>([]);
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSavingLead, setIsSavingLead] = useState(false);
   const [deletingLeadInfo, setDeletingLeadInfo] = useState<{ id: string; name: string } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -255,6 +257,7 @@ export default function AdminLeadsPage() {
 
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSavingLead(true);
     try {
       let targetStage = newLead.stage || 'New Lead';
       if (newLead.site_visit_date && (targetStage === 'New Lead' || targetStage === 'Follow Up Pending')) {
@@ -264,6 +267,14 @@ export default function AdminLeadsPage() {
       }
       const targetPriority = newLead.priority || (newLead.site_visit_date ? 'Hot' : 'Warm');
       const createRes = await api.createCrmLead({ ...newLead, stage: targetStage, status: targetStage, source: newLead.source || 'Manual', priority: targetPriority });
+      
+      const matchedProject = projects.find(p => p.id === newLead.project_id);
+      const enrichedNewLead = createRes?.data ? {
+        ...createRes.data,
+        project_name: matchedProject ? matchedProject.name : (newLead.project_id ? 'Linked Project' : 'General Plot Enquiry'),
+        project_location: matchedProject ? `${matchedProject.location_area}, ${matchedProject.location_city}` : ''
+      } : null;
+
       setIsAddModalOpen(false);
       setNewLead({
         name: '',
@@ -287,12 +298,14 @@ export default function AdminLeadsPage() {
         message: '',
         initial_note: ''
       });
-      if (createRes?.data) {
-        setLeads((prev) => [createRes.data, ...prev]);
+      if (enrichedNewLead) {
+        setLeads((prev) => [enrichedNewLead, ...prev]);
       }
       refreshLeadsOnly();
     } catch (err: any) {
       setToastMessage(err.message || 'Failed to create CRM lead');
+    } finally {
+      setIsSavingLead(false);
     }
   };
 
@@ -324,6 +337,7 @@ export default function AdminLeadsPage() {
   const handleUpdateEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingLead) return;
+    setIsSavingLead(true);
     try {
       let targetStage = editForm.stage || 'New Lead';
       if (editForm.site_visit_date && (targetStage === 'New Lead' || targetStage === 'Follow Up Pending')) {
@@ -332,6 +346,7 @@ export default function AdminLeadsPage() {
         targetStage = 'Follow Up Pending';
       }
       const targetPriority = editForm.priority || (editForm.site_visit_date ? 'Hot' : 'Warm');
+      const matchedProject = projects.find(p => p.id === editForm.project_id);
       await api.updateCrmLead(editingLead.id, {
         ...editForm,
         source: editForm.source,
@@ -339,27 +354,33 @@ export default function AdminLeadsPage() {
         status: targetStage,
         priority: targetPriority
       });
+      const updatedItem = {
+        ...editingLead,
+        ...editForm,
+        source: editForm.source,
+        stage: targetStage,
+        status: targetStage,
+        priority: targetPriority,
+        project_name: matchedProject ? matchedProject.name : (editForm.project_id ? 'Linked Project' : 'General Plot Enquiry'),
+        project_location: matchedProject ? `${matchedProject.location_area}, ${matchedProject.location_city}` : ''
+      };
       setLeads((prev) =>
         prev.map((l) =>
-          l.id === editingLead.id
-            ? { ...l, ...editForm, source: editForm.source, stage: targetStage, status: targetStage, priority: targetPriority }
-            : l
+          l.id === editingLead.id ? updatedItem : l
         )
       );
       if (selectedLeadForDetail && selectedLeadForDetail.id === editingLead.id) {
         setSelectedLeadForDetail({
           ...selectedLeadForDetail,
-          ...editForm,
-          source: editForm.source,
-          stage: targetStage,
-          status: targetStage,
-          priority: targetPriority
+          ...updatedItem
         });
       }
       setEditingLead(null);
       refreshLeadsOnly();
     } catch (err: any) {
       setToastMessage(err.message || 'Failed to update lead');
+    } finally {
+      setIsSavingLead(false);
     }
   };
 
@@ -1122,9 +1143,17 @@ export default function AdminLeadsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-500 shadow-md shadow-emerald-600/20"
+                  disabled={isSavingLead}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-500 shadow-md shadow-emerald-600/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Save Lead to PostgreSQL
+                  {isSavingLead ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving Lead...</span>
+                    </>
+                  ) : (
+                    <span>Save Lead to PostgreSQL</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -1489,9 +1518,17 @@ export default function AdminLeadsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-500 shadow-md shadow-amber-600/20"
+                  disabled={isSavingLead}
+                  className="px-4 py-2 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-500 shadow-md shadow-amber-600/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Save Changes
+                  {isSavingLead ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving Changes...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
                 </button>
               </div>
             </form>

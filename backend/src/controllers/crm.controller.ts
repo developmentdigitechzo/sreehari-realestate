@@ -332,10 +332,17 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
     store.leads.unshift(newLead);
     db.saveFallbackData(store);
 
+    const proj = store.projects?.find((p: any) => p.id === newLead.project_id);
+    const enrichedNewLead = {
+      ...newLead,
+      project_name: proj ? proj.name : (newLead.project_id ? 'Linked Project' : 'General Plot Enquiry'),
+      project_location: proj ? `${proj.location_area}, ${proj.location_city}` : ''
+    };
+
     res.status(201).json({
       success: true,
       message: 'New CRM lead created successfully',
-      data: newLead
+      data: enrichedNewLead
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: 'Failed to create CRM lead', error: err.message });

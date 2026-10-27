@@ -86,7 +86,7 @@ export const api = {
   // Public APIs for website
   async getPublicProjects() {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/public/projects`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/projects`, { next: { revalidate: 30 } });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -95,7 +95,7 @@ export const api = {
 
   async getPublicProjectBySlug(slug: string) {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/public/projects/${slug}`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/projects/${slug}`, { next: { revalidate: 30 } });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: null };
@@ -104,7 +104,7 @@ export const api = {
 
   async getPublicPlotsByProjectSlug(slug: string) {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/public/projects/${slug}/plots`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/projects/${slug}/plots`, { next: { revalidate: 30 } });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -113,7 +113,7 @@ export const api = {
 
   async getPublicPlotsByProjectId(projectId: string) {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/public/plots/by-project/${projectId}`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/plots/by-project/${projectId}`, { next: { revalidate: 30 } });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -122,7 +122,7 @@ export const api = {
 
   async getPublicBlogs() {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/public/blogs`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/blogs`, { next: { revalidate: 30 } });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -131,7 +131,7 @@ export const api = {
 
   async getPublicBlogBySlug(slug: string) {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/public/blogs/${slug}`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/blogs/${slug}`, { next: { revalidate: 30 } });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: null };
@@ -140,7 +140,7 @@ export const api = {
 
   async getPublicGallery() {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/public/gallery`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/gallery`, { next: { revalidate: 30 } });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
@@ -149,7 +149,7 @@ export const api = {
 
   async getPublicSettings() {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/public/settings`, { cache: 'no-store' });
+      const res = await fetch(`${getApiBaseUrl()}/public/settings`, { next: { revalidate: 60 } });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: null };
@@ -202,7 +202,7 @@ export const api = {
 
   async getPublicPopups() {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/public/popups`);
+      const res = await fetch(`${getApiBaseUrl()}/public/popups`, { next: { revalidate: 30 } });
       return res.json();
     } catch (err: any) {
       return { success: false, message: err.message || 'Network error', data: [] };
