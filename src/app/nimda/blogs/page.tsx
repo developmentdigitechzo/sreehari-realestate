@@ -107,6 +107,17 @@ export default function AdminBlogsPage() {
     }
   }
 
+  async function refreshBlogsSilently() {
+    try {
+      const res = await api.getBlogs();
+      if (res && res.success && Array.isArray(res.data)) {
+        setBlogs(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to silently refresh blogs:', err);
+    }
+  }
+
   function showToast(msg: string) {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
@@ -264,29 +275,26 @@ export default function AdminBlogsPage() {
     try {
       if (editingBlog && editingBlog.id) {
         const res = await api.updateBlog(editingBlog.id, payload);
-        if (res && res.success) {
-          showToast(
-            currentStatus === 'Draft'
-              ? 'Blog article saved as Draft (Hidden from website)'
-              : 'Blog article updated and live on website'
-          );
-        } else {
-          showToast(res.message || 'Failed to update article');
-        }
+        const updated = res?.data || { ...editingBlog, ...payload };
+        setBlogs((prev) => prev.map((b) => (b.id === editingBlog.id ? { ...b, ...updated } : b)));
+        showToast(
+          currentStatus === 'Draft'
+            ? 'Blog article saved as Draft (Hidden from website)'
+            : 'Blog article updated and live on website'
+        );
       } else {
         const res = await api.createBlog(payload);
-        if (res && res.success) {
-          showToast(
-            currentStatus === 'Draft'
-              ? 'New blog article saved as Draft (Hidden from website)'
-              : 'New blog article published and live on website'
-          );
-        } else {
-          showToast(res.message || 'Failed to create article');
+        if (res?.data) {
+          setBlogs((prev) => [res.data, ...prev]);
         }
+        showToast(
+          currentStatus === 'Draft'
+            ? 'New blog article saved as Draft (Hidden from website)'
+            : 'New blog article published and live on website'
+        );
       }
-      await loadBlogs();
       setViewMode('grid');
+      refreshBlogsSilently();
     } catch (err: any) {
       showToast('Error saving article: ' + (err.message || 'Unknown error'));
     } finally {

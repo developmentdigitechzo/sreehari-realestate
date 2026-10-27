@@ -360,7 +360,7 @@ export async function createProject(req: Request, res: Response): Promise<void> 
             google_maps_embed_url, dtcp_number, rera_number, meta_title, meta_description,
             gallery_images, highlights, amenities, nearby_landmarks, latitude, longitude
           ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23::jsonb, $24::jsonb, $25::jsonb, $26::jsonb, $27, $28
           );`,
           [
             newProject.id, newProject.name, newProject.slug, newProject.tagline, newProject.description,
@@ -495,8 +495,8 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
             status = $12, is_featured = $13, banner_image = $14, video_url = $15,
             brochure_url = $16, google_maps_embed_url = $17, dtcp_number = $18,
             rera_number = $19, meta_title = $20, meta_description = $21,
-            gallery_images = $22, highlights = $23, amenities = $24,
-            nearby_landmarks = $25, latitude = $26, longitude = $27, updated_at = CURRENT_TIMESTAMP
+            gallery_images = $22::jsonb, highlights = $23::jsonb, amenities = $24::jsonb,
+            nearby_landmarks = $25::jsonb, latitude = $26, longitude = $27, updated_at = CURRENT_TIMESTAMP
            WHERE id = $28;`,
           [
             updated.name, updated.slug, updated.tagline, updated.description, updated.location_area,

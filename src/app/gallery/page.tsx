@@ -405,7 +405,7 @@ export default function GalleryPage() {
     setTouchStartPos(null);
   };
 
-  // 3D Perspective calculation matching Image 3 Coverflow
+  // Crisp 2D Depth Layering (Zero 3D perspective distortion or text blur)
   const getCardStyle = (index: number) => {
     const total = carouselItems.length;
     if (total === 0) return { display: 'none' };
@@ -418,9 +418,10 @@ export default function GalleryPage() {
       return {
         opacity: 0,
         pointerEvents: 'none' as const,
-        transform: `translateX(${diff > 0 ? 160 : -160}%) scale(0.65)`,
+        transform: `translate3d(${diff > 0 ? 160 : -160}%, 0, 0) scale(0.7)`,
         zIndex: 0,
-        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)',
+        willChange: 'transform, opacity'
       };
     }
 
@@ -428,54 +429,59 @@ export default function GalleryPage() {
       return {
         opacity: 1,
         zIndex: 30,
-        transform: 'translateX(0%) scale(1.02) rotateY(0deg)',
-        filter: 'brightness(1)',
+        transform: 'translate3d(0%, 0, 0) scale(1.04)',
         cursor: 'pointer',
-        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+        boxShadow: '0 25px 35px -5px rgba(0, 0, 0, 0.18), 0 10px 15px -5px rgba(0, 0, 0, 0.08)',
+        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)',
+        willChange: 'transform, opacity'
       };
     }
 
     if (diff === -1) {
       return {
-        opacity: 0.85,
+        opacity: 0.95,
         zIndex: 20,
-        transform: 'translateX(-56%) scale(0.88) rotateY(10deg)',
-        filter: 'brightness(0.93)',
+        transform: 'translate3d(-58%, 0, 0) scale(0.92)',
         cursor: 'pointer',
-        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+        boxShadow: '0 15px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06)',
+        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)',
+        willChange: 'transform, opacity'
       };
     }
 
     if (diff === 1) {
       return {
-        opacity: 0.85,
+        opacity: 0.95,
         zIndex: 20,
-        transform: 'translateX(56%) scale(0.88) rotateY(-10deg)',
-        filter: 'brightness(0.93)',
+        transform: 'translate3d(58%, 0, 0) scale(0.92)',
         cursor: 'pointer',
-        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+        boxShadow: '0 15px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06)',
+        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)',
+        willChange: 'transform, opacity'
       };
     }
 
     if (diff === -2) {
       return {
-        opacity: 0.45,
+        opacity: 0.85,
         zIndex: 10,
-        transform: 'translateX(-105%) scale(0.76) rotateY(18deg)',
-        filter: 'brightness(0.85)',
+        transform: 'translate3d(-108%, 0, 0) scale(0.82)',
         cursor: 'pointer',
-        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.08)',
+        transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)',
+        willChange: 'transform, opacity'
       };
     }
 
     // diff === 2
     return {
-      opacity: 0.45,
+      opacity: 0.85,
       zIndex: 10,
-      transform: 'translateX(105%) scale(0.76) rotateY(-18deg)',
-      filter: 'brightness(0.85)',
+      transform: 'translate3d(108%, 0, 0) scale(0.82)',
       cursor: 'pointer',
-      transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)'
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.08)',
+      transition: 'all 500ms cubic-bezier(0.25, 1, 0.5, 1)',
+      willChange: 'transform, opacity'
     };
   };
 
@@ -558,7 +564,7 @@ export default function GalleryPage() {
           {/* Bounded 3D Perspective Stage */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div
-              className="relative w-full h-[400px] sm:h-[440px] flex items-center justify-center overflow-hidden [perspective:1200px]"
+              className="relative w-full h-[400px] sm:h-[440px] flex items-center justify-center overflow-hidden"
               onMouseEnter={() => setIsCarouselHovered(true)}
               onMouseLeave={() => setIsCarouselHovered(false)}
               onTouchStart={handleTouchStart}
@@ -579,7 +585,7 @@ export default function GalleryPage() {
                         setCurrentCarouselIndex(idx);
                       }
                     }}
-                    className="absolute w-[265px] xs:w-[285px] sm:w-[325px] md:w-[345px] h-[345px] sm:h-[375px] rounded-2xl sm:rounded-[1.75rem] bg-white border border-amber-200/90 shadow-lg hover:shadow-2xl flex flex-col justify-between overflow-hidden group select-none"
+                    className="absolute w-[265px] xs:w-[285px] sm:w-[325px] md:w-[345px] h-[345px] sm:h-[375px] rounded-2xl sm:rounded-[1.75rem] bg-white border border-amber-200/90 flex flex-col justify-between overflow-hidden group select-none [backface-visibility:hidden]"
                   >
                     {/* Top Rounded Image Banner */}
                     <div className="relative h-[215px] sm:h-[240px] w-full overflow-hidden bg-slate-900 rounded-t-2xl sm:rounded-t-[1.75rem]">
@@ -594,7 +600,7 @@ export default function GalleryPage() {
                           target.src = '/project_park_avenue_new.jpg';
                         }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
                       {/* Top Floating Badges */}
                       <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">

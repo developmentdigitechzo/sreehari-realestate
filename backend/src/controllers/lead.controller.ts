@@ -246,7 +246,7 @@ export async function submitPublicLead(req: Request, res: Response): Promise<voi
               name, phone, email, preferred_plot_size, budget,
               facing_preference, message, source, status, stage,
               priority, assigned_to, site_visit_date, notes, admin_notes
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20);`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::jsonb, $20);`,
             [
               finalLeadRecord.id,
               finalLeadRecord.project_id,

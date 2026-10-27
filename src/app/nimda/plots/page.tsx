@@ -195,6 +195,19 @@ export default function AdminPlotsPage() {
     }
   }
 
+  async function refreshPlotsSilently() {
+    try {
+      const [plotsRes, projRes] = await Promise.all([
+        api.getPlots(),
+        api.getProjects().catch(() => null)
+      ]);
+      if (plotsRes?.data) setPlots(plotsRes.data);
+      if (projRes?.data) setProjects(projRes.data);
+    } catch (err) {
+      console.error('Failed to silently refresh plots:', err);
+    }
+  }
+
   // Filter Logic
   const filteredPlots = plots.filter((plot) => {
     if (searchQuery.trim()) {
@@ -1101,9 +1114,16 @@ Plot 02,"Corner Villa Plot in Park Avenue",Corner Villa Plot,Sale,"Thiruverumbur
       <PlotFormModal
         isOpen={isPlotModalOpen}
         onClose={() => setIsPlotModalOpen(false)}
-        onSaved={() => {
-          loadData();
+        onSaved={(savedPlot?: Plot) => {
+          if (editingPlot && editingPlot.id) {
+            setPlots((prev) => prev.map((p) => (p.id === editingPlot.id ? { ...p, ...(savedPlot || {}) } : p)));
+            setToastMessage('Plot updated successfully');
+          } else if (savedPlot) {
+            setPlots((prev) => [savedPlot, ...prev]);
+            setToastMessage('New plot created successfully');
+          }
           setIsPlotModalOpen(false);
+          refreshPlotsSilently();
         }}
         plotToEdit={editingPlot}
         projectsList={projects}

@@ -317,7 +317,7 @@ export async function createPlot(req: Request, res: Response): Promise<void> {
             $11, $12, $13, $14, $15, $16, $17, $18,
             $19, $20, $21, $22, $23, $24,
             $25, $26, $27, $28, $29, $30, $31,
-            $32, $33, $34
+            $32, $33::jsonb, $34::jsonb
           );`,
           [
             newPlot.id, newPlot.project_id, newPlot.title, newPlot.slug, newPlot.type, newPlot.category,
@@ -429,7 +429,7 @@ export async function updatePlot(req: Request, res: Response): Promise<void> {
             plot_number=$9, length_ft=$10, width_ft=$11, dimension_str=$12, dimension=$13, area_sqft=$14, facing=$15, approval_status=$16,
             price_per_sqft=$17, total_price_lakhs=$18, price=$19, currency=$20, status=$21, listing_visibility=$22,
             amenities=$23, description=$24, meta_title=$25, meta_description=$26, video_url=$27, latitude=$28, longitude=$29,
-            primary_image_url=$30, gallery_images=$31, video_urls=$32, updated_at=CURRENT_TIMESTAMP
+            primary_image_url=$30, gallery_images=$31::jsonb, video_urls=$32::jsonb, updated_at=CURRENT_TIMESTAMP
           WHERE id=$33;`,
           [
             updated.title || '', updated.slug || '', updated.type || 'Plot', updated.category || 'Sale',

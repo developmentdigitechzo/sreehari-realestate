@@ -296,7 +296,7 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
       try {
         await db.query(
           `INSERT INTO leads (id, project_id, name, phone, email, preferred_plot_size, message, source, status, stage, priority, admin_notes, notes, plot_id, plot_name, plot_description, budget, facing_preference, assigned_to, site_visit_date, site_visit_time, next_follow_up_date, next_follow_up_time)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23);`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23);`,
           [
             newLead.id,
             newLead.project_id || null,
@@ -332,10 +332,17 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
     store.leads.unshift(newLead);
     db.saveFallbackData(store);
 
+    const proj = store.projects?.find((p: any) => p.id === newLead.project_id);
+    const enrichedNewLead = {
+      ...newLead,
+      project_name: proj ? proj.name : (newLead.project_id ? 'Linked Project' : 'General Plot Enquiry'),
+      project_location: proj ? `${proj.location_area}, ${proj.location_city}` : ''
+    };
+
     res.status(201).json({
       success: true,
       message: 'New CRM lead created successfully',
-      data: newLead
+      data: enrichedNewLead
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: 'Failed to create CRM lead', error: err.message });
@@ -374,7 +381,20 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
       admin_notes
     } = req.body;
 
-    const current = index !== -1 ? store.leads[index] : {};
+    let current: any = {};
+    if (db.isPostgres()) {
+      try {
+        const pgCurrent = await db.query('SELECT * FROM leads WHERE id = $1;', [id]);
+        if (pgCurrent.rows && pgCurrent.rows.length > 0) {
+          current = pgCurrent.rows[0];
+        }
+      } catch (err: any) {
+        console.warn('Failed to fetch existing lead from pg:', err.message);
+      }
+    }
+    if (!current.id && index !== -1) {
+      current = store.leads[index];
+    }
     let finalStage = normalizeLeadStage(stage || status || current.stage || current.status || 'New Lead');
     const resolvedSiteVisitDate = site_visit_date !== undefined ? site_visit_date : current.site_visit_date;
     const resolvedFollowUpDate = next_follow_up_date !== undefined ? next_follow_up_date : current.next_follow_up_date;
