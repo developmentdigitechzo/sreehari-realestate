@@ -90,6 +90,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Prevent proxy/browser stale caching across all API endpoints
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
+
 // Route registration
 app.use('/api/public', publicRoutes);
 app.use('/api/admin', adminRoutes);

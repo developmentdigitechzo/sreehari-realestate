@@ -240,6 +240,15 @@ export async function submitPublicLead(req: Request, res: Response): Promise<voi
 
       if (db.isPostgres()) {
         try {
+          let safeProjectId = finalLeadRecord.project_id || null;
+          if (safeProjectId) {
+            try {
+              const chk = await db.query('SELECT id FROM projects WHERE id = $1 LIMIT 1;', [safeProjectId]);
+              if (chk.rows.length === 0) safeProjectId = null;
+            } catch {
+              safeProjectId = null;
+            }
+          }
           await db.query(
             `INSERT INTO leads (
               id, project_id, plot_id, plot_name, plot_description,
@@ -249,7 +258,7 @@ export async function submitPublicLead(req: Request, res: Response): Promise<voi
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::jsonb, $20);`,
             [
               finalLeadRecord.id,
-              finalLeadRecord.project_id,
+              safeProjectId,
               finalLeadRecord.plot_id,
               finalLeadRecord.plot_name,
               finalLeadRecord.plot_description,
@@ -382,12 +391,18 @@ export async function getAllLeadsAdmin(req: Request, res: Response): Promise<voi
           LEFT JOIN projects p ON l.project_id = p.id 
           ORDER BY l.created_at DESC;
         `);
-        leads = pgRes.rows;
+        leads = pgRes.rows || [];
+        const pgIds = new Set(leads.map((l: any) => l.id));
+        for (const fbLead of store.leads || []) {
+          if (!pgIds.has(fbLead.id)) {
+            leads.push(fbLead);
+          }
+        }
       } catch {
-        leads = [...store.leads];
+        leads = [...(store.leads || [])];
       }
     } else {
-      leads = [...store.leads];
+      leads = [...(store.leads || [])];
     }
 
     const { status, projectId } = req.query;

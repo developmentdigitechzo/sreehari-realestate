@@ -161,10 +161,21 @@ export default function AdminProjectsPage() {
     }
   }
 
-  async function refreshProjectsSilently() {
+  async function refreshProjectsSilently(priorityProject?: any) {
     try {
       const res = await api.getProjects();
-      if (res?.data) setProjects(res.data);
+      if (res?.data) {
+        let incoming: Project[] = res.data;
+        if (priorityProject && priorityProject.id) {
+          const idx = incoming.findIndex((p) => p.id === priorityProject.id);
+          if (idx !== -1) {
+            incoming[idx] = { ...incoming[idx], ...priorityProject };
+          } else {
+            incoming = [priorityProject, ...incoming];
+          }
+        }
+        setProjects(incoming);
+      }
     } catch (err) {
       console.error('Failed to silently refresh projects:', err);
     }
@@ -510,15 +521,18 @@ export default function AdminProjectsPage() {
         const updated = res?.data || { ...editingProject, ...payload };
         setProjects((prev) => prev.map((p) => (p.id === editingProject.id ? { ...p, ...updated } : p)));
         setToastMessage('Project updated successfully');
+        setIsModalOpen(false);
+        refreshProjectsSilently(updated);
       } else {
         const res = await api.createProject(payload);
-        if (res?.data) {
-          setProjects((prev) => [res.data, ...prev]);
+        const created = res?.data;
+        if (created) {
+          setProjects((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
         }
         setToastMessage('New project created successfully');
+        setIsModalOpen(false);
+        refreshProjectsSilently(created);
       }
-      setIsModalOpen(false);
-      refreshProjectsSilently();
     } catch (err: any) {
       setToastMessage(err.message || 'Operation failed');
     } finally {

@@ -4,7 +4,6 @@ import { properties, Property } from '@/data/properties';
 import PropertyDetailClient from './PropertyDetailClient';
 import { api } from '@/lib/api';
 
-export const instant = false;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
