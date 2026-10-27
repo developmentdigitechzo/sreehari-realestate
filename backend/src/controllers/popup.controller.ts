@@ -33,7 +33,13 @@ export async function getAllPopups(req: Request, res: Response): Promise<void> {
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM popups ORDER BY created_at DESC;');
-        popups = pgRes.rows;
+        popups = pgRes.rows || [];
+        const pgIds = new Set(popups.map((p: any) => p.id));
+        for (const fbPopup of store.popups || []) {
+          if (!pgIds.has(fbPopup.id)) {
+            popups.push(fbPopup);
+          }
+        }
       } catch (err: any) {
         console.error('PostgreSQL popups SELECT error:', err.message);
         popups = store.popups || [];
@@ -61,7 +67,13 @@ export async function getActivePopups(req: Request, res: Response): Promise<void
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query("SELECT * FROM popups WHERE status = 'Active' ORDER BY created_at DESC;");
-        popups = pgRes.rows;
+        popups = pgRes.rows || [];
+        const pgIds = new Set(popups.map((p: any) => p.id));
+        for (const fbPopup of store.popups || []) {
+          if (!pgIds.has(fbPopup.id) && (fbPopup.status || 'Active') === 'Active') {
+            popups.push(fbPopup);
+          }
+        }
       } catch {
         popups = (store.popups || []).filter((p: any) => (p.status || 'Active') === 'Active');
       }
@@ -214,10 +226,29 @@ export async function updatePopup(req: Request, res: Response): Promise<void> {
     if (db.isPostgres()) {
       try {
         await db.query(
-          `UPDATE popups SET
-            title=$1, subtitle=$2, category=$3, badge_tag=$4, banner_image=$5, highlights=$6, cta_text=$7, cta_action=$8, whatsapp_number=$9, custom_url=$10, start_date=$11, end_date=$12, layout_style=$13, display_delay=$14, show_frequency=$15, status=$16, updated_at=CURRENT_TIMESTAMP
-          WHERE id=$17;`,
+          `INSERT INTO popups (
+            id, title, subtitle, category, badge_tag, banner_image, highlights, cta_text, cta_action, whatsapp_number, custom_url, start_date, end_date, layout_style, display_delay, show_frequency, status, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, CURRENT_TIMESTAMP)
+          ON CONFLICT (id) DO UPDATE SET
+            title = EXCLUDED.title,
+            subtitle = EXCLUDED.subtitle,
+            category = EXCLUDED.category,
+            badge_tag = EXCLUDED.badge_tag,
+            banner_image = EXCLUDED.banner_image,
+            highlights = EXCLUDED.highlights,
+            cta_text = EXCLUDED.cta_text,
+            cta_action = EXCLUDED.cta_action,
+            whatsapp_number = EXCLUDED.whatsapp_number,
+            custom_url = EXCLUDED.custom_url,
+            start_date = EXCLUDED.start_date,
+            end_date = EXCLUDED.end_date,
+            layout_style = EXCLUDED.layout_style,
+            display_delay = EXCLUDED.display_delay,
+            show_frequency = EXCLUDED.show_frequency,
+            status = EXCLUDED.status,
+            updated_at = CURRENT_TIMESTAMP;`,
           [
+            id,
             updated.title || '',
             updated.subtitle || '',
             updated.category !== undefined ? updated.category : '',
@@ -233,8 +264,7 @@ export async function updatePopup(req: Request, res: Response): Promise<void> {
             updated.layout_style || 'Auto Detect',
             updated.display_delay || '3s',
             updated.show_frequency || 'Once per Session',
-            updated.status || 'Active',
-            id
+            updated.status || 'Active'
           ]
         );
       } catch (pgErr: any) {

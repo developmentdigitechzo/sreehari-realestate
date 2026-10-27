@@ -504,6 +504,13 @@ export async function initDatabase() {
 
         // Projects extra fields
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS video_url TEXT;`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS tagline VARCHAR(255);`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS plot_size_range VARCHAR(100);`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS price_range VARCHAR(100);`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS brochure_url TEXT;`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS google_maps_embed_url TEXT;`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS total_extent_acres DECIMAL(10, 2);`,
+        `ALTER TABLE projects ADD COLUMN IF NOT EXISTS total_plots_count INT DEFAULT 0;`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS gallery_images JSONB DEFAULT '[]'::jsonb;`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS highlights JSONB DEFAULT '[]'::jsonb;`,
         `ALTER TABLE projects ADD COLUMN IF NOT EXISTS amenities JSONB DEFAULT '[]'::jsonb;`,

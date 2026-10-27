@@ -548,6 +548,7 @@ export default function ProjectDetailManagementClient({ projectId }: Props) {
       const res = await api.updateProject(projectId, projectFormData);
       if (res?.success) {
         showToast('Project details successfully saved!');
+        if (res?.data) setProject((prev: any) => ({ ...prev, ...res.data }));
         await loadProjectDetails();
       } else {
         showToast(res?.message || 'Failed to update project', 'error');

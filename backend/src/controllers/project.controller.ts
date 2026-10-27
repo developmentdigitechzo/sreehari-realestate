@@ -27,6 +27,7 @@ export async function getPublicProjects(req: Request, res: Response): Promise<vo
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     let projects: any[] = [];
 
+    const store = db.getFallbackData();
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query(
@@ -40,11 +41,19 @@ export async function getPublicProjects(req: Request, res: Response): Promise<vo
            ORDER BY created_at DESC;`
         );
         projects = pgRes.rows || [];
+        const pgIds = new Set(projects.map((p: any) => p.id));
+        for (const fbProj of store.projects || []) {
+          if (!pgIds.has(fbProj.id) && fbProj.status !== 'Draft' && fbProj.status !== 'Unpublished' && fbProj.status !== 'Deleted') {
+            projects.push(fbProj);
+          }
+        }
       } catch (err: any) {
         console.error('getPublicProjects PG Error:', err.message);
+        projects = (store.projects || []).filter(
+          (p: any) => p.status !== 'Draft' && p.status !== 'Unpublished' && p.status !== 'Deleted'
+        );
       }
     } else {
-      const store = db.getFallbackData();
       projects = (store.projects || []).filter(
         (p: any) => p.status !== 'Draft' && p.status !== 'Unpublished' && p.status !== 'Deleted'
       ).sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
@@ -171,10 +180,19 @@ export async function getAllProjectsAdmin(req: Request, res: Response): Promise<
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM projects ORDER BY created_at DESC;');
-        projects = pgRes.rows;
+        projects = pgRes.rows || [];
+        const pgIds = new Set(projects.map((p: any) => p.id));
+        for (const fbProj of store.projects || []) {
+          if (!pgIds.has(fbProj.id)) {
+            projects.push(fbProj);
+          }
+        }
       } catch (err: any) {
         console.error('getAllProjectsAdmin PG Error:', err.message);
+        projects = store.projects || [];
       }
+    } else {
+      projects = store.projects || [];
     }
 
     const parsed = projects.map((p: any) => ({
@@ -210,8 +228,11 @@ export async function getProjectByIdAdmin(req: Request, res: Response): Promise<
       }
     }
 
+    const fbProject = (store.projects || []).find((p: any) => p.id === id || p.slug === id);
     if (!project) {
-      project = (store.projects || []).find((p: any) => p.id === id || p.slug === id);
+      project = fbProject;
+    } else if (fbProject && new Date(fbProject.updated_at || 0).getTime() > new Date(project.updated_at || 0).getTime()) {
+      project = { ...project, ...fbProject };
     }
 
     if (!project) {
@@ -398,12 +419,12 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
 
   try {
     const store = db.getFallbackData();
-    const index = (store.projects || []).findIndex((p: any) => p.id === id);
+    const index = (store.projects || []).findIndex((p: any) => p.id === id || p.slug === id);
 
     let current = index !== -1 ? store.projects[index] : null;
 
     if (!current && db.isPostgres()) {
-      const pgGet = await db.query('SELECT * FROM projects WHERE id = $1;', [id]);
+      const pgGet = await db.query('SELECT * FROM projects WHERE id = $1 OR slug = $1;', [id]);
       if (pgGet.rows.length > 0) current = pgGet.rows[0];
     }
 
@@ -497,7 +518,7 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
             rera_number = $19, meta_title = $20, meta_description = $21,
             gallery_images = $22::jsonb, highlights = $23::jsonb, amenities = $24::jsonb,
             nearby_landmarks = $25::jsonb, latitude = $26, longitude = $27, updated_at = CURRENT_TIMESTAMP
-           WHERE id = $28;`,
+           WHERE id = $28 OR slug = $28;`,
           [
             updated.name, updated.slug, updated.tagline, updated.description, updated.location_area,
             updated.location_city, updated.total_extent_acres, updated.total_plots_count,
@@ -507,7 +528,7 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
             updated.rera_number, updated.meta_title, updated.meta_description,
             JSON.stringify(updated.gallery_images),
             JSON.stringify(updated.highlights), JSON.stringify(updated.amenities),
-            JSON.stringify(updated.nearby_landmarks), updated.latitude, updated.longitude, id
+            JSON.stringify(updated.nearby_landmarks), updated.latitude, updated.longitude, current ? current.id : id
           ]
         );
       } catch (pgErr: any) {
@@ -515,8 +536,9 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
       }
     }
 
-    if (index !== -1) {
-      store.projects[index] = updated;
+    const realIdx = (store.projects || []).findIndex((p: any) => p.id === updated.id || (current && p.id === current.id));
+    if (realIdx !== -1) {
+      store.projects[realIdx] = updated;
     } else {
       if (!store.projects) store.projects = [];
       store.projects.push(updated);

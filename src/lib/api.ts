@@ -55,14 +55,24 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
     return { success: false, message: 'Authentication required', data: null };
   }
 
+  const isGet = !options.method || options.method.toUpperCase() === 'GET';
+  let url = `${getApiBaseUrl()}${endpoint}`;
+  if (isGet) {
+    const sep = url.includes('?') ? '&' : '?';
+    url = `${url}${sep}_t=${Date.now()}`;
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
     ...(options.headers as Record<string, string> || {}),
     'Authorization': `Bearer ${token}`,
   };
 
   try {
-    const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+    const res = await fetch(url, {
       ...options,
       headers,
       cache: 'no-store',

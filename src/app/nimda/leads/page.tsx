@@ -201,7 +201,7 @@ export default function AdminLeadsPage() {
     }
   }
 
-  async function refreshLeadsOnly() {
+  async function refreshLeadsOnly(priorityLead?: any) {
     try {
       const leadsRes = await api.getCrmLeads({
         stage: selectedStage,
@@ -209,7 +209,18 @@ export default function AdminLeadsPage() {
         projectId: selectedProject,
         search: searchQuery
       });
-      if (leadsRes?.data) setLeads(leadsRes.data);
+      if (leadsRes?.data) {
+        let incoming: CrmLead[] = leadsRes.data;
+        if (priorityLead && priorityLead.id) {
+          const idx = incoming.findIndex((l) => l.id === priorityLead.id);
+          if (idx !== -1) {
+            incoming[idx] = { ...incoming[idx], ...priorityLead };
+          } else {
+            incoming = [priorityLead, ...incoming];
+          }
+        }
+        setLeads(incoming);
+      }
     } catch (err) {
       console.error('Error refreshing leads:', err);
     }
@@ -299,9 +310,9 @@ export default function AdminLeadsPage() {
         initial_note: ''
       });
       if (enrichedNewLead) {
-        setLeads((prev) => [enrichedNewLead, ...prev]);
+        setLeads((prev) => [enrichedNewLead, ...prev.filter((l) => l.id !== enrichedNewLead.id)]);
       }
-      refreshLeadsOnly();
+      refreshLeadsOnly(enrichedNewLead);
     } catch (err: any) {
       setToastMessage(err.message || 'Failed to create CRM lead');
     } finally {
@@ -376,7 +387,7 @@ export default function AdminLeadsPage() {
         });
       }
       setEditingLead(null);
-      refreshLeadsOnly();
+      refreshLeadsOnly(updatedItem);
     } catch (err: any) {
       setToastMessage(err.message || 'Failed to update lead');
     } finally {

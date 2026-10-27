@@ -2,7 +2,6 @@ import React, { Suspense } from 'react';
 import { api } from '@/lib/api';
 import HomeClient from './HomeClient';
 
-export const instant = false;
 
 export default async function HomePage() {
   let initialProjects: any[] = [];

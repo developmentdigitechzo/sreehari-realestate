@@ -39,7 +39,7 @@ const COLOR_PRESETS = [
   { name: 'Soft Cream', hex: '#FFFCDD' },
 ];
 
-export const STANDARD_FRONTEND_PAGES = [
+const STANDARD_FRONTEND_PAGES = [
   { path: '/properties', label: 'All Properties & Layouts (/properties)' },
   { path: '/properties/park-avenue', label: 'Park Avenue Community (/properties/park-avenue)' },
   { path: '/properties/sri-amman-nagar', label: 'Sri Amman Nagar (/properties/sri-amman-nagar)' },
@@ -52,7 +52,7 @@ export const STANDARD_FRONTEND_PAGES = [
   { path: '/', label: 'Home Page (/)' }
 ];
 
-export const DEFAULT_HERO_BANNER: HeroBanner = {
+const DEFAULT_HERO_BANNER: HeroBanner = {
   id: 'default_entrance_hero',
   banner_type: 'overlay',
   image_url: '/hero_gate_entrance.png',

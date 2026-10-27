@@ -56,7 +56,13 @@ export async function getCrmLeads(req: Request, res: Response): Promise<void> {
     if (db.isPostgres()) {
       try {
         const pgRes = await db.query('SELECT * FROM leads ORDER BY created_at DESC;');
-        leads = pgRes.rows;
+        leads = pgRes.rows || [];
+        const pgIds = new Set(leads.map((l: any) => l.id));
+        for (const fbLead of store.leads || []) {
+          if (!pgIds.has(fbLead.id)) {
+            leads.push(fbLead);
+          }
+        }
       } catch {
         leads = [...(store.leads || [])];
       }
@@ -263,9 +269,25 @@ export async function createCrmLead(req: Request, res: Response): Promise<void> 
       finalStage = 'Follow Up Pending';
     }
 
+    let validProjectId: string | null = null;
+    if (project_id && typeof project_id === 'string' && project_id.trim()) {
+      const pid = project_id.trim();
+      if (db.isPostgres()) {
+        try {
+          const chk = await db.query('SELECT id FROM projects WHERE id = $1 LIMIT 1;', [pid]);
+          if (chk.rows.length > 0) validProjectId = pid;
+        } catch {
+          validProjectId = null;
+        }
+      } else {
+        const found = store.projects?.find((p: any) => p.id === pid);
+        if (found) validProjectId = pid;
+      }
+    }
+
     const newLead: any = {
       id: uuidv4(),
-      project_id: project_id || null,
+      project_id: validProjectId,
       plot_id: plot_id ? plot_id.trim() : '',
       plot_name: plot_name ? plot_name.trim() : '',
       plot_description: plot_description ? plot_description.trim() : '',
@@ -433,6 +455,15 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
 
     if (db.isPostgres()) {
       try {
+        let safeProjectId = updated.project_id || null;
+        if (safeProjectId) {
+          try {
+            const chk = await db.query('SELECT id FROM projects WHERE id = $1 LIMIT 1;', [safeProjectId]);
+            if (chk.rows.length === 0) safeProjectId = null;
+          } catch {
+            safeProjectId = null;
+          }
+        }
         await db.query(
           `UPDATE leads SET 
             name=$1, phone=$2, email=$3, source=$4, status=$5, stage=$6, priority=$7, 
@@ -455,7 +486,7 @@ export async function updateCrmLead(req: Request, res: Response): Promise<void> 
             updated.budget,
             updated.facing_preference,
             updated.assigned_to,
-            updated.project_id || null,
+            safeProjectId,
             updated.site_visit_date || null,
             updated.site_visit_time || null,
             updated.next_follow_up_date || null,

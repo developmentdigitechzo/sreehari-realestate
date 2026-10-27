@@ -2,7 +2,6 @@ import React, { Suspense } from 'react';
 import { api } from '@/lib/api';
 import PropertiesClient from './PropertiesClient';
 
-export const instant = false;
 
 export default async function PropertiesPage() {
   let initialProjects: any[] = [];

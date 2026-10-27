@@ -108,11 +108,20 @@ export default function AdminPopupsPage() {
     }
   }
 
-  async function refreshPopupsSilently() {
+  async function refreshPopupsSilently(priorityPopup?: any) {
     try {
       const res = await api.getPopups();
       if (res && res.success && Array.isArray(res.data)) {
-        setPopups(res.data);
+        let incoming: PromotionalPopup[] = res.data;
+        if (priorityPopup && priorityPopup.id) {
+          const idx = incoming.findIndex((p) => p.id === priorityPopup.id);
+          if (idx !== -1) {
+            incoming[idx] = { ...incoming[idx], ...priorityPopup };
+          } else {
+            incoming = [priorityPopup, ...incoming];
+          }
+        }
+        setPopups(incoming);
       }
     } catch (err) {
       console.error('Failed to silently refresh popups:', err);
@@ -233,15 +242,18 @@ export default function AdminPopupsPage() {
         const updated = res?.data || { ...editingPopup, ...payload };
         setPopups((prev) => prev.map((p) => (p.id === editingPopup.id ? { ...p, ...updated } : p)));
         showToast('Promotional popup updated successfully');
+        setIsModalOpen(false);
+        refreshPopupsSilently(updated);
       } else {
         const res = await api.createPopup(payload);
-        if (res?.data) {
-          setPopups((prev) => [res.data, ...prev]);
+        const created = res?.data;
+        if (created) {
+          setPopups((prev) => [created, ...prev.filter((p) => p.id !== created.id)]);
         }
         showToast('New promotional popup published live!');
+        setIsModalOpen(false);
+        refreshPopupsSilently(created);
       }
-      setIsModalOpen(false);
-      refreshPopupsSilently();
     } catch (err: any) {
       showToast('Error saving popup: ' + err.message);
     } finally {
